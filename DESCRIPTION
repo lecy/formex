@@ -1,0 +1,31 @@
+Package: formex
+Title: Format Expressions and Data-Type Detection for Research Data
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Jesse", "Lecy", email = "jlecy@urban.org", role = c("aut", "cre")),
+    person("Olivia", "Beck", email = "obeck@urban.org", role = "aut"))
+Description: A vocabulary and detection engine for the data types found in
+    research datasets. Provides a library of column detectors (identifiers,
+    geographies, temporal formats, currencies, codes, hashes, and more), a
+    dispatchable data-type registry, the formex format-expression syntax, and
+    the type/class/subclass ontology that names them. 'guess_data_type()' is
+    the single entry point that other packages build on.
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+Language: en-US
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    stats,
+    stringr,
+    utils
+Suggests:
+    ISOcodes,
+    knitr,
+    maps,
+    readxl,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
