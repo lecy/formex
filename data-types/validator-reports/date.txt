@@ -1,0 +1,14 @@
+################  ERROR REPORT: date / timestamp (tolerant parser) ################
+
+False negatives -- real positives REJECTED (0):
+
+S1 false positives -- negatives wrongly ACCEPTED (4 / 296, 1.4%):
+   5/3/12 | 3/1/16 | 3/3/36 
+
+S2 false positives -- negatives wrongly ACCEPTED (0 / 299, 0.0%):
+
+S3 false positives -- negatives wrongly ACCEPTED (0 / 299, 0.0%):
+
+SP false positives -- negatives wrongly ACCEPTED (12 / 221, 5.4%):
+   33/1/6 | 5th  March2016 | 5th March2016  
+

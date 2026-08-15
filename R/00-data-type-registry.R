@@ -85,6 +85,11 @@
   clock_time       = list(detector = "is_clock_time",       label = "clock time"),
   date_range       = list(detector = "is_date_range",       label = "date range"),
   hijri_date       = list(detector = "is_hijri_date",       label = "Hijri (Islamic) date"),
+  quarter          = list(detector = "is_quarter",          label = "year-quarter (YYYYQq)"),
+  day_of_week      = list(detector = "is_day_of_week",      label = "day-of-week name"),
+  month_of_year    = list(detector = "is_month_of_year",    label = "month-of-year name"),
+  fiscal_year      = list(detector = "is_fiscal_year",      label = "fiscal year (FYyyyy)"),
+  date             = list(detector = "is_date",             label = "date / timestamp (tolerant parser)"),
 
   # address (atomic components + composite)
   street_address = list(detector = "is_street_address", label = "street address"),
@@ -93,6 +98,22 @@
   city_state     = list(detector = "is_city_state",     label = "City, State"),
   state_zip      = list(detector = "is_state_zip",      label = "State ZIP"),
   address        = list(detector = "is_address",        label = "full postal address"),
+
+  # person names
+  first_name = list(detector = "is_first_name", label = "given (first) name"),
+  last_name  = list(detector = "is_last_name",  label = "surname (last name)"),
+  full_name  = list(detector = "is_full_name",  label = "person full name"),
+
+  # boolean / indicator
+  boolean = list(detector = "is_boolean", label = "boolean / indicator"),
+
+  # structured geometry
+  wkt_geometry = list(detector = "is_wkt_geometry", label = "WKT geometry"),
+  geojson      = list(detector = "is_geojson",      label = "GeoJSON geometry"),
+  wkb          = list(detector = "is_wkb",          label = "WKB / EWKB geometry (hex)"),
+
+  # serialized text
+  json = list(detector = "is_json", label = "JSON object / array"),
 
   # geography
   state_fips       = list(detector = "is_state_fips",       label = "state FIPS code"),

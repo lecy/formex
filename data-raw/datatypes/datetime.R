@@ -92,3 +92,36 @@ hijri_date <- c(
   "11 Shawwal 1430", "5 Muharram 1300", "19 Rajab 1460", "6 Muharram 1300",
   "1 Ramadan 1445", "27 Rajab 1440", "10 Muharram 1444", "15 Shaban 1443"
 )
+
+## tolerant date/timestamp: diverse forms that is_date() must all accept
+date <- c(
+  "2016-03-15", "3/3/16", "05/Mar/2016", "March 5, 2016", "5th March 2016",
+  "2020-09-12T10:50:39.8920-0500", "05.03.2020 14:07", "Mar 05, 2020 2:00 PM",
+  "20160305", "2016-03-15 10:53:29", "Fri, 06 Feb 1987", "15 August 1999",
+  "01/27/2016 6:00 AM", "2019-12-31T23:59:59Z", "December 29 2023 20:30"
+)
+
+## year-quarter: year-first and quarter-first, calendar and fiscal
+quarter <- c(
+  "2019Q1", "2019Q2", "2019Q3", "2019Q4", "2020-Q1", "2018 Q4",
+  "Q1 2019", "Q3 2020", "Q4-2021", "FY2018Q4", "FY2019Q1", "2000Q2"
+)
+
+## fiscal / labelled years (FY-prefixed, incl. crossover spans)
+fiscal_year <- c(
+  "FY2019", "FY2020", "FY2021", "FY18", "FY19", "FY 2022", "FY2000",
+  "FY2019-20", "FY2019/2020", "FY2022-23", "FY05", "FY99"
+)
+
+## day-of-week names (full and three-letter)
+day_of_week <- c(
+  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+  "Sunday", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+)
+
+## month-of-year names (full and three-letter)
+month_of_year <- c(
+  "January", "February", "March", "April", "May", "June", "July", "August",
+  "September", "October", "November", "December",
+  "Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+)

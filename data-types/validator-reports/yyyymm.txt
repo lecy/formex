@@ -1,0 +1,12 @@
+################  ERROR REPORT: Year-month (YYYYMM) ################
+
+False negatives -- real positives REJECTED (0):
+
+S1 false positives -- negatives wrongly ACCEPTED (22 / 194, 11.3%):
+   200910 | 201910 | 201807 
+
+S2 false positives -- negatives wrongly ACCEPTED (22 / 194, 11.3%):
+   200910 | 201910 | 201807 
+
+S3 false positives -- negatives wrongly ACCEPTED (0 / 196, 0.0%):
+

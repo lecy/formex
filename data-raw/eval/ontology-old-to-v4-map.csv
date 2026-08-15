@@ -1,0 +1,88 @@
+old_type,old_subtype,old_class,v4_type,v4_class,v4_subclass,status,note
+boolean,binary,eligibility,boolean,binary,indicator,nearest,V4 has no eligibility; nearest is indicator
+boolean,binary,indicator,boolean,binary,indicator,exact,
+boolean,binary,presence,boolean,binary,presence,exact,
+boolean,binary,response,boolean,binary,response,exact,
+boolean,binary,status,boolean,binary,status,exact,
+categorical,multiselect,multiple_categories,categorical,multiselect,tags,renamed,leaf renamed to tags
+categorical,nominal,category,categorical,mutually_exclusive,unordered,renamed,nominal->mutually_exclusive; category->unordered
+categorical,nominal,classification_code,categorical,mutually_exclusive,classification_code,renamed,middle level nominal->mutually_exclusive
+categorical,nominal,geography,categorical,mutually_exclusive,geographic,renamed,leaf geography->geographic
+categorical,nominal,group,categorical,mutually_exclusive,unordered,merged,group folds into unordered (same as category)
+categorical,nominal,missingness_reason,categorical,mutually_exclusive,missingness_reason,renamed,middle level renamed
+categorical,ordinal,grade_level,categorical,scale,grade_level,renamed,ordinal->scale
+categorical,ordinal,likert,categorical,scale,likert,renamed,ordinal->scale
+categorical,ordinal,ordered_category,categorical,mutually_exclusive,ordered,renamed,ordinal category w/o intervals -> mutually_exclusive/ordered
+categorical,ordinal,rating,categorical,scale,rating,renamed,ordinal->scale
+identifier,hash_id,record_id,identifier,id,hash,renamed,hash_id subtype collapses; leaf->hash
+identifier,numeric_id,administrative_id,identifier,id,administrative,merged,numeric_id/text_id merge into id
+identifier,numeric_id,geographic_id,identifier,id,geographic,renamed,numeric_id->id
+identifier,numeric_id,record_id,identifier,id,record,merged,numeric_id/text_id record ids merge
+identifier,text_id,administrative_id,identifier,id,administrative,merged,merges with numeric_id/administrative_id
+identifier,text_id,entity_id,identifier,id,entity,renamed,text_id->id
+identifier,text_id,record_id,identifier,id,record,merged,merges with numeric_id/record_id
+identifier,text_id,version_id,identifier,id,version,renamed,text_id->id
+number,continuous,balance,number,currency,balance,renamed,balance moves under currency class
+number,continuous,coefficient,number,quantity,measurement,nearest,no coefficient leaf in V4
+number,continuous,coordinate,number,coordinate,lat_lon,split,V4 splits into lat/lon/lat_lon/lon_lat
+number,continuous,currency,number,currency,usd,split,V4 splits currency by locale (usd/euro)
+number,continuous,decimal,number,quantity,measurement,nearest,V4 has no generic decimal bucket
+number,continuous,difference,number,quantity,measurement,nearest,no difference leaf in V4
+number,continuous,duration,number,quantity,duration,renamed,continuous->quantity
+number,continuous,estimate,number,quantity,measurement,nearest,no estimate leaf in V4
+number,continuous,growth_rate,number,quantity,rate,nearest,no growth_rate; nearest rate
+number,continuous,index,number,quantity,index,renamed,continuous->quantity
+number,continuous,measurement,number,quantity,measurement,renamed,continuous->quantity
+number,continuous,percentile,number,portion,percentile,renamed,continuous->portion
+number,continuous,probability,number,portion,probability,renamed,continuous->portion
+number,continuous,proportion,number,portion,percent,nearest,proportion->percent
+number,continuous,rate,number,quantity,rate,renamed,continuous->quantity
+number,continuous,ratio,number,quantity,ratio,renamed,continuous->quantity
+number,continuous,standard_error,number,quantity,measurement,nearest,no standard_error leaf in V4
+number,continuous,standardized_score,number,quantity,score,nearest,z/T-score -> score
+number,continuous,weight,number,quantity,measurement,nearest,no weight leaf in V4 (physical folds to measurement)
+number,discrete,count,number,quantity,count,renamed,discrete->quantity
+number,discrete,frequency,number,quantity,count,nearest,no frequency leaf; nearest count
+number,discrete,integer,number,quantity,count,nearest,no generic integer leaf
+number,discrete,rank,number,quantity,rank,renamed,discrete->quantity
+number,discrete,score,number,quantity,score,renamed,discrete->quantity
+number,range,confidence_interval,number,range,confidence_interval,exact,
+number,range,numeric_range,number,range,min_max,renamed,leaf numeric_range->min_max
+structured,collection,array,structured,collection,array,exact,
+structured,collection,list,structured,collection,list,exact,
+structured,record,key_value,structured,record,key_value,exact,
+structured,record,object,structured,record,object,exact,
+structured,spatial,geometry,structured,geometry,point,split,V4 promotes geometry to class; point/polygon leaves
+temporal,interval,date_range,temporal,interval,date_range,exact,
+temporal,period,month,temporal,period,month,exact,
+temporal,period,quarter,temporal,period,quarter,exact,
+temporal,period,reporting_period,temporal,period,reporting_period,exact,
+temporal,period,season,temporal,period,reporting_period,nearest,no season leaf in V4
+temporal,period,semester,temporal,period,reporting_period,nearest,no semester leaf in V4
+temporal,period,year,temporal,period,year,exact,
+temporal,phase,day_of_week,temporal,phase,day_of_week,exact,
+temporal,phase,hour_of_day,temporal,phase,hour_of_day,exact,
+temporal,phase,month_of_year,temporal,phase,month_of_year,exact,
+temporal,phase,season_of_year,temporal,phase,,dropped,no season_of_year leaf in V4 (phase class kept)
+temporal,phase,week_of_year,temporal,phase,week_of_year,exact,
+temporal,point,calendar_date,temporal,date,calendar,renamed,point->date
+temporal,point,time_of_day,temporal,time,clock,renamed,point->time; leaf->clock
+temporal,point,timestamp,temporal,date,timestamp,renamed,point->date
+text,block,long_text,text,text,long,renamed,block->text; leaf->long
+text,block,serialized_text,text,text,serialized,renamed,block->text
+text,block,text,text,text,literal,renamed,block/text->text/literal
+text,line,address,text,postal,full,split,V4 postal splits into full/po_box/street
+text,line,organization_name,text,name,organization,renamed,line->name
+text,line,person_name,text,name,person,renamed,line->name
+text,line,place_name,text,name,place,renamed,line->name
+text,line,title,text,text,title,renamed,line->text
+text,token,color,text,color,hex,split,V4 splits color by model (hex/rgb/hsl/cmyk)
+text,token,email,text,contact,email,renamed,token->contact
+text,token,label,text,text,label,renamed,token->text
+text,token,network_address,text,web,ip,split,V4 web splits into ip/mac (+domain/url)
+text,token,phone,text,contact,phone,renamed,token->contact
+text,token,url,text,web,url,renamed,token->web
+text,token,username,text,name,handle,renamed,username->name/handle
+unknown,malformed,parse_failure,unknown,unknown,malformed,renamed,class->unknown
+unknown,mixed,mixed_type,unknown,unknown,mixed,renamed,class->unknown
+unknown,unclassified,unclassified,unknown,unknown,unclassified,renamed,class->unknown

@@ -1,0 +1,16 @@
+################  ERROR REPORT: person full name ################
+
+False negatives -- real positives REJECTED (0):
+
+S1 false positives -- negatives wrongly ACCEPTED (15 / 240, 6.2%):
+   John SwiJh | John BWitD | James WillPtms 
+
+S2 false positives -- negatives wrongly ACCEPTED (8 / 240, 3.3%):
+   Mary  oPns.D | Mary Johnlol | James tMllGamB 
+
+S3 false positives -- negatives wrongly ACCEPTED (8 / 240, 3.3%):
+   Mary {Qhkson | Mary J=hn&Dn | James xil|1a1s 
+
+SP false positives -- negatives wrongly ACCEPTED (31 / 122, 25.4%):
+   Mary J C.ooper | .Mary J Cooper | Mary .JCoo per 
+

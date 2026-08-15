@@ -5,7 +5,7 @@ False negatives -- real positives REJECTED (0):
 S1 false positives -- negatives wrongly ACCEPTED (199 / 199, 100.0%):
    15-6454349 | 14-5464549 | 12-4164619 
 
-S2 false positives -- negatives wrongly ACCEPTED (65 / 197, 33.0%):
+S2 false positives -- negatives wrongly ACCEPTED (64 / 197, 32.5%):
    01-7464149 | 85-4424339 | 85-1464968 
 
 S3 false positives -- negatives wrongly ACCEPTED (0 / 200, 0.0%):

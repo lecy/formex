@@ -1,0 +1,14 @@
+################  ERROR REPORT: year-quarter (YYYYQq) ################
+
+False negatives -- real positives REJECTED (0):
+
+S1 false positives -- negatives wrongly ACCEPTED (8 / 233, 3.4%):
+   2039Q1 | 1999Q4 | 2023-Q1 
+
+S2 false positives -- negatives wrongly ACCEPTED (7 / 235, 3.0%):
+   2009Q3 | 2008-Q1 | Q2 2019 
+
+S3 false positives -- negatives wrongly ACCEPTED (0 / 236, 0.0%):
+
+SP false positives -- negatives wrongly ACCEPTED (0 / 23, 0.0%):
+

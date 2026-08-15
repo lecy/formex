@@ -1,0 +1,16 @@
+################  ERROR REPORT: JSON object / array ################
+
+False negatives -- real positives REJECTED (0):
+
+S1 false positives -- negatives wrongly ACCEPTED (146 / 146, 100.0%):
+   {"e":x,"b":2} | {"a":1,"d":v} | {"s":a,"u":c} 
+
+S2 false positives -- negatives wrongly ACCEPTED (21 / 160, 13.1%):
+   {"b3:.,"b":2} | {"a":1aeb":2} | {"namy":"odel0[AgA":36} 
+
+S3 false positives -- negatives wrongly ACCEPTED (25 / 160, 15.6%):
+   {"g<:H,"b":2} | {"q":ElG:.:2} | {"a":1c.b":2} 
+
+SP false positives -- negatives wrongly ACCEPTED (13 / 158, 8.2%):
+   {"a:""1,b":2} | {"id""":1,]tags:["x,"y"",""z} | {"lat":40.7,":lng:74.-0,"""label"n"yc} 
+

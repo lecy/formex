@@ -1,0 +1,79 @@
+sherlock_type,v4_type,v4_class,v4_subclass,unit,feasible_depth,unit_recoverable,basis,note
+address,text,postal,full,,3,0,mask,street/postal pattern reaches subclass
+affiliate,,,,,0,0,none,relational role; no formex value concept (NULL target)
+affiliation,text,name,organization,,2,0,lookup,org name; class-level only (weak)
+age,number,quantity,duration,years,2,0,shape,quantity reachable; duration+unit need DD
+album,text,text,title,,1,0,none,free text; only type(text)
+area,number,quantity,measurement,area_unit,2,0,shape,quantity; measurement+unit need DD
+artist,text,name,person,,2,0,lookup,person or band; class(name)
+birth date,temporal,date,calendar,,3,0,mask,date mask reaches subclass
+birth place,categorical,mutually_exclusive,geographic,,3,0,lookup,place gazetteer reaches subclass
+brand,categorical,mutually_exclusive,unordered,,2,0,shape,low-cardinality category; class
+capacity,number,quantity,measurement,capacity_unit,2,0,shape,quantity
+category,categorical,mutually_exclusive,unordered,,2,0,shape,cardinality reaches class
+city,categorical,mutually_exclusive,geographic,,3,0,lookup,city gazetteer reaches subclass
+class,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+classification,categorical,mutually_exclusive,classification_code,,2,0,shape,label or code; class (subclass if coded mask)
+club,text,name,organization,,2,0,lookup,org; class
+code,categorical,mutually_exclusive,classification_code,,2,0,shape,coded category; class (subclass if structured mask)
+collection,text,text,title,,1,0,none,free text; type
+command,,,,,0,0,none,opaque command string; no formex concept (NULL target)
+company,text,name,organization,,2,0,lookup,org suffixes weak; class
+component,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+continent,categorical,mutually_exclusive,geographic,,3,0,lookup,closed set reaches subclass
+country,categorical,mutually_exclusive,geographic,,3,0,lookup,ISO lookup reaches subclass
+county,categorical,mutually_exclusive,geographic,,3,0,lookup,FIPS/name reaches subclass
+creator,text,name,person,,2,0,lookup,person; class
+credit,text,name,person,,2,0,lookup,person (film credits); class
+currency,number,currency,usd,currency,3,1,mask,symbol reaches subclass and unit recoverable
+day,temporal,phase,day_of_week,,3,0,lookup,weekday names reach subclass (ambiguous w/ day-of-month)
+depth,number,quantity,measurement,length_unit,2,0,shape,quantity
+description,text,text,long,,2,0,shape,long vs label by length; class (subclass weak)
+director,text,name,person,,2,0,lookup,person; class
+duration,number,quantity,duration,time_unit,2,0,shape,quantity (HH:MM:SS may reach subclass)
+education,categorical,scale,grade_level,,2,0,shape,ordinal not value-detectable; class
+elevation,number,quantity,measurement,length_unit,2,0,shape,quantity
+family,categorical,mutually_exclusive,unordered,,2,0,shape,taxonomic or surname; class (ambiguous)
+file size,number,quantity,measurement,byte_unit,2,1,shape,quantity; unit recoverable when suffixed (MB/KB)
+format,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+gender,categorical,mutually_exclusive,unordered,,2,0,lookup,closed set; class (may be boolean)
+genre,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+grades,categorical,scale,grade_level,,2,0,shape,ordinal; class
+industry,categorical,mutually_exclusive,unordered,,2,0,shape,category (NAICS->code); class
+isbn,identifier,id,administrative,,3,0,mask,checksum mask reaches subclass (ISBN leaf could be added)
+jockey,text,name,person,,2,0,lookup,person; class
+language,categorical,mutually_exclusive,unordered,,2,0,lookup,closed set; class
+location,categorical,mutually_exclusive,geographic,,3,0,lookup,place gazetteer reaches subclass (or coords)
+manufacturer,text,name,organization,,2,0,lookup,org; class
+name,text,name,person,,3,0,lookup,first/last gazetteer reaches subclass (loose)
+nationality,categorical,mutually_exclusive,geographic,,3,0,lookup,closed set reaches subclass
+notes,text,text,long,,2,0,shape,free text; class
+operator,text,name,organization,,2,0,lookup,org or person; class
+order,,,,,0,0,none,sort-order vs taxonomic; ambiguous; no formex concept (NULL target)
+organisation,text,name,organization,,2,0,lookup,org; class
+origin,categorical,mutually_exclusive,geographic,,3,0,lookup,place reaches subclass
+owner,text,name,person,,2,0,lookup,person or org; class
+person,text,name,person,,3,0,lookup,gazetteer reaches subclass
+plays,number,quantity,count,,2,0,shape,quantity
+position,categorical,mutually_exclusive,unordered,,2,0,shape,role or rank; class (ambiguous)
+product,text,text,title,,1,0,none,product name; type
+publisher,text,name,organization,,2,0,lookup,org; class
+range,number,range,min_max,,3,0,mask,a-b pattern reaches subclass
+ranking,number,quantity,rank,,2,0,shape,quantity (rank not value-distinguishable)
+rank,number,quantity,rank,,2,0,shape,quantity
+region,categorical,mutually_exclusive,geographic,,3,0,lookup,region names reach subclass
+religion,categorical,mutually_exclusive,unordered,,2,0,lookup,closed set; class
+requirement,text,text,long,,2,0,shape,free text; class
+result,categorical,mutually_exclusive,unordered,,2,0,shape,outcome; class (may be boolean)
+sales,number,currency,usd,currency,2,1,shape,monetary; class (subclass+unit if symbol)
+service,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+sex,categorical,mutually_exclusive,unordered,,2,0,lookup,closed set; class (may be boolean)
+species,categorical,mutually_exclusive,unordered,,2,0,shape,taxonomic; class
+state,categorical,mutually_exclusive,geographic,,3,0,lookup,state name/abbr/FIPS reaches subclass
+status,categorical,mutually_exclusive,unordered,,2,0,shape,category; class (may be boolean)
+symbol,,,,,0,0,none,ticker symbol; no formex concept (NULL target)
+team,text,name,organization,,2,0,lookup,org; class
+team name,text,name,organization,,2,0,lookup,org; class
+type,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+weight,number,quantity,measurement,mass_unit,2,0,shape,quantity; measurement+unit need DD (0-100 range may cap at type)
+year,temporal,period,year,,0,0,shape,4-digit ~ integer; not value-detectable as temporal (feasible depth 0 on the temporal path)

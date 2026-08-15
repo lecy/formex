@@ -1,0 +1,13 @@
+################  ERROR REPORT: boolean / indicator ################
+
+False negatives -- real positives REJECTED (0):
+
+S1 false positives -- negatives wrongly ACCEPTED (3 / 215, 1.4%):
+   tRUE | f | t 
+
+S2 false positives -- negatives wrongly ACCEPTED (3 / 215, 1.4%):
+   tRUE | f | t 
+
+S3 false positives -- negatives wrongly ACCEPTED (3 / 260, 1.2%):
+   FALsE | f | t 
+

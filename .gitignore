@@ -8,3 +8,24 @@ docs
 ..Rcheck/
 *.tar.gz
 .DS_Store
+
+# Downloaded external eval corpora (not part of the package)
+data-raw/eval/gittables/
+data-types/eval-reports/
+data-raw/eval/sherlock/
+
+# Census surname source CSV (public domain, 9.4MB) — regeneration input for
+# data-raw/gazetteers.R; the derived .last_names vector is baked into R/.
+data-raw/Names_2010Census.csv
+
+# stray editor/temp + empty log artifacts
+*.tmp.*
+err.log
+
+# development scaffolding: bank corpora, feature matrices, and the dev-only
+# gazetteers (incl. the license-uncertain gaz.rds). Not part of the package.
+dev/
+
+# heavy downloaded evaluation corpora (regenerable, not shipped)
+data-raw/eval/gittables/
+data-raw/eval/sherlock/

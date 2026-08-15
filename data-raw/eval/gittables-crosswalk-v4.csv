@@ -1,0 +1,56 @@
+gittables_label,v4_type,v4_class,v4_subclass,unit,feasible_depth,unit_recoverable,basis,note
+id,identifier,id,record,,0,0,none,integer surrogate keys not value-detectable (uuid/hash would reach subclass)
+comment,text,text,long,,2,0,shape,free text
+note,text,text,long,,2,0,shape,free text
+notes,text,text,long,,2,0,shape,free text
+description,text,text,long,,2,0,shape,free text
+name,text,name,person,,3,0,lookup,first/last gazetteer reaches subclass (loose)
+author,text,name,person,,2,0,lookup,person or org; class
+title,text,text,title,,1,0,none,free text; type
+project,text,text,title,,1,0,none,free text; type
+product,text,text,title,,1,0,none,free text; type
+publication,text,text,title,,1,0,none,free text; type
+team,text,name,organization,,2,0,lookup,org; class
+type,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+status,categorical,mutually_exclusive,unordered,,2,0,shape,category; class (may be boolean)
+class,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+species,categorical,mutually_exclusive,unordered,,2,0,shape,taxonomic; class
+genus,categorical,mutually_exclusive,unordered,,2,0,shape,taxonomic; class
+code,categorical,mutually_exclusive,classification_code,,2,0,shape,coded category; class
+category,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+format,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+language,categorical,mutually_exclusive,unordered,,2,0,lookup,closed set; class
+role,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+component,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+orientation,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+material,categorical,mutually_exclusive,unordered,,2,0,shape,category; class
+rating,categorical,scale,rating,,2,0,shape,ordinal; class
+state,categorical,mutually_exclusive,geographic,,3,0,lookup,state name/abbr/FIPS reaches subclass
+city,categorical,mutually_exclusive,geographic,,3,0,lookup,city gazetteer reaches subclass
+country,categorical,mutually_exclusive,geographic,,3,0,lookup,ISO lookup reaches subclass
+year,temporal,period,year,,0,0,shape,4-digit ~ integer; not value-detectable as temporal
+date,temporal,date,calendar,,3,0,mask,date mask reaches subclass
+end date,temporal,date,calendar,,3,0,mask,date mask reaches subclass
+created,temporal,date,timestamp,,3,0,mask,ISO or unix timestamp reaches subclass
+time,temporal,time,clock,,3,0,mask,clock pattern reaches subclass
+period,temporal,period,reporting_period,,1,0,shape,vague; type only
+rank,number,quantity,rank,,2,0,shape,quantity (rank not value-distinguishable)
+min,number,quantity,measurement,,2,0,shape,minimum value; quantity
+value,number,quantity,measurement,,2,0,shape,quantity
+width,number,quantity,measurement,length_unit,2,0,shape,quantity
+height,number,quantity,measurement,length_unit,2,0,shape,quantity
+depth,number,quantity,measurement,length_unit,2,0,shape,quantity
+length,number,quantity,measurement,length_unit,2,0,shape,quantity
+volume,number,quantity,measurement,volume_unit,2,0,shape,quantity
+weight,number,quantity,measurement,mass_unit,2,0,shape,quantity; measurement+unit need DD
+temperature,number,quantity,measurement,temp_unit,2,0,shape,quantity
+resolution,number,quantity,measurement,,2,0,shape,quantity
+duration,number,quantity,duration,time_unit,2,0,shape,quantity
+range,number,range,min_max,,3,0,mask,a-b pattern reaches subclass
+price,number,currency,usd,currency,2,1,shape,monetary; class (subclass+unit if symbol)
+version,identifier,id,version,,3,0,mask,semver pattern reaches subclass
+parent,,,,,0,0,none,relational id reference; no formex concept (NULL target)
+source,,,,,0,0,none,vague; no formex concept (NULL target)
+reference,,,,,0,0,none,vague; no formex concept (NULL target)
+field,,,,,0,0,none,vague; no formex concept (NULL target)
+dam,,,,,0,0,none,obscure (equine breeding); no formex concept (NULL target)

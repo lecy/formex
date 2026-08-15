@@ -1,0 +1,15 @@
+################  ERROR REPORT: WKT geometry ################
+
+False negatives -- real positives REJECTED (0):
+
+S1 false positives -- negatives wrongly ACCEPTED (4 / 199, 2.0%):
+   POINT (3L Z3) | POINT(M0 NZ) | POINT(30 1S) 
+
+S2 false positives -- negatives wrongly ACCEPTED (0 / 200, 0.0%):
+
+S3 false positives -- negatives wrongly ACCEPTED (1 / 200, 0.5%):
+   POINT(=0 &D) 
+
+SP false positives -- negatives wrongly ACCEPTED (21 / 182, 11.5%):
+   POINT ( 3010) | POINT(3 01 0) | POINT(301 0)  
+

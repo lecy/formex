@@ -68,6 +68,11 @@
   clock_time       = c("temporal", "point",    "time_of_day",   "hhii"),
   date_range       = c("temporal", "interval", "date_range",    "range"),
   hijri_date       = c("temporal", "point",    "calendar_date", "hijri"),
+  quarter          = c("temporal", "period",   "quarter",       "yyyyQq"),
+  day_of_week      = c("temporal", "phase",    "day_of_week",   "name"),
+  month_of_year    = c("temporal", "phase",    "month_of_year", "name"),
+  fiscal_year      = c("temporal", "period",   "year",          "FYyyyy"),
+  date             = c("temporal", "point",    "calendar_date", "flex"),
   # address
   street_address = c("text",        "line",    "address",   "plain"),
   po_box         = c("text",        "line",    "address",   "plain"),
@@ -75,6 +80,18 @@
   city_state     = c("categorical", "nominal", "geography", "label"),
   state_zip      = c("categorical", "nominal", "geography", "label"),
   address        = c("text",        "line",    "address",   "plain"),
+  # person names
+  first_name     = c("text",        "line",    "person_name", "plain"),
+  last_name      = c("text",        "line",    "person_name", "plain"),
+  full_name      = c("text",        "line",    "person_name", "plain"),
+  # boolean / indicator
+  boolean        = c("boolean",     "binary",  "indicator",   "true_false"),
+  # structured geometry
+  wkt_geometry   = c("structured",  "spatial", "geometry",    "wkt"),
+  geojson        = c("structured",  "spatial", "geometry",    "geojson"),
+  wkb            = c("structured",  "spatial", "geometry",    "wkb"),
+  # serialized text
+  json           = c("text",        "block",   "serialized_text", "serialized"),
   # geography
   # all FIPS default to categorical/geography; create_dgf() promotes to
   # identifier/geographic_id when % distinct is near-unique (a key, not a group)
@@ -122,7 +139,9 @@
 #' @noRd
 .loose_detectors <- c("phone", "intl_phone", "msisdn", "unix_time",
                       "http_status", "roman", "state_fips", "county_fips",
-                      "nces_locale", "us_state", "country_code", "ein")
+                      "nces_locale", "us_state", "country_code", "ein",
+                      "first_name", "last_name", "boolean",
+                      "day_of_week", "month_of_year", "json")
 
 #' Ontology coordinates for a detector type
 #'

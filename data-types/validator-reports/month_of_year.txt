@@ -1,0 +1,11 @@
+################  ERROR REPORT: month-of-year name ################
+
+False negatives -- real positives REJECTED (0):
+
+S1 false positives -- negatives wrongly ACCEPTED (0 / 407, 0.0%):
+
+S2 false positives -- negatives wrongly ACCEPTED (0 / 407, 0.0%):
+
+S3 false positives -- negatives wrongly ACCEPTED (2 / 415, 0.5%):
+   augUst | JuL 
+
