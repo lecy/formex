@@ -68,385 +68,242 @@
     
     
 <div class="section level2">
-<h2 id="why-a-variable-needs-more-than-a-type">Why a variable needs more than a type<a class="anchor" aria-label="anchor" href="#why-a-variable-needs-more-than-a-type"></a>
+<h2 id="why-a-column-needs-more-than-a-type">Why a column needs more than a type<a class="anchor" aria-label="anchor" href="#why-a-column-needs-more-than-a-type"></a>
 </h2>
 <p>A CSV cell like <code>47401</code> is just text. Is it a ZIP code, a
-county FIPS, a count of something? A single “type” label can’t capture
+county FIPS, a count of something? A single “type” label cannot capture
 that: <code>47401</code> and <code>06037</code> are both five-digit
 geographic codes (same <em>type</em>), but one is a ZIP and one is a
 county (different <em>meaning</em>), and neither should be summed like a
-number (different <em>treatment</em>). The DGF pulls these apart onto
-separate axes:</p>
-<table class="table">
-<colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
-</colgroup>
-<thead><tr class="header">
-<th>field (DGF column)</th>
-<th>question it answers</th>
-<th>example values</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><strong><code>desired_data_type</code></strong></td>
-<td>How should the guide <em>treat</em> it?</td>
-<td>
-<code>number</code>, <code>text</code>, <code>boolean</code>,
-<code>temporal</code>, <code>categorical</code>,
-<code>identifier</code>
-</td>
-</tr>
-<tr class="even">
-<td><strong><code>desired_data_class</code></strong></td>
-<td>What <em>role</em> does it play? (<code>class.subclass</code>)</td>
-<td>
-<code>mutually_exclusive.geographic</code>,
-<code>id.administrative</code>, <code>date.calendar</code>
-</td>
-</tr>
-<tr class="odd">
-<td><strong><code>raw_data_format</code> /
-<code>stable_data_format</code></strong></td>
-<td>How is it <em>written</em>? (a formex expression)</td>
-<td>
-<code>{{ mmddyyyy }}</code>, <code>{{ [strip:$,][dec:.2] }}</code>,
-<code>{{ fips:county }}</code>
-</td>
-</tr>
-<tr class="even">
-<td><strong><code>dd_data_unit</code></strong></td>
-<td>At what <em>unit</em> is it interpreted?</td>
-<td>
-<code>USD</code>, <code>kg</code>, <code>EPSG:4326</code>
-</td>
-</tr>
-</tbody>
-</table>
-<p><code>type</code> and <code>class.subclass</code> say what a column
-<strong>is</strong> — its intended meaning, stable across file versions.
-<code>format</code> describes how the current file happens to
-<strong>write</strong> it, and <code>dd_data_unit</code> is a label an
-analyst needs to interpret it. That separation is the whole reason the
-ontology has several fields, not one.</p>
-</div>
-<div class="section level2">
-<h2 id="data_type-the-treatment">
-<code>data_type</code> — the treatment<a class="anchor" aria-label="anchor" href="#data_type-the-treatment"></a>
-</h2>
-<p>The top-level type decides how a variable is rendered and summarized.
-Two of the groups matter for governance:</p>
-<p><strong>Reader types</strong> — a plain CSV reader can produce these
-from the bytes alone:</p>
-<ul>
-<li>
-<strong><code>number</code></strong> — a quantity you can do
-arithmetic on (revenue, a count, a rate).</li>
-<li>
-<strong><code>text</code></strong> — free or tokenized strings (a
-name, an email, an address).</li>
-<li>
-<strong><code>boolean</code></strong> — a two-state flag
-(<code>Y</code>/<code>N</code>, <code>TRUE</code>/<code>FALSE</code>,
-<code>IN</code>/<code>OUT</code>).</li>
-<li>
-<strong><code>temporal</code></strong> — a point or span in time (a
-date, a timestamp, a clock time).</li>
-</ul>
-<p><strong>Semantic types</strong> — meaning a CSV <em>cannot</em>
-carry; only the DGF can assert them:</p>
-<ul>
-<li>
-<strong><code>categorical</code></strong> — a value from a fixed set
-of groups (a state, an NTEE code, a survey response). Stored as text or
-a number, but <em>treated</em> as a category.</li>
-<li>
-<strong><code>identifier</code></strong> — a key that labels a row
-or entity (an EIN, an ORCID, a census tract). Never summarized as a
-quantity, even when it looks numeric.</li>
-</ul>
-<p>(<code>structured</code> and <code>unknown</code> round out the set
-as fallbacks.) This reader-vs-semantic split decides <strong>which
-bridge</strong> closes the gap between how a column is stored and how
-you want it read (see below).</p>
-</div>
-<div class="section level2">
-<h2 id="data_class-the-role-with-a-built-in-default">
-<code>data_class</code> — the role, with a built-in default<a class="anchor" aria-label="anchor" href="#data_class-the-role-with-a-built-in-default"></a>
-</h2>
-<p>The class is the semantic role, written as
-<strong><code>class.subclass</code></strong> (dotted). It is a two-level
-hierarchy: the <strong>class</strong> is the broad, looser parent; the
-<strong>subclass</strong> refines it and may add its own validation.
-Name only the class and you get the parent’s treatment; name the
-subclass to pin the specifics.</p>
-<table class="table">
-<colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
-</colgroup>
-<thead><tr class="header">
-<th>type</th>
-<th>classes</th>
-<th>example subclasses</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><code>number</code></td>
-<td>
-<code>quantity</code>, <code>currency</code>, <code>portion</code>,
-<code>range</code>, <code>coordinate</code>
-</td>
-<td>
-<code>count</code>, <code>measurement</code>, <code>percent</code>,
-<code>lat</code>
-</td>
-</tr>
-<tr class="even">
-<td><code>text</code></td>
-<td>
-<code>text</code>, <code>name</code>, <code>postal</code>,
-<code>web</code>, <code>contact</code>, <code>color</code>
-</td>
-<td>
-<code>person</code>, <code>url</code>, <code>email</code>,
-<code>hex</code>
-</td>
-</tr>
-<tr class="odd">
-<td><code>categorical</code></td>
-<td>
-<code>mutually_exclusive</code>, <code>multiselect</code>,
-<code>scale</code>
-</td>
-<td>
-<code>unordered</code>, <code>ordered</code>,
-<code>geographic</code>, <code>likert</code>
-</td>
-</tr>
-<tr class="even">
-<td><code>boolean</code></td>
-<td><code>binary</code></td>
-<td>
-<code>indicator</code>, <code>presence</code>,
-<code>status</code>
-</td>
-</tr>
-<tr class="odd">
-<td><code>temporal</code></td>
-<td>
-<code>date</code>, <code>time</code>, <code>period</code>,
-<code>phase</code>, <code>interval</code>
-</td>
-<td>
-<code>calendar</code>, <code>month</code>,
-<code>day_of_week</code>
-</td>
-</tr>
-<tr class="even">
-<td><code>identifier</code></td>
-<td><code>id</code></td>
-<td>
-<code>record</code>, <code>administrative</code>,
-<code>geographic</code>, <code>hash</code>
-</td>
-</tr>
-</tbody>
-</table>
-<p>The inheritance has a useful safety property: <strong>defaulting up
-to the parent can only relax validation, never falsely reject.</strong>
-Mark a column <code>quantity</code> but not <code>count</code>, and it’s
-validated as a plain number — you lose the “non-negative integer” check
-but never wrongly fail a valid value.</p>
-<p>Two columns can share a <code>type</code> but differ in
-<code>class.subclass</code> — a ZIP and an NTEE code are both
-<code>categorical.mutually_exclusive</code>, but one is
-<code>.geographic</code> and one is <code>.classification_code</code>,
-and that is what a reader (or an archival standard like DDI) needs to
-know.</p>
-<blockquote>
-<p>This replaces the older
-<code>type / subtype / class / format / unit</code> five-field model.
-The storage hazard the old <code>numeric_id</code> /
-<code>text_id</code> / <code>hash_id</code> subtypes flagged is now
-handled at the representation layer (<code>raw_data_type</code>, and ID
-<em>hardening</em> — see below), not as a semantic coordinate.</p>
-</blockquote>
-</div>
-<div class="section level2">
-<h2 id="data_format-how-its-written-formex">
-<code>data_format</code> — how it’s written (formex)<a class="anchor" aria-label="anchor" href="#data_format-how-its-written-formex"></a>
-</h2>
-<p>The format is the surface form the file uses, written as a
-<strong>formex</strong> expression inside <code>{{ }}</code>. For plain
-values it’s <code>{{ none }}</code>; it earns its keep as a date-mask
-(<code>{{ mmddyyyy }}</code>), a number bundle
-(<code>{{ [strip:$,][dec:.2] }}</code>), a scheme token
-(<code>{{ fips:county }}</code>), or a directive
-(<code>{{ split:[_lo][_hi] }}</code>). The <strong>Formex</strong>
-vignette is the full guide; the short version:</p>
-<table class="table">
-<colgroup>
-<col width="50%">
-<col width="50%">
-</colgroup>
-<thead><tr class="header">
-<th>format</th>
-<th>reads</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><code>{{ mmddyyyy }}</code></td>
-<td>a US date, any separator, stabilized to ISO</td>
-</tr>
-<tr class="even">
-<td><code>{{ hh:ii24 }}</code></td>
-<td>a 24-hour clock time (<code>hh:ii12A</code> for 12-hour)</td>
-</tr>
-<tr class="odd">
-<td><code>{{ [strip:$,][range:0,Inf][dec:.2] }}</code></td>
-<td>a dollar amount: strip <code>$</code>/<code>,</code>, keep 2
-decimals</td>
-</tr>
-<tr class="even">
-<td><code>{{ fips:county }}</code></td>
-<td>a 5-digit county GEOID (registry-backed)</td>
-</tr>
-<tr class="odd">
-<td><code>{{ code=label }}</code></td>
-<td>a coded categorical, <code>1=Strongly agree</code>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="section level2">
-<h2 id="dd_data_unit-the-interpretive-unit">
-<code>dd_data_unit</code> — the interpretive unit<a class="anchor" aria-label="anchor" href="#dd_data_unit-the-interpretive-unit"></a>
-</h2>
-<p><code>dd_data_unit</code> carries a unit an analyst needs but a type
-does not: <code>USD</code> for a currency, <code>kg</code> for a mass,
-<code>EPSG:4326</code> for a coordinate. It is documentation, not a
-parsing instruction.</p>
-<p>One thing it deliberately does <strong>not</strong> carry is the
-temporal <em>grain</em>. A date’s grain (calendar vs month vs
-day-of-week) is load-bearing — it <strong>selects the render
-graphic</strong> — so it lives in <code>class.subclass</code>, where the
-render engine reads it:</p>
-<table class="table">
-<thead><tr class="header">
-<th><code>class.subclass</code></th>
-<th>grain</th>
-<th>graphic</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><code>date.calendar</code></td>
-<td>a calendar date</td>
-<td>calendar heatmap</td>
-</tr>
-<tr class="even">
-<td><code>period.month</code></td>
-<td>a month bucket</td>
-<td>month bars (Jan..Dec)</td>
-</tr>
-<tr class="odd">
-<td><code>period.year</code></td>
-<td>a year</td>
-<td>year histogram</td>
-</tr>
-<tr class="even">
-<td><code>phase.hour_of_day</code></td>
-<td>a time of day</td>
-<td>hour-of-day bars</td>
-</tr>
-<tr class="odd">
-<td><code>phase.day_of_week</code></td>
-<td>day of week</td>
-<td>Mon..Sun bars</td>
-</tr>
-</tbody>
-</table>
-<p>Retype the grain in the DGF (via
-<code>retype_dgf(..., units = c(x = "month"))</code>, which writes
-<code>period.month</code>) and re-render — the chart changes, no
-re-profiling, because the frequency table is grain-independent.</p>
-</div>
-<div class="section level2">
-<h2 id="a-column-reads-as-type-class-subclass">A column reads as type + <code>class.subclass</code><a class="anchor" aria-label="anchor" href="#a-column-reads-as-type-class-subclass"></a>
-</h2>
-<p>Here is what the migrated <code>create_dgf()</code> actually returns
-for a handful of columns — built live from this data:</p>
+number (different <em>treatment</em>). formex pulls these apart onto a
+small set of coordinates, held in the <strong>research data-type
+ontology</strong> — the shared vocabulary that <a href="../reference/guess_data_type.html"><code>guess_data_type()</code></a>
+and <a href="../reference/fx_stabilize.html"><code>fx_stabilize()</code></a>
+both speak.</p>
+<p>Read the ontology with <code><a href="../reference/fx_ontology.html">fx_ontology()</a></code>; it ships as a
+diff-able CSV
+(<code>inst/extdata/research_data_type_ontology_v6.csv</code>) and a
+parsed <code>data/ontology.rda</code>, and a package test asserts the
+two agree.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  revenue <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1200.5</span>, <span class="fl">88.0</span>, <span class="fl">45.2</span>, <span class="fl">300.1</span>, <span class="fl">12.0</span>, <span class="fl">7.7</span><span class="op">)</span>,</span>
-<span>  state   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CA"</span>,<span class="st">"NY"</span>,<span class="st">"CA"</span>,<span class="st">"NY"</span>,<span class="st">"TX"</span>,<span class="st">"TX"</span><span class="op">)</span>,</span>
-<span>  county  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"06037"</span>,<span class="st">"36061"</span>,<span class="st">"48201"</span>,<span class="st">"17031"</span>,<span class="st">"12086"</span>,<span class="st">"04013"</span><span class="op">)</span>,</span>
-<span>  edate   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2019-12-31"</span>,<span class="st">"2020-01-01"</span>,<span class="st">"2019-06-15"</span>,<span class="st">"2018-03-02"</span>,<span class="st">"2021-11-11"</span>,<span class="st">"2017-07-04"</span><span class="op">)</span>,</span>
-<span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/capture.output.html" class="external-link">capture.output</a></span><span class="op">(</span></span>
-<span>  <span class="va">dgf</span> <span class="op">&lt;-</span> <span class="fu">create_dgf</span><span class="op">(</span><span class="va">raw</span>, file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"dgf"</span><span class="op">)</span>, open <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">dgf</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"var_name"</span>, <span class="st">"desired_data_type"</span>, <span class="st">"desired_data_class"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt;         var_name desired_data_type desired_data_class</span></span>
-<span><span class="co">#&gt; revenue  revenue            number                   </span></span>
-<span><span class="co">#&gt; state      state       categorical          geography</span></span>
-<span><span class="co">#&gt; county    county        identifier      geographic_id</span></span>
-<span><span class="co">#&gt; edate      edate          temporal      calendar_date</span></span></code></pre></div>
-<p><code>state</code> and <code>county</code> are both geographic, but
-the <strong>role differs by cardinality</strong>: <code>state</code>
-repeats, so it’s a grouping —
-<code>categorical.mutually_exclusive.geographic</code>; the six distinct
-<code>county</code> FIPS read as a near-unique <strong>key</strong>, so
-it’s promoted to <code>identifier.id.geographic</code>. Same domain,
-different treatment. (<code>revenue</code> carries no detector match, so
-it keeps the bare <code>number</code> type and its default
-<code>quantity</code> class.)</p>
+<code class="sourceCode R"><span><span class="va">o</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_ontology.html">fx_ontology</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">o</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 96 25</span></span></code></pre></div>
+<p>Each <strong>row is one format variant</strong> of a semantic type.
+The columns fall into four groups: the <strong>path</strong> (what a
+column <em>is</em>), the <strong>detection kind</strong> (how it is
+recognized), the <strong>recipe</strong> (how raw values are
+stabilized), and <strong>metadata</strong> (units, validation,
+lifecycle).</p>
 </div>
 <div class="section level2">
-<h2 id="the-two-bridges-stable-and-desired">The two bridges: <code>stable</code> and <code>desired</code><a class="anchor" aria-label="anchor" href="#the-two-bridges-stable-and-desired"></a>
+<h2 id="the-path-four-coordinates">The path: four coordinates<a class="anchor" aria-label="anchor" href="#the-path-four-coordinates"></a>
 </h2>
-<p>A variable travels from the raw file to how you want to analyze it in
-<strong>three stages</strong>, joined by <strong>two rule
-bridges</strong>:</p>
-<pre><code>RAW CSV ──raw_to_stable_transform──▶ GOVERNED CSV ──desired_data_import_rule──▶ ANALYSIS
-   │            (reformat: lossless)        │           (coerce into type)          │
- raw_*                              stable_*                               desired_*
- how R reads the file               the canonical current state           what it should BE</code></pre>
+<p>A column is placed on a four-level path, coarse to fine:</p>
+<pre><code>data_type  ›  semantic_family  ›  semantic_type  ›  format_label
+ treatment      broad role         specific meaning     surface form</code></pre>
 <ul>
 <li>
-<strong><code>raw_</code></strong> — the file as received
-(<code>raw_data_type</code>, <code>raw_data_format</code>).</li>
+<strong><code>data_type</code></strong> — how a value is
+<em>treated</em>: <code>number</code>, <code>text</code>,
+<code>boolean</code>, <code>temporal</code>, <code>categorical</code>,
+<code>identifier</code>, <code>structured</code>,
+<code>unknown</code>.</li>
 <li>
-<strong><code>stable_</code></strong> — the <strong>governed
-CSV</strong> after cleanup (<code>stable_data_type</code>,
-<code>stable_data_format</code>) — the data <em>as it now is</em>.</li>
+<strong><code>semantic_family</code></strong> — the broad role
+within a type (e.g. <code>currency</code>, <code>name</code>,
+<code>date</code>, <code>geographic</code>).</li>
 <li>
-<strong><code>desired_</code></strong> — the intended meaning,
-unchanging across file versions (<code>desired_data_type</code>,
-<code>desired_data_class</code>).</li>
+<strong><code>semantic_type</code></strong> — the specific meaning
+that carries the validation and the render treatment
+(e.g. <code>usd</code>, <code>person</code>, <code>calendar</code>,
+<code>us_state</code>).</li>
+<li>
+<strong><code>format_label</code></strong> — the surface
+<em>form</em> the file happens to use for that meaning; one semantic
+type can have several (e.g. an ISBN written 10-digit, 13-digit, or
+hyphenated). The <code>format_label</code> selects the recipe row.</li>
 </ul>
-<p>Each bridge holds the <strong>name of an <code>as_*</code>
-rule</strong>:</p>
-<p><strong><code>raw_to_stable_transform</code> — the reformat bridge (→
-the stable stage).</strong> A <em>lossless</em> rewrite into a canonical
-form every tool reads: standardize a weird date to ISO
-(<code>as_mmddyyyy</code>), strip a currency symbol
-(<code>as_usd</code>), zero-pad and harden an ID
-(<code>as_id[prefix:FIPS]</code>). Its output is the governed CSV.</p>
-<p><strong><code>desired_data_import_rule</code> — the import bridge (→
-the desired stage).</strong> The coercion that reads the governed column
-into the intended type (<code>as_factor</code>,
-<code>as_yyyymmdd</code>, <code>as_id</code>). When a value is already
-unambiguous once stabilized — a hardened <code>FIPS-06037</code> can
-only load as text — the rule is just
-<code>{{ default:character }}</code>.</p>
+<p><code>data_type</code> through <code>semantic_type</code> say what a
+column <strong>is</strong> — its intended meaning, stable across file
+versions. <code>format_label</code> describes how the <em>current</em>
+file writes it. That is why <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> can return a
+<strong>path prefix</strong> when it is confident about the type but not
+the exact format: it stops at the deepest coordinate the values actually
+support.</p>
+<p>Every semantic type also carries a stable
+<code>semantic_type_id</code> (e.g. <code>n0059</code>), and each
+variant a <code>variant_id</code> (e.g. <code>n0059-f01</code>). Ids are
+allocated once and never renumbered, so banked test cases and downstream
+governance files stay valid across ontology versions.</p>
 <div class="section level3">
-<h3 id="which-bridge-a-mechanical-rule">Which bridge? A mechanical rule<a class="anchor" aria-label="anchor" href="#which-bridge-a-mechanical-rule"></a>
+<h3 id="the-full-hierarchy">The full hierarchy<a class="anchor" aria-label="anchor" href="#the-full-hierarchy"></a>
 </h3>
-<p>The reader-vs-semantic split of <code>data_type</code> tells you
-which bridge closes the gap:</p>
+<p>Built live from <code><a href="../reference/fx_ontology.html">fx_ontology()</a></code> —
+<code>data_type › semantic_family : semantic_types</code>:</p>
+<p><strong><code>boolean</code></strong></p>
+<ul>
+<li>
+<code>binary</code> — <code>indicator</code>, <code>mixed</code>,
+<code>presence</code>, <code>response</code>, <code>status</code>
+</li>
+</ul>
+<p><strong><code>categorical</code></strong></p>
+<ul>
+<li>
+<code>multiselect</code> — <code>tags</code>
+</li>
+<li>
+<code>mutually_exclusive</code> — <code>classification_code</code>,
+<code>geographic</code>, <code>missingness_reason</code>,
+<code>ordered</code>, <code>unordered</code>
+</li>
+<li>
+<code>scale</code> — <code>grade_level</code>, <code>likert</code>,
+<code>ranking</code>, <code>rating</code>
+</li>
+</ul>
+<p><strong><code>identifier</code></strong></p>
+<ul>
+<li>
+<code>id</code> — <code>administrative</code>, <code>entity</code>,
+<code>geographic</code>, <code>hash</code>, <code>record</code>,
+<code>version</code>
+</li>
+</ul>
+<p><strong><code>number</code></strong></p>
+<ul>
+<li>
+<code>coordinate</code> — <code>lat</code>, <code>lat_lon</code>,
+<code>lon</code>, <code>lon_lat</code>
+</li>
+<li>
+<code>currency</code> — <code>balance</code>, <code>euro</code>,
+<code>usd</code>
+</li>
+<li>
+<code>portion</code> — <code>odds</code>, <code>percent</code>,
+<code>percentile</code>, <code>probability</code>
+</li>
+<li>
+<code>quantity</code> — <code>count</code>, <code>duration</code>,
+<code>index</code>, <code>measurement</code>, <code>rank</code>,
+<code>rate</code>, <code>ratio</code>, <code>score</code>
+</li>
+<li>
+<code>range</code> — <code>confidence_interval</code>,
+<code>min_max</code>
+</li>
+</ul>
+<p><strong><code>structured</code></strong></p>
+<ul>
+<li>
+<code>collection</code> — <code>array</code>, <code>list</code>
+</li>
+<li>
+<code>geometry</code> — <code>point</code>,
+<code>polygon</code>
+</li>
+<li>
+<code>record</code> — <code>key_value</code>,
+<code>object</code>
+</li>
+</ul>
+<p><strong><code>temporal</code></strong></p>
+<ul>
+<li>
+<code>date</code> — <code>calendar</code>,
+<code>timestamp</code>
+</li>
+<li>
+<code>interval</code> — <code>date_range</code>
+</li>
+<li>
+<code>period</code> — <code>month</code>, <code>quarter</code>,
+<code>reporting_period</code>, <code>year</code>
+</li>
+<li>
+<code>phase</code> — <code>day_of_week</code>,
+<code>hour_of_day</code>, <code>month_of_year</code>,
+<code>week_of_year</code>
+</li>
+<li>
+<code>time</code> — <code>clock</code>
+</li>
+</ul>
+<p><strong><code>text</code></strong></p>
+<ul>
+<li>
+<code>color</code> — <code>cmyk</code>, <code>hex</code>,
+<code>hsl</code>, <code>rgb</code>
+</li>
+<li>
+<code>contact</code> — <code>email</code>, <code>phone</code>
+</li>
+<li>
+<code>name</code> — <code>handle</code>, <code>organization</code>,
+<code>person</code>, <code>place</code>
+</li>
+<li>
+<code>postal</code> — <code>full</code>, <code>po_box</code>,
+<code>street</code>
+</li>
+<li>
+<code>text</code> — <code>label</code>, <code>literal</code>,
+<code>long</code>, <code>serialized</code>, <code>title</code>
+</li>
+<li>
+<code>web</code> — <code>domain</code>, <code>ip</code>,
+<code>mac</code>, <code>url</code>
+</li>
+</ul>
+<p><strong><code>unknown</code></strong></p>
+<ul>
+<li>
+<code>unknown</code> — <code>malformed</code>, <code>mixed</code>,
+<code>unclassified</code>
+</li>
+</ul>
+</div>
+</div>
+<div class="section level2">
+<h2 id="the-detection-kind">The detection kind<a class="anchor" aria-label="anchor" href="#the-detection-kind"></a>
+</h2>
+<p><code>match_kind</code> records <em>how</em> a semantic type is
+recognized from values — which is also what decides whether a column can
+be typed from its contents at all.</p>
+<table class="table">
+<thead><tr class="header">
+<th align="left">match_kind</th>
+<th align="right">rows</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">genome</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">lexicon</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">mask</td>
+<td align="right">48</td>
+</tr>
+<tr class="even">
+<td align="left">mask+lexicon</td>
+<td align="right">7</td>
+</tr>
+<tr class="odd">
+<td align="left">none</td>
+<td align="right">16</td>
+</tr>
+<tr class="even">
+<td align="left">shape</td>
+<td align="right">12</td>
+</tr>
+</tbody>
+</table>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -454,55 +311,276 @@ which bridge closes the gap:</p>
 <col width="33%">
 </colgroup>
 <thead><tr class="header">
-<th>the desired type is…</th>
-<th>example</th>
-<th>close the gap with</th>
+<th><code>match_kind</code></th>
+<th>recognized by</th>
+<th>examples</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
+<td><strong><code>genome</code></strong></td>
+<td>a tolerant multi-format parser</td>
 <td>
-<strong>reader</strong> (achievable by a reader)</td>
-<td>a date stored as text</td>
-<td>
-<strong>reformat</strong> — make a plain reader hit it
-(<code>raw_to_stable_transform</code>)</td>
+<code>calendar</code>, <code>timestamp</code>,
+<code>clock</code>
+</td>
 </tr>
 <tr class="even">
+<td><strong><code>mask</code></strong></td>
+<td>a regex / format mask (often checksum-validated)</td>
 <td>
-<strong>semantic</strong> (not expressible in a CSV)</td>
-<td>a ZIP that is <code>categorical</code>, an EIN that is an
-<code>identifier</code>
+<code>ein</code>, <code>isbn</code>, <code>phone</code>,
+<code>usd</code>
 </td>
+</tr>
+<tr class="odd">
+<td><strong><code>lexicon</code></strong></td>
+<td>membership in a controlled vocabulary</td>
 <td>
-<strong>import rule</strong> — only metadata can assert it
-(<code>desired_data_import_rule</code>)</td>
+<code>us_state</code>, <code>iso_country</code>,
+<code>first_name</code>
+</td>
+</tr>
+<tr class="even">
+<td><strong><code>mask+lexicon</code></strong></td>
+<td>a shape gate, then a vocabulary check</td>
+<td>
+<code>person</code> (name-shaped <em>and</em> in the gazetteer)</td>
+</tr>
+<tr class="odd">
+<td><strong><code>shape</code></strong></td>
+<td>a numeric distribution</td>
+<td>
+<code>count</code>, <code>ratio</code>,
+<code>probability</code>
+</td>
+</tr>
+<tr class="even">
+<td><strong><code>none</code></strong></td>
+<td>not value-detectable; only metadata can assert it</td>
+<td>
+<code>record</code> keys, free <code>text</code>,
+<code>unknown</code>
+</td>
 </tr>
 </tbody>
 </table>
-<p>Push as much as possible into the <em>reformat</em> — it is lossless
-and every downstream tool benefits — and reserve import rules for the
-genuinely schema-dependent distinctions a CSV can never carry on its
-own.</p>
+<p><code>none</code>-kind types are the reason some columns can never be
+pinned from values alone: a surrogate record key is just an integer, and
+free text is just text. Those are asserted by context (a column name, a
+data dictionary), not by <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code>.</p>
 </div>
+<div class="section level2">
+<h2 id="the-recipe-raw-stable-import">The recipe: raw → stable → import<a class="anchor" aria-label="anchor" href="#the-recipe-raw-stable-import"></a>
+</h2>
+<p>Four columns encode how a raw column is turned into a canonical,
+analysis-ready form. They use the <strong>formex</strong> expression
+syntax (<code>{{ ... }}</code>); the <em>Formex</em> vignette is the
+full guide.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>column</th>
+<th>holds</th>
+<th>example</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><strong><code>data_format</code></strong></td>
+<td>the mask the <em>raw</em> file matches</td>
+<td>
+<code>{{ mmddyyyy }}</code>,
+<code>{{ [strip:$,][dec:.2] }}</code>
+</td>
+</tr>
+<tr class="even">
+<td><strong><code>raw_to_stable_transform</code></strong></td>
+<td>a <em>lossless</em> rewrite to canonical form</td>
+<td>
+<code>{{ as_mmddyyyy }}</code>, <code>{{ as_usd }}</code>,
+<code>lookup:usps</code>
+</td>
+</tr>
+<tr class="odd">
+<td><strong><code>stable_format</code></strong></td>
+<td>what a stabilized value looks like</td>
+<td>
+<code>2019-03-15</code>, <code>CA</code>
+</td>
+</tr>
+<tr class="even">
+<td><strong><code>stable_import_rule</code></strong></td>
+<td>how to read the stable column into its type</td>
+<td>
+<code>{{ as_yyyymmdd }}</code>, <code>{{ as_integer }}</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>A few real rows, straight from the ontology:</p>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="10%">
+<col width="8%">
+<col width="7%">
+<col width="27%">
+<col width="16%">
+<col width="29%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">semantic_type</th>
+<th align="left">format_label</th>
+<th align="left">match_kind</th>
+<th align="left">data_format</th>
+<th align="left">raw_to_stable_transform</th>
+<th align="left">stable_format</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">calendar</td>
+<td align="left">calendar</td>
+<td align="left">genome</td>
+<td align="left">{{ mmddyyyy }}</td>
+<td align="left">{{ as_mmddyyyy }}</td>
+<td align="left">2019-03-15 ;; 2019-03-15</td>
+</tr>
+<tr class="even">
+<td align="left">administrative</td>
+<td align="left">ein</td>
+<td align="left">mask</td>
+<td align="left">{{ gov:ein }}</td>
+<td align="left">{{ as_ein }}</td>
+<td align="left">12-3456789</td>
+</tr>
+<tr class="odd">
+<td align="left">usd</td>
+<td align="left">usd</td>
+<td align="left">mask</td>
+<td align="left">{{ [strip:$,][range:-Inf,Inf][dec:.2] }}</td>
+<td align="left">{{ as_usd }}</td>
+<td align="left">{{ as_usd }} -45.00 ;; 2300.00 ;; 17298.00</td>
+</tr>
+<tr class="even">
+<td align="left">person</td>
+<td align="left">first_name</td>
+<td align="left">lexicon</td>
+<td align="left">{{ lexicon:given_name }}</td>
+<td align="left">lookup:given</td>
+<td align="left">given_name</td>
+</tr>
+<tr class="odd">
+<td align="left">count</td>
+<td align="left">count</td>
+<td align="left">shape</td>
+<td align="left">{{ [range:0,Inf][dec:.0] }}</td>
+<td align="left">{{ as_integer }}</td>
+<td align="left">{{ as_integer }} 0 ;; 1 ;; 42</td>
+</tr>
+</tbody>
+</table>
+<p>The split has a purpose: push as much as possible into the
+<em>lossless</em> reformat (<code>raw_to_stable_transform</code>), which
+every downstream tool benefits from, and reserve
+<code>stable_import_rule</code> for the genuinely schema-dependent step
+of coercing a value into a type a plain CSV reader cannot infer (a ZIP
+that must stay a <code>categorical</code>, an EIN that must stay an
+<code>identifier</code>).</p>
+</div>
+<div class="section level2">
+<h2 id="metadata-units-validation-lifecycle">Metadata: units, validation, lifecycle<a class="anchor" aria-label="anchor" href="#metadata-units-validation-lifecycle"></a>
+</h2>
+<p>The remaining columns are documentation the engine carries but does
+not parse:</p>
+<ul>
+<li>
+<strong><code>dd_data_unit</code></strong> — an interpretive unit an
+analyst needs but a type does not (<code>USD</code>, <code>kg</code>,
+<code>EPSG:4326</code>). It is proposed only when the semantic type
+declares one. Crucially it does <strong>not</strong> carry temporal
+<em>grain</em>: a date’s grain (calendar vs month vs day-of-week)
+selects the render graphic, so it lives in <code>semantic_type</code>,
+not in a unit.</li>
+<li>
+<strong><code>validation</code></strong>,
+<strong><code>default_storage</code></strong>,
+<strong><code>short_desc</code></strong> /
+<strong><code>detail</code></strong> — the human-facing description, the
+storage class a stabilized value round-trips to, and the checks a value
+should pass.</li>
+<li>
+<strong><code>implemented</code></strong> — whether a value-level
+detector/recipe is wired up yet, so the ontology can name a type before
+its machinery exists.</li>
+<li>
+<strong><code>version_added</code></strong> /
+<strong><code>version_deprecated</code></strong> /
+<strong><code>superseded_by</code></strong> — lifecycle. Rows are
+deprecated, never deleted, so old labels remain resolvable.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="how-the-engine-uses-the-ontology">How the engine uses the ontology<a class="anchor" aria-label="anchor" href="#how-the-engine-uses-the-ontology"></a>
+</h2>
+<p><strong><code><a href="../reference/guess_data_type.html">guess_data_type()</a></code></strong> anchors a column to
+these coordinates. The <code>$route</code> record is the ontology path
+it resolved to, only as deep as it is confident:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span>, <span class="st">"01/01/2021"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span></span>
+<span><span class="va">r</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"data_type"</span>, <span class="st">"semantic_family"</span>, <span class="st">"semantic_type"</span>, <span class="st">"format_label"</span>, <span class="st">"match_kind"</span>, <span class="st">"depth"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; $data_type</span></span>
+<span><span class="co">#&gt; [1] "temporal"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $semantic_family</span></span>
+<span><span class="co">#&gt; [1] "date"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $semantic_type</span></span>
+<span><span class="co">#&gt; [1] "calendar"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $format_label</span></span>
+<span><span class="co">#&gt; [1] "calendar"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $match_kind</span></span>
+<span><span class="co">#&gt; [1] "genome"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $depth</span></span>
+<span><span class="co">#&gt; [1] 4</span></span></code></pre></div>
+<p><strong><code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code></strong> looks up the recipe for
+a <code>(semantic_type, format_label)</code> pair and runs it, returning
+the stable values plus the format mask and import rule from that
+row:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"California"</span>, <span class="st">"TX"</span>, <span class="st">"Ohio"</span><span class="op">)</span>, <span class="st">"geographic"</span>, <span class="st">"us_state"</span><span class="op">)</span><span class="op">[</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stable"</span>, <span class="st">"stable_format"</span>, <span class="st">"import_rule"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; $stable</span></span>
+<span><span class="co">#&gt; [1] "CA" "TX" "OH"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $stable_format</span></span>
+<span><span class="co">#&gt; [1] "usps_state"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $import_rule</span></span>
+<span><span class="co">#&gt; [1] "{{ as_factor }}"</span></span></code></pre></div>
+<p>Because both functions read the <em>same</em>
+<code><a href="../reference/fx_ontology.html">fx_ontology()</a></code>, a column typed by
+<code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> can be handed straight to
+<code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> using the <code>semantic_type</code> and
+<code>format_label</code> it returned.</p>
 </div>
 <div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <ul>
-<li>The <strong>Formex</strong> vignette — the <code>{{ }}</code>
-format-expression syntax in full, with worked examples from the
-ontology.</li>
-<li>The <strong>Rule-Based Data Governance</strong> vignette — the
-three-stage workflow in depth, and how <code>create_dgf()</code> /
-<code>stabilize_data()</code> / <code>update_dgf()</code> use it.</li>
+<li>The <strong>Guessing a Column’s Type</strong> vignette — the router
+→ verifier flow that produces the <code>$route</code> path above.</li>
 <li>The <strong>Data-Type Detector Guide</strong> — the
-<code>is_*</code> predicates that populate these coordinates and guard
-the rules.</li>
+<code>is_*</code> predicates behind the <code>mask</code> /
+<code>lexicon</code> / <code>genome</code> match kinds.</li>
 <li>
-<code>data-types/research_data_type_ontology_v4.csv</code> — the
-full catalog of <code>type / class / subclass</code> coordinates, the
-formex format for each, the raw → stable → import workflow by example,
-and suggested validations.</li>
+<code><a href="../reference/fx_ontology.html">fx_ontology()</a></code>, <code><a href="../reference/fx_validate_ontology.html">fx_validate_ontology()</a></code>, and
+<code>inst/extdata/research_data_type_ontology_v6.csv</code> — the
+accessor, the integrity check, and the full diff-able catalog. ```</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
