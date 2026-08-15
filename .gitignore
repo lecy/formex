@@ -4,7 +4,6 @@
 .Ruserdata
 *.Rproj
 inst/doc
-docs
 ..Rcheck/
 *.tar.gz
 .DS_Store
@@ -30,5 +29,6 @@ dev/
 data-raw/eval/gittables/
 data-raw/eval/sherlock/
 
-# pkgdown site (built locally; canonical build is via GitHub Actions -> gh-pages)
-docs/
+# The pkgdown site is committed and served by GitHub Pages from /docs on main.
+# Rebuild it with: pkgdown::build_site()  (see _pkgdown.yml). Its .nojekyll file
+# must stay tracked so Pages does not strip the _-prefixed assets.
