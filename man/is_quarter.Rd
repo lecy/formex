@@ -24,6 +24,7 @@ is_quarter(c("2019Q1", "Q3 2020", "FY2018Q4", "2019Q5", NA))
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_fiscal_year}()},

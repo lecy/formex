@@ -74,6 +74,19 @@ STORAGE_CLASS <- list(
   logical   = "logical",   date   = "character", datetime = "character"
 )
 
+#' Check whether stabilized values survive a read/write round trip
+#'
+#' Reads a column of already-stabilized values back with both base and
+#' type-guessing readers and reports whether the values change, the inferred
+#' type is wrong, the readers disagree, or Excel hazards are present -- i.e.
+#' whether an explicit import rule is required to preserve the intended storage.
+#'
+#' @param stable_values Character vector of stabilized values.
+#' @param intended_storage The intended storage type (e.g. `"integer"`,
+#'   `"factor"`, `"date"`).
+#' @param id Optional identifier carried through to the result.
+#' @return A one-row data frame flagging each hazard plus `needs_import_rule`.
+#' @seealso [fx_audit_ontology()]
 #' @export
 fx_roundtrip_check <- function( stable_values, intended_storage, id = NA_character_ ){
 
@@ -118,6 +131,17 @@ fx_roundtrip_check <- function( stable_values, intended_storage, id = NA_charact
 ## values -- once stable_format is populated per row, point it there instead.
 ## ---------------------------------------------------------------------------
 
+#' Round-trip audit an ontology file
+#'
+#' Runs [fx_roundtrip_check()] across every row of an ontology CSV, using a
+#' value column (default `examples`) as a stand-in for stable values, and
+#' returns which types need an explicit import rule to survive a read/write
+#' round trip.
+#'
+#' @param path Path to an ontology CSV.
+#' @param value_col Column holding `;;`-separated example values.
+#' @return A data frame of per-row round-trip results with the ontology path.
+#' @seealso [fx_roundtrip_check()]
 #' @export
 fx_audit_ontology <- function( path, value_col = "examples" ){
   d <- read.csv(path, stringsAsFactors = FALSE)

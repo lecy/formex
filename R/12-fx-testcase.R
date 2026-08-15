@@ -229,6 +229,19 @@ shortlist_candidates <- function(x, ontology, k = 8, weights = SIGNATURE_WEIGHTS
 
 ## ---- assemble --------------------------------------------------------------
 
+#' Build a banked test case from a column
+#'
+#' Profiles a column, computes its signature and candidate shortlist, and writes
+#' a self-describing JSON test case (values, profile, label, difficulty) to the
+#' bank directory. These cases are the replayable substrate for router training
+#' and regression testing.
+#'
+#' @param x A column (coerced to character).
+#' @param case_number Integer index used to mint the case id.
+#' @param data_type,semantic_family,semantic_type,... Label fields and options
+#'   (a later labelling pass may overwrite them).
+#' @return Invisibly, a list with the written `path` and the case `obj`.
+#' @seealso [fx_index_bank()], [fx_bank_coverage()]
 #' @export
 fx_make_test_case <- function( x, case_number,
     ## label (pass 2 may overwrite all of these)
@@ -326,6 +339,15 @@ fx_make_test_case <- function( x, case_number,
 
 ## ---- bank-level helpers ----------------------------------------------------
 
+#' Index a directory of banked test cases
+#'
+#' Reads every `.json` case in a bank directory and returns one row per case
+#' with its label, difficulty, ontology status, and profile size -- the flat
+#' view used to audit and sample the bank.
+#'
+#' @param dir Bank directory (default the working directory).
+#' @return A data frame, one row per case (empty if none). Requires `jsonlite`.
+#' @seealso [fx_bank_coverage()], [fx_make_test_case()]
 #' @export
 fx_index_bank <- function(dir = "."){
   files <- list.files(dir, pattern = "\\.json$", full.names = TRUE)
@@ -351,6 +373,14 @@ fx_index_bank <- function(dir = "."){
   do.call(rbind, rows)
 }
 
+#' Coverage of a test-case bank by type and difficulty
+#'
+#' Cross-tabulates the banked cases by `semantic_type` and difficulty
+#' (easy/medium/hard), so gaps in the regression corpus are visible at a glance.
+#'
+#' @param dir Bank directory (default the working directory).
+#' @return A data frame of counts per semantic_type x difficulty.
+#' @seealso [fx_index_bank()]
 #' @export
 fx_bank_coverage <- function(dir = "."){
   ix <- fx_index_bank(dir)

@@ -25,6 +25,7 @@ is_yyyymm(c("201912", "201301", "201913", "2019", NA))
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_fiscal_year}()},

@@ -24,6 +24,7 @@ is_day_of_week(c("Monday", "TUE", "Wed", "Someday", NA))
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_fiscal_year}()},
 \code{\link{is_hijri_date}()},

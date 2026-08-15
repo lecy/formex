@@ -22,6 +22,7 @@ is_hijri_date(c("11 Shawwal 1430", "5 Muharram 1300", NA))
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_fiscal_year}()},

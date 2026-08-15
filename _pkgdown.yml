@@ -1,0 +1,93 @@
+url: https://lecy.github.io/formex/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#2c6b8f"
+
+reference:
+- title: Detect & classify a column
+  desc: >
+    The primary entry point. Route a column to its ontology type and reconcile
+    value- and name-based evidence.
+  contents:
+  - guess_data_type
+  - guess_column
+  - score_data_type
+  - classify_by_name
+  - starts_with("fx_classify")
+
+- title: Stabilize
+  desc: Execute an ontology recipe to normalize a column to its stable form.
+  contents:
+  - fx_stabilize
+  - fx_transform
+
+- title: The ontology
+  desc: The shared vocabulary of semantic types, plus tooling to audit and evolve it.
+  contents:
+  - fx_ontology
+  - fx_validate_ontology
+  - fx_ontology_diff
+  - fx_ontology_impact_table
+  - fx_impacted_cases
+  - fx_migrate_bank
+  - fx_relabel_queue
+  - fx_dgf_fields
+  - fx_triage_field
+
+- title: Column detectors
+  desc: >
+    Deterministic value predicates, one per format. A column is typed by the
+    share of its values a detector accepts.
+  contents:
+  - starts_with("is_")
+  - starts_with("as_")
+
+- title: Feature extraction & signatures
+  desc: >
+    The value-profile the routers are built on, and the lightweight signature
+    primitives derived from it.
+  contents:
+  - fx_extract_features
+  - fx_extract_features_df
+  - fx_feature_manifest
+  - fx_blocks_for_features
+  - default_lexicons
+  - fx_type_signature
+  - fx_signature_distance
+  - fx_path_distance
+  - fx_sibling_report
+  - SIGNATURE_WEIGHTS
+  - WEIGHTS_FORMAT
+
+- title: Test-case bank & auditing
+  contents:
+  - fx_make_test_case
+  - fx_index_bank
+  - fx_bank_coverage
+  - fx_roundtrip_check
+  - fx_audit_ontology
+
+- title: Evaluation & AutoType reporting
+  contents:
+  - evaluate_columns
+  - eval_summary
+  - feasibility_score
+  - score_feasibility_table
+  - starts_with("generate_")
+  - starts_with("autotype_")
+  - build_autotype_results
+
+- title: Other
+  contents:
+  - matches(".")
+
+articles:
+- title: Get started
+  navbar: ~
+  contents:
+  - formex
+  - guess-data-type
+  - data-type-detectors
+  - data-type-ontology

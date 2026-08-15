@@ -23,6 +23,7 @@ is_iso_datetime(c("2009-06-15T13:45:30+02:00", "2009-06-15", NA))
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_fiscal_year}()},

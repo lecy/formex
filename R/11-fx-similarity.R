@@ -51,11 +51,27 @@ SIGNATURE_AXES <- c(
 ## dimension you care about. Format-level comparisons usually want cardinality
 ## down-weighted (two date formats differ in shape, not in how many distinct
 ## dates a column holds).
+#' Signature axis weights (balanced default)
+#'
+#' Per-axis weights for [fx_signature_distance()]. Set an axis to 0 to ignore
+#' it, or raise one to emphasize it. `SIGNATURE_WEIGHTS` weights all seven axes
+#' equally; [WEIGHTS_FORMAT] is tuned for format-level comparisons.
+#'
+#' @format A named numeric vector over the seven signature axes.
+#' @seealso [fx_signature_distance()], [WEIGHTS_FORMAT]
 #' @export
 SIGNATURE_WEIGHTS <- c(composition = 1, numeric_gap = 1, rigidity = 1,
                        width = 1, punctuation = 1, tokenization = 1,
                        cardinality = 1)
 
+#' Signature axis weights tuned for format comparisons
+#'
+#' A weighting for [fx_signature_distance()] that emphasizes shape (rigidity,
+#' width, punctuation) and down-weights cardinality to 0, because two formats of
+#' the same type differ in shape, not in how many distinct values a column holds.
+#'
+#' @format A named numeric vector over the seven signature axes.
+#' @seealso [fx_signature_distance()], [SIGNATURE_WEIGHTS]
 #' @export
 WEIGHTS_FORMAT <- c(composition = 1, numeric_gap = 0.5, rigidity = 2,
                     width = 2, punctuation = 2, tokenization = 1,
@@ -65,6 +81,18 @@ WEIGHTS_FORMAT <- c(composition = 1, numeric_gap = 0.5, rigidity = 2,
 ## fx_type_signature() -- 7 numbers, each scaled to [0,1]
 ## ---------------------------------------------------------------------------
 
+#' Reduce a column to its 7-number type signature
+#'
+#' Collapses a column's value profile to seven interpretable axes, each scaled
+#' to `[0,1]`: composition, numeric_gap, rigidity, width, punctuation,
+#' tokenization, and cardinality. The signature is the model-free router's view
+#' of a column and the input to [fx_signature_distance()].
+#'
+#' @param x A column (coerced to character).
+#' @param features Optional precomputed [fx_extract_features()] row; computed
+#'   from `x` when `NULL`.
+#' @return A named numeric vector of the seven axes (`NA` where undefined).
+#' @seealso [fx_signature_distance()], [fx_extract_features()]
 #' @export
 fx_type_signature <- function( x, features = NULL ){
 
@@ -100,6 +128,20 @@ fx_type_signature <- function( x, features = NULL ){
 ## having no numeric axis.
 ## ---------------------------------------------------------------------------
 
+#' Weighted distance between two type signatures
+#'
+#' A Gower-style weighted mean absolute difference over the axes both signatures
+#' define. Axes that are `NA` in either signature are dropped and the weights
+#' renormalized, so a column with no numeric content is not penalized for
+#' lacking a numeric axis.
+#'
+#' @param a,b Signatures from [fx_type_signature()].
+#' @param weights Per-axis weights (default [SIGNATURE_WEIGHTS]; see also
+#'   [WEIGHTS_FORMAT]).
+#' @param per_axis If `TRUE`, return the per-axis absolute differences instead
+#'   of the aggregated distance.
+#' @return A single distance in `[0,1]`, or a named per-axis vector.
+#' @seealso [fx_type_signature()]
 #' @export
 fx_signature_distance <- function( a, b, weights = SIGNATURE_WEIGHTS, per_axis = FALSE ){
   ax <- names(SIGNATURE_AXES)
@@ -141,6 +183,16 @@ signature_matrix <- function( sigs, weights = SIGNATURE_WEIGHTS ){
 ##   different data_type                  1.00
 ## ---------------------------------------------------------------------------
 
+#' Taxonomic distance between two ontology paths
+#'
+#' Distance on the `data_type/semantic_family/semantic_type` path: the fraction
+#' of levels that diverge once the shared prefix ends. Same leaf = 0; different
+#' `data_type` = 1. Format is deliberately not a level.
+#'
+#' @param p1,p2 Slash-separated ontology paths.
+#' @param levels Number of path levels to compare (default 3).
+#' @return A distance in `[0,1]`.
+#' @seealso [fx_signature_distance()], [fx_sibling_report()]
 #' @export
 fx_path_distance <- function( p1, p2, levels = 3 ){
   a <- strsplit(p1, "/", fixed = TRUE)[[1]][seq_len(levels)]
@@ -181,6 +233,23 @@ path_matrix <- function( paths, levels = 3 ){
 ## cannot support, and under a guessability-based ontology it should collapse.
 ## ---------------------------------------------------------------------------
 
+#' Surface confusable type pairs through the taxonomy and the data
+#'
+#' Compares every pair of types through two lenses -- taxonomic distance
+#' ([fx_path_distance()]) and signature distance ([fx_signature_distance()]) --
+#' and flags where they disagree. `hidden_risk` pairs (far in the taxonomy but
+#' near in signature space) are the dangerous set that needs hard negatives
+#' banked against each other; `safe_split` pairs are siblings the data tells
+#' apart easily.
+#'
+#' @param sigs A named list (or matrix of rows) of signatures.
+#' @param paths Ontology paths, aligned to `sigs`.
+#' @param labels Row labels (default `names(paths)`).
+#' @param weights Signature weights (default [SIGNATURE_WEIGHTS]).
+#' @param path_near,sig_near Thresholds for taxonomic / signature nearness.
+#' @return A data frame of pairs with distances and a `status` column
+#'   (`both`, `hidden_risk`, `safe_split`, `unrelated`).
+#' @seealso [fx_path_distance()], [fx_signature_distance()]
 #' @export
 fx_sibling_report <- function( sigs, paths, labels = names(paths),
                             weights = SIGNATURE_WEIGHTS,

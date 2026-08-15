@@ -25,6 +25,7 @@ is_fiscal_year(c("FY2019", "FY19", "FY2019-20", "2019", NA))
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_hijri_date}()},

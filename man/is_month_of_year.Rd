@@ -24,6 +24,7 @@ is_month_of_year(c("January", "feb", "Aug", "Smarch", NA))
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_fiscal_year}()},

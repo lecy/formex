@@ -21,6 +21,7 @@ is_clock_time(c("6:00:37 AM", "23:45", "25:00", NA))
 \seealso{
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_fiscal_year}()},

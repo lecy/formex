@@ -21,6 +21,7 @@ is_abbr_month_date(c("1-Jul-14", "21/Nov/2012", NA))
 \seealso{
 Other datetime detectors: 
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_fiscal_year}()},

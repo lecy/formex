@@ -22,6 +22,7 @@ is_date_range(c("07/21/16 to 08/19/16", "1972-01-01 - 1972-07-01", NA))
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_fiscal_year}()},
 \code{\link{is_hijri_date}()},

@@ -24,6 +24,7 @@ is_long_date(c("Friday, June 16, 1967", "Mar 15 2016 10:53:29", NA))
 Other datetime detectors: 
 \code{\link{is_abbr_month_date}()},
 \code{\link{is_clock_time}()},
+\code{\link{is_date}()},
 \code{\link{is_date_range}()},
 \code{\link{is_day_of_week}()},
 \code{\link{is_fiscal_year}()},

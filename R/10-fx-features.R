@@ -62,6 +62,16 @@ STOPWORDS <- c("the","of","and","a","to","in","for","on","at","by","with","from"
 ## each entry becomes lex_<name>_value_rate and lex_<name>_token_rate.
 ## ---------------------------------------------------------------------------
 
+#' Default controlled-vocabulary lexicons for the lexicon feature block
+#'
+#' The small, shippable lexicons `blk_lexicon` scores each column against,
+#' including the public-domain person/place gazetteers (first/last name, US
+#' city) that are the learned router's strongest features. Each named entry
+#' becomes `lex_<name>_value` and `lex_<name>_token` rate features. Extend by
+#' passing your own named list of character vectors to `fx_extract_features()`.
+#'
+#' @return A named list of lowercase character vectors.
+#' @seealso [fx_extract_features()]
 #' @export
 default_lexicons <- function(){
   list(
@@ -698,6 +708,26 @@ blk_header <- function(ctx, col_name = NULL){
 ALL_BLOCKS <- c("core","sequence","length","charclass","punct","mask",
                 "charfreq","regex","numeric","token","lexicon","header")
 
+#' Extract the value-profile feature vector for a column
+#'
+#' Profiles a column into a wide, flat numeric feature row across a set of
+#' independent, block-gated feature families (core, sequence, length,
+#' character-class, punctuation, mask, character-frequency, regex, numeric,
+#' token, lexicon, header). This is the substrate the learned router and the
+#' signature primitives are built on. Extraction is reproducible (a local,
+#' non-invasive RNG stream) so a profile is stable across runs.
+#'
+#' @param x A column (coerced to character).
+#' @param col_name Optional column name; enables the `header` block features.
+#' @param blocks Character vector of feature blocks to compute (default all).
+#'   Compute only the blocks a fitted model references to trim deployment cost
+#'   (see [fx_feature_manifest()], [fx_blocks_for_features()]).
+#' @param lexicons Named list of controlled vocabularies for the lexicon block
+#'   (default [default_lexicons()]).
+#' @param max_unique Cap on distinct values profiled (downsampled above it).
+#' @param seed Integer seed for the internal, caller-non-invasive RNG stream.
+#' @return A one-row data frame of numeric/`NA` features.
+#' @seealso [fx_type_signature()], [fx_feature_manifest()]
 #' @export
 fx_extract_features <- function( x, col_name = NULL,
                               blocks = ALL_BLOCKS,
@@ -747,6 +777,17 @@ fx_extract_features <- function( x, col_name = NULL,
   out
 }
 
+#' Extract features for every column of a data frame
+#'
+#' Runs [fx_extract_features()] on each column and row-binds the results into a
+#' single aligned feature matrix (one row per column), filling block-gated gaps
+#' with `NA`.
+#'
+#' @param df A data frame (or list) of columns to profile.
+#' @param ... Passed to [fx_extract_features()].
+#' @return A data frame with a leading `column` name and one feature row per
+#'   input column.
+#' @seealso [fx_extract_features()]
 #' @export
 fx_extract_features_df <- function(df, ...){
   rows <- lapply(names(df), function(nm) fx_extract_features(df[[nm]], col_name=nm, ...))
@@ -768,6 +809,16 @@ fx_extract_features_df <- function(df, ...){
 BLOCK_TIER <- c(core=1, sequence=1, length=1, charclass=1, punct=1, mask=1,
                 header=1, numeric=1, charfreq=2, regex=2, token=2, lexicon=3)
 
+#' Map each feature to its block and cascade tier
+#'
+#' Returns the feature -> block -> tier lookup that makes deployment-stage
+#' trimming mechanical: given the features a fitted model references, look up
+#' their blocks and pass only those to [fx_extract_features()].
+#'
+#' @param lexicons Named list of lexicons (default [default_lexicons()]),
+#'   included because they determine the lexicon-block feature names.
+#' @return A data frame with `feature`, `block`, and `tier` columns.
+#' @seealso [fx_blocks_for_features()], [fx_extract_features()]
 #' @export
 fx_feature_manifest <- function(lexicons = default_lexicons()){
   probe <- c(sprintf("%02d-%07d", 10:60, 1234567L), "Quercus alba", "12.50", "a@b.com")
@@ -779,6 +830,16 @@ fx_feature_manifest <- function(lexicons = default_lexicons()){
   m[!duplicated(m$feature), ]
 }
 
+#' Minimal set of feature blocks needed for a set of features
+#'
+#' Given the features a fitted model uses, returns the blocks
+#' [fx_extract_features()] must compute to produce them (always including
+#' `core`), so deployment can skip the blocks it never reads.
+#'
+#' @param features Character vector of feature names.
+#' @param manifest Feature manifest (default [fx_feature_manifest()]).
+#' @return A character vector of block names.
+#' @seealso [fx_feature_manifest()]
 #' @export
 fx_blocks_for_features <- function(features, manifest = fx_feature_manifest()){
   b <- unique(manifest$block[manifest$feature %in% features])

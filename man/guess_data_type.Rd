@@ -11,7 +11,13 @@ guess_data_type(
   threshold = 0.8,
   floor = 0.5,
   detectors = data_type_detectors(),
-  seed = NULL
+  seed = NULL,
+  route = TRUE,
+  ontology = NULL,
+  router_k = 8,
+  confirm_thr = 0.8,
+  sig_floor = 0.55,
+  router = c("auto", "learned", "signature")
 )
 }
 \arguments{
@@ -23,36 +29,65 @@ named \code{fips} favors a FIPS detector over a same-shape ZIP detector).}
 \item{n_sample}{Maximum number of unique non-missing values to test.}
 
 \item{threshold}{Minimum pass rate for the top type to be reported as the
-guess; below it, \code{guess} is \code{NA} (unknown).}
+legacy \code{guess}; below it, \code{guess} is \code{NA} (unknown).}
 
 \item{floor}{Minimum pass rate for a type to appear in \code{candidates}.}
 
 \item{detectors}{A named list of detector functions; defaults to the registry.}
 
 \item{seed}{Optional integer seed for reproducible sampling.}
+
+\item{route}{If \code{TRUE} (default), also compute the v6 router->verifier
+\code{route} record. Set \code{FALSE} to skip it (pure legacy behavior).}
+
+\item{ontology}{The v6 ontology used by the router/verifier; defaults to
+\code{\link[=fx_ontology]{fx_ontology()}}.}
+
+\item{router_k}{Router shortlist size (candidates handed to the verifier).}
+
+\item{confirm_thr}{Minimum verifier confirm rate for a discriminating variant
+to resolve a full leaf (depth 4).}
+
+\item{sig_floor}{Minimum router similarity for any non-\code{NA} route guess
+(signature router only).}
+
+\item{router}{Which Stage-1 router to use: \code{"auto"} (default) prefers the
+learned xgboost model in \code{inst/extdata/router_xgb.rds} and falls back to
+the signature router when xgboost or the artifact is unavailable;
+\code{"learned"} forces the model (route is \code{NA} if unavailable); \code{"signature"}
+forces the model-free signature router. \code{route$router_method} reports which
+ran.}
 }
 \value{
-A list with:
+A list with the legacy fields:
 \describe{
 \item{guess}{Best-matching detector type name, or \code{NA}.}
 \item{ontology}{Named vector \code{c(data_type, data_subtype, data_class, data_format)} for the guess (all \code{NA} if none).}
 \item{confidence}{The guess's pass rate.}
-\item{candidates}{Ranked data frame of types clearing \code{floor}, with
-\code{pass_rate}, \code{name_match}, and \code{specific} columns.}
+\item{candidates}{Ranked data frame of types clearing \code{floor}.}
 \item{n}{Number of unique values scored.}
 }
+and, when \code{route = TRUE}, a \code{route} sub-list anchored to the v6 ontology:
+\code{data_type}, \code{semantic_family}, \code{semantic_type}, \code{semantic_type_id},
+\code{variant_id}, \code{format_label}, \code{match_kind}, \code{depth} (0 = unknown, 1 =
+data_type, 2 = family, 3 = semantic_type, 4 = leaf/format), \code{confidence},
+\code{dd_unit}, and \code{candidates} (the \code{router} shortlist + \code{verified} table).
 }
 \description{
-Reads up to \code{n_sample} unique values, scores them against every registered
-detector, and returns the best-matching type (when its pass rate clears
-\code{threshold}) together with its ontology coordinates. Ties in pass rate are
-broken first by a variable-name hint, then by specificity.
+Reads up to \code{n_sample} unique values and returns two aligned views of the
+column's type. The LEGACY view scores the values against every registered
+detector and reports the best-matching type (when its pass rate clears
+\code{threshold}) with its flat-ontology coordinates. The \code{route} view runs the
+v6 two-stage flow: a signature-based ROUTER shortlists ontology candidates,
+then a deterministic VERIFIER (confirm = detect o transform) confirms a leaf
+or gracefully truncates to the depth the router agrees on.
 }
 \examples{
 guess_data_type(c("USD", "EUR", "JPY", "GBP"))$ontology
 guess_data_type(c("06037", "36061"), name = "county_fips")$guess
+guess_data_type(c("03/15/2019", "12/31/2020"))$route$format_label  # calendar
 
 }
 \seealso{
-\code{\link[=score_data_type]{score_data_type()}}
+\code{\link[=score_data_type]{score_data_type()}}, \code{\link[=fx_stabilize]{fx_stabilize()}}, \code{\link[=fx_ontology]{fx_ontology()}}
 }
