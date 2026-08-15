@@ -74,39 +74,112 @@
 dozens of pure predicates that each answer one yes/no question about a
 column (<code><a href="../reference/is_currency_code.html">is_currency_code()</a></code>, <code><a href="../reference/is_iso_date.html">is_iso_date()</a></code>,
 <code><a href="../reference/is_county_fips.html">is_county_fips()</a></code>, …). <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> sits
-<strong>above</strong> them. Given a column of values, it runs the whole
-library, ranks what matched, and returns a single best guess anchored to
-the ontology — the function <code>create_dgf()</code> leans on to make
-its first pass at typing a dataset.</p>
+<strong>above</strong> them. Given a column of values it returns two
+aligned views: a v6 ontology <strong><code>$route</code></strong> — the
+current two-stage router → verifier answer — and a set of
+<strong>legacy</strong> detector fields kept for backward
+compatibility.</p>
+</div>
+<div class="section level2">
+<h2 id="the-route-an-ontology-path-only-as-deep-as-its-sure">The <code>$route</code>: an ontology path, only as deep as it’s
+sure<a class="anchor" aria-label="anchor" href="#the-route-an-ontology-path-only-as-deep-as-its-sure"></a>
+</h2>
+<p><code>$route</code> anchors the column to the ontology
+(<code>data_type › semantic_family › semantic_type › format_label</code>;
+see the <em>Data-Type Ontology</em> vignette) and stops at the deepest
+coordinate the values actually support:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span>, <span class="st">"01/01/2021"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span></span>
+<span><span class="va">r</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"data_type"</span>, <span class="st">"semantic_family"</span>, <span class="st">"semantic_type"</span>, <span class="st">"format_label"</span>,</span>
+<span>    <span class="st">"match_kind"</span>, <span class="st">"depth"</span>, <span class="st">"confidence"</span>, <span class="st">"router_method"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; $data_type</span></span>
+<span><span class="co">#&gt; [1] "temporal"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $semantic_family</span></span>
+<span><span class="co">#&gt; [1] "date"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $semantic_type</span></span>
+<span><span class="co">#&gt; [1] "calendar"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $format_label</span></span>
+<span><span class="co">#&gt; [1] "calendar"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $match_kind</span></span>
+<span><span class="co">#&gt; [1] "genome"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $depth</span></span>
+<span><span class="co">#&gt; [1] 4</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $confidence</span></span>
+<span><span class="co">#&gt; [1] 1</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $router_method</span></span>
+<span><span class="co">#&gt; [1] "learned"</span></span></code></pre></div>
+<ul>
+<li>
+<strong><code>depth</code></strong> records how far it resolved:
+<code>0</code> unknown · <code>1</code> data_type · <code>2</code>
+family · <code>3</code> semantic_type · <code>4</code> leaf (format).
+Fields below the confident depth are <code>NA</code>. A column of clean
+dates resolves all the way to a leaf; a column of ambiguous five-digit
+codes may stop at its data_type. This <strong>graceful
+truncation</strong> is deliberate — forcing a leaf would manufacture
+false precision.</li>
+<li>
+<strong><code>match_kind</code></strong> is how the resolved type is
+recognized (genome / mask / lexicon / …).</li>
+<li>
+<strong><code>router_method</code></strong> reports which router
+produced the shortlist (below).</li>
+</ul>
+<div class="section level3">
+<h3 id="two-stages-router-then-verifier">Two stages: router, then verifier<a class="anchor" aria-label="anchor" href="#two-stages-router-then-verifier"></a>
+</h3>
+<ul>
+<li>
+<strong>Router</strong> (stage 1) shortlists candidate semantic
+types. Two ship: a <strong>learned</strong> xgboost model over the full
+value profile (<code><a href="../reference/fx_extract_features.html">fx_extract_features()</a></code>), and a model-free
+<strong>signature</strong> router. The <code>router =</code> argument
+chooses (<code>"auto"</code>, <code>"learned"</code>,
+<code>"signature"</code>); with <code>xgboost</code> absent,
+<code>"auto"</code> falls back to the signature router.</li>
+<li>
+<strong>Verifier</strong> (stage 2) confirms a leaf
+deterministically with <em>confirm = detect ∘ transform</em>, gated so
+that permissive types truncate instead of claiming a false leaf.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"14:30:00"</span>, <span class="st">"09:15:45"</span>, <span class="st">"23:59:59"</span><span class="op">)</span>,</span>
+<span>                router <span class="op">=</span> <span class="st">"signature"</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"semantic_type"</span>, <span class="st">"depth"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; $semantic_type</span></span>
+<span><span class="co">#&gt; [1] "clock"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $depth</span></span>
+<span><span class="co">#&gt; [1] 4</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="the-legacy-detector-view">The legacy detector view<a class="anchor" aria-label="anchor" href="#the-legacy-detector-view"></a>
+</h2>
+<p>The same call also returns the flat detector fields it always did, so
+existing code keeps working:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">g</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"USD"</span>, <span class="st">"EUR"</span>, <span class="st">"JPY"</span>, <span class="st">"GBP"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">g</span><span class="op">$</span><span class="va">guess</span></span>
 <span><span class="co">#&gt; [1] "currency_code"</span></span>
 <span><span class="va">g</span><span class="op">$</span><span class="va">ontology</span></span>
 <span><span class="co">#&gt;     data_type  data_subtype    data_class   data_format </span></span>
 <span><span class="co">#&gt; "categorical"     "nominal"    "category"        "code"</span></span></code></pre></div>
-<p>The guess is a <strong>detector name</strong>
-(<code>"currency_code"</code>); the ontology coordinates say what that
-means for governance — a currency code is a <code>categorical</code>
-<code>code</code>, not a number. The full return value carries the
-evidence behind the call:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">g</span>, max.level <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="co">#&gt; List of 5</span></span>
-<span><span class="co">#&gt;  $ guess     : chr "currency_code"</span></span>
-<span><span class="co">#&gt;  $ ontology  : Named chr [1:4] "categorical" "nominal" "category" "code"</span></span>
-<span><span class="co">#&gt;   ..- attr(*, "names")= chr [1:4] "data_type" "data_subtype" "data_class" "data_format"</span></span>
-<span><span class="co">#&gt;  $ confidence: num 1</span></span>
-<span><span class="co">#&gt;  $ candidates:'data.frame':  1 obs. of  5 variables:</span></span>
-<span><span class="co">#&gt;  $ n         : int 4</span></span></code></pre></div>
 <ul>
 <li>
-<strong><code>guess</code></strong> — the winning detector, or
-<code>NA</code> when nothing is confident enough.</li>
+<strong><code>guess</code></strong> — the winning detector name, or
+<code>NA</code> when nothing is confident.</li>
 <li>
-<strong><code>ontology</code></strong> —
-<code>c(data_type, data_subtype, data_class, data_format)</code> for the
-guess.</li>
+<strong><code>ontology</code></strong> — the flat
+<code>c(data_type, data_subtype, data_class, data_format)</code>
+coordinates for that detector (the legacy scheme; the v6 path is in
+<code>$route</code>).</li>
 <li>
 <strong><code>confidence</code></strong> — the winner’s pass rate
 (share of values it matched).</li>
@@ -117,35 +190,12 @@ the reporting <code>floor</code>, ranked.</li>
 <strong><code>n</code></strong> — how many unique values were
 actually scored.</li>
 </ul>
-</div>
-<div class="section level2">
-<h2 id="how-it-decides">How it decides<a class="anchor" aria-label="anchor" href="#how-it-decides"></a>
-</h2>
-<p>Four steps, designed to stay cheap on a big dataset:</p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Dedupe + sample.</strong> Only the unique non-missing values
-are scored, and at most <code>n_sample</code> of them (default 100).
-Scoring a million-row column costs the same as scoring its distinct
-values.</li>
-<li>
-<strong>Fast tier first.</strong> The fast detectors run first; the
-slow tier (fuzzy matchers) is consulted only if nothing fast clears
-<code>threshold</code>. (No detectors are slow today, so this is
-currently a single pass.)</li>
-<li>
-<strong>Rank with tie-breakers.</strong> Candidates are ordered by
-pass rate, then by a variable-<strong>name</strong> hint, then by
-<strong>specificity</strong> (a loose, catch-many detector loses a tie
-to a precise one).</li>
-<li>
-<strong>Map to the ontology.</strong> The winning detector name is
-resolved to its ontology coordinates.</li>
-</ol>
-<p>The raw first step is exposed on its own as
-<code><a href="../reference/score_data_type.html">score_data_type()</a></code>, which returns every detector’s pass rate
-against a set of values:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>The legacy path stays cheap on big data: it <strong>dedupes and
+samples</strong> (only unique non-missing values, at most
+<code>n_sample</code>, default 100), scores them against every
+registered detector, and ranks by pass rate. The raw scoring step is
+exposed on its own as <code><a href="../reference/score_data_type.html">score_data_type()</a></code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_data_type.html">score_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"USD"</span>, <span class="st">"EUR"</span>, <span class="st">"XYZ"</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt;       data_type n pass_rate</span></span>
 <span><span class="co">#&gt; 1 currency_code 3 0.6666667</span></span></code></pre></div>
@@ -156,51 +206,45 @@ against a set of values:</p>
 <p>Some values match more than one type. A five-digit code like
 <code>06037</code> is a valid ZIP <strong>and</strong> a valid county
 FIPS — both detectors pass at 100%. The data alone cannot choose; the
-<strong>variable name</strong> can:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<strong>variable name</strong> can (it is a tie-break for the legacy
+<code>$guess</code>):</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"06037"</span>, <span class="st">"36061"</span>, <span class="st">"48201"</span>, <span class="st">"17031"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="va">vals</span>, name <span class="op">=</span> <span class="st">"county_fips"</span><span class="op">)</span><span class="op">$</span><span class="va">guess</span></span>
 <span><span class="co">#&gt; [1] "county_fips"</span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="va">vals</span>, name <span class="op">=</span> <span class="st">"zip_code"</span><span class="op">)</span><span class="op">$</span><span class="va">guess</span></span>
 <span><span class="co">#&gt; [1] "zip_code"</span></span></code></pre></div>
-<p>Look at the ranked candidates to see <em>why</em>. Both types pass at
+<p>Look at the ranked candidates to see <em>why</em>: both types pass at
 <code>1.0</code>, so the <code>name_match</code> column casts the
-deciding vote:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+deciding vote, and with no name the tie falls to the more
+<strong>specific</strong> detector.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="va">vals</span>, name <span class="op">=</span> <span class="st">"county_fips"</span><span class="op">)</span><span class="op">$</span><span class="va">candidates</span></span>
 <span><span class="co">#&gt;     data_type n pass_rate name_match specific</span></span>
 <span><span class="co">#&gt; 1 county_fips 4         1       TRUE    FALSE</span></span>
 <span><span class="co">#&gt; 2    zip_code 4         1      FALSE     TRUE</span></span></code></pre></div>
-<p>With no name supplied, the tie falls to the more
-<strong>specific</strong> detector, so a bare column of five-digit codes
-is not silently mislabeled by whichever type happens to sort first.</p>
 </div>
 <div class="section level2">
 <h2 id="confidence-and-the-threshold-floor-knobs">Confidence, and the <code>threshold</code> / <code>floor</code>
 knobs<a class="anchor" aria-label="anchor" href="#confidence-and-the-threshold-floor-knobs"></a>
 </h2>
 <p>When nothing matches well, the honest answer is “I don’t know”:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"apple"</span>, <span class="st">"banana"</span>, <span class="st">"cherry"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">guess</span></span>
 <span><span class="co">#&gt; [1] NA</span></span></code></pre></div>
-<p>Two thresholds control how bold the guess is:</p>
+<p>Two thresholds control how bold the legacy guess is:</p>
 <ul>
 <li>
 <strong><code>threshold</code></strong> (default <code>0.8</code>) —
-the top type must match at least this share of values to be
-<em>reported</em> as the guess; below it, <code>guess</code> is
+the top type must match at least this share of values to be reported as
+<code>guess</code>; below it, <code>guess</code> is
 <code>NA</code>.</li>
 <li>
 <strong><code>floor</code></strong> (default <code>0.5</code>) — the
-minimum pass rate for a type to even appear in
-<code>candidates</code>.</li>
+minimum pass rate to appear in <code>candidates</code>.</li>
 </ul>
-<p>Lower the threshold to accept a messier column; raise it to demand
-near-uniform matches. Because scoring is separated from the decision,
-you can also inspect <code>candidates</code> yourself and apply your own
-rule.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a column that is 3/4 ISO dates: unknown at the default, a date if you relax it</span></span>
 <span><span class="va">messy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2016-03-15"</span>, <span class="st">"2016-03-13"</span>, <span class="st">"1999-12-31"</span>, <span class="st">"not a date"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="va">messy</span><span class="op">)</span><span class="op">$</span><span class="va">guess</span>               <span class="co"># NA (below 0.8)</span></span>
@@ -209,15 +253,22 @@ rule.</p>
 <span><span class="co">#&gt; [1] "iso_date"</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="where-it-is-used">Where it is used<a class="anchor" aria-label="anchor" href="#where-it-is-used"></a>
+<h2 id="from-a-guess-to-a-stable-column">From a guess to a stable column<a class="anchor" aria-label="anchor" href="#from-a-guess-to-a-stable-column"></a>
 </h2>
-<p><code>create_dgf()</code> calls <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> once
-per column (via <code>guess_dgf_types()</code>), passing the variable
-name as the hint, to seed each variable’s <code>desired_data_type</code>
-/ <code>subtype</code> / <code>class</code> and to flag near-unique
-keys. You then correct what the data alone could not reveal — see the
-<em>Rule-Based Data Governance</em> vignette for that workflow, and the
-<em>Data-Type Detector Guide</em> for the predicates underneath.</p>
+<p>Because <code>$route</code> returns the ontology
+<code>semantic_type</code> and <code>format_label</code>, its output
+hands straight to <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> to normalize the
+column:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">x</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span>, <span class="st">"01/01/2021"</span><span class="op">)</span></span>
+<span><span class="va">route</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">$</span><span class="va">route</span></span>
+<span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">route</span><span class="op">$</span><span class="va">semantic_type</span>, <span class="va">route</span><span class="op">$</span><span class="va">format_label</span><span class="op">)</span><span class="op">$</span><span class="va">stable</span></span>
+<span><span class="co">#&gt; [1] "2019-03-15" "2020-12-31" "2021-01-01"</span></span></code></pre></div>
+<p>That is the whole formex loop: <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> says
+<em>what a column is</em>, and <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> puts it in a
+standard form. A downstream workflow package (such as datagoodr) can
+build a per-column governance file on top of these two calls — see the
+<em>Data-Type Ontology</em> vignette for the coordinates they share.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

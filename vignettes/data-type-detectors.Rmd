@@ -9,12 +9,12 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = FALSE, collapse = TRUE, comment = "#>")
-library(datagoodr)
+library(formex)
 ```
 
 ## What this is
 
-`datagoodr` ships a library of **data-type detectors**: small functions that
+`formex` ships a library of **data-type detectors**: small functions that
 answer one yes/no question about a column of values --- *"is each value an
 X?"* --- where X is a semantic type such as an email address, an ISO currency
 code, a census tract GEOID, or an ORCID iD. Each detector is a pure predicate:
@@ -197,25 +197,28 @@ for (grp in names(groups)) {
 
 ## Adding a new detector
 
-New types are added with a copy-paste, bring-your-own-LLM workflow --- no API
-key required. Collect 10-25 example values of the new type and call
-[`draft_detector_prompt()`]. It builds the AutoType test cases for your
-examples and assembles a self-contained prompt (a versioned contract + your
-positives + generated hard negatives) that you paste into any LLM:
+A detector is just a pure `is_<type>()` predicate, so adding one is
+self-contained. Collect 10-25 example values of the new type and build the same
+positive + hard-negative fixture the report above uses with
+[`generate_autotype_test_cases()`] (it generates the S1/S2/S3/SP negatives via
+[`generate_autotype_negatives()`]):
 
-```{r prompt-demo, echo = TRUE, eval = FALSE}
-draft_detector_prompt(
-  examples  = c("ENSG00000139618", "ENSMUSG00000102659", "ENST00000407559"),
-  type_name = "ensembl_id"
-)
+```{r fixture-demo, echo = TRUE, eval = FALSE}
+cases <- generate_autotype_test_cases(
+  P         = c("ENSG00000139618", "ENSMUSG00000102659", "ENST00000407559"),
+  data_type = "ensembl_id")
 ```
 
-The prompt is printed to the console and written to a `.md` file you can attach
-to a chat. When the LLM returns an `is_<type>()` function, score it with
-[`evaluate_detector()`], which runs the same recall/precision report used
-above so you can see how it performs before adopting it. Once you are happy,
-drop the function into an `R/dt-<family>.R` file, add its positive examples to
-`data-raw/datatypes/<family>.R`, and register one line in
-`R/00-data-type-registry.R`.
+Write the `is_ensembl_id()` predicate, then score it against that fixture with
+[`build_autotype_results()`] and [`generate_autotype_report()`] to read the same
+recall/precision table shown here before you adopt it. Once you are happy:
 
-See `?draft_detector_prompt` and `?evaluate_detector` for details.
+1. Drop the function into an `R/dt-<family>.R` file (a character-in, logical-out
+   predicate that never errors).
+2. Add its positive examples to `data-raw/datatypes/<family>.R`.
+3. Register one line in `R/00-data-type-registry.R` so `guess_data_type()` and
+   `score_data_type()` pick it up, and add a row to the ontology
+   (`inst/extdata/research_data_type_ontology_v6.csv`) for its semantic type.
+
+See `?generate_autotype_test_cases`, `?build_autotype_results`, and
+`?generate_autotype_report` for details.

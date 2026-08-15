@@ -67,12 +67,15 @@
 
     
     
-<p>Formex is the small language DataGoodr uses to describe, per
-variable, <strong>how a raw value is read, cleaned, and
-imported</strong>. It lives in the machine-read columns of the DGF
-(<code>data_format</code>, <code>raw_to_stable_transform</code>,
-<code>stable_format</code>, <code>stable_import_rule</code>). Every
-example below is a real row from the type ontology.</p>
+<p>Formex is the small language the formex ontology uses to describe,
+per semantic type, <strong>how a raw value is read, cleaned, and
+imported</strong>. It lives in the machine-read columns of each ontology
+row (<code>data_format</code>, <code>raw_to_stable_transform</code>,
+<code>stable_format</code>, <code>stable_import_rule</code>), and is
+executed by <a href="../reference/fx_transform.html"><code>fx_transform()</code></a>
+(run one expression) and <a href="../reference/fx_stabilize.html"><code>fx_stabilize()</code></a>
+(run a whole row’s recipe). Every example below is a real row from
+<code><a href="../reference/fx_ontology.html">fx_ontology()</a></code>.</p>
 <div class="section level2">
 <h2 id="the-one-rule-is-the-parsed-part">The one rule: <code>{{ … }}</code> is the parsed part<a class="anchor" aria-label="anchor" href="#the-one-rule-is-the-parsed-part"></a>
 </h2>
@@ -177,18 +180,26 @@ cell starts with <code>{</code>, Excel never mis-reads it as a formula
 <p>Strip <code>$</code> and <code>,</code>, keep two decimals; the
 result is a plain number, so a normal read imports it with no extra
 rule.</p>
-<p>A few of these transforms ship today; the fuller <code>as_*</code>
-engine set is forthcoming. What works now:</p>
+<p>Run any expression with <code><a href="../reference/fx_transform.html">fx_transform()</a></code>, or a whole row’s
+recipe with <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code>. A few of the transform verbs
+ship today; the fuller set is forthcoming (an unimplemented verb returns
+all-<code>NA</code>). What works now:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># same digits: the format's element order decides the date</span></span>
-<span><span class="fu">as_mmddyyyy</span><span class="op">(</span><span class="st">"03/04/2019"</span><span class="op">)</span>     <span class="co"># US, month-first -&gt; March 4</span></span>
-<span><span class="co">#&gt; [1] "2019-03-04"</span></span>
-<span><span class="fu">as_ddmmyyyy</span><span class="op">(</span><span class="st">"03/04/2019"</span><span class="op">)</span>     <span class="co"># EU, day-first   -&gt; April 3</span></span>
-<span><span class="co">#&gt; [1] "2019-04-03"</span></span>
+<code class="sourceCode R"><span><span class="co"># a US date mask, stabilized to ISO (unambiguous days)</span></span>
+<span><span class="fu"><a href="../reference/fx_transform.html">fx_transform</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span><span class="op">)</span>, <span class="st">"{{ as_mmddyyyy }}"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "2019-03-15" "2020-12-31"</span></span>
 <span></span>
-<span><span class="co"># identifiers stay text; leading zeros preserved</span></span>
-<span><span class="fu">as_id</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">" 06037 "</span>, <span class="st">"36061"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "06037" "36061"</span></span></code></pre></div>
+<span><span class="co"># a currency bundle: strip $ and grouping comma, keep the number</span></span>
+<span><span class="fu"><a href="../reference/fx_transform.html">fx_transform</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"$1,234.50"</span>, <span class="st">"-45"</span><span class="op">)</span>, <span class="st">"{{ as_usd }}"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "1234.5" "-45"</span></span>
+<span></span>
+<span><span class="co"># an EIN mask restores the dropped leading zero and the delimiter</span></span>
+<span><span class="fu"><a href="../reference/fx_transform.html">fx_transform</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"123456789"</span>, <span class="st">"01-2345678"</span><span class="op">)</span>, <span class="st">"{{ as_ein }}"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "12-3456789" "01-2345678"</span></span>
+<span></span>
+<span><span class="co"># fx_stabilize() runs the whole recipe for a (semantic_type, format_label)</span></span>
+<span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span><span class="op">)</span>, <span class="st">"calendar"</span><span class="op">)</span><span class="op">$</span><span class="va">stable</span></span>
+<span><span class="co">#&gt; [1] "2019-03-15" "2020-12-31"</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="numbers-the-four-slot-bundle">Numbers: the four-slot bundle<a class="anchor" aria-label="anchor" href="#numbers-the-four-slot-bundle"></a>

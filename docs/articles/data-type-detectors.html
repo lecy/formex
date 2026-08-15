@@ -70,7 +70,7 @@
 <div class="section level2">
 <h2 id="what-this-is">What this is<a class="anchor" aria-label="anchor" href="#what-this-is"></a>
 </h2>
-<p><code>datagoodr</code> ships a library of <strong>data-type
+<p><code>formex</code> ships a library of <strong>data-type
 detectors</strong>: small functions that answer one yes/no question
 about a column of values — <em>“is each value an X?”</em> — where X is a
 semantic type such as an email address, an ISO currency code, a census
@@ -1808,7 +1808,7 @@ divisions.<br><strong>Examples:</strong> <code>Northeast</code>, <code>Midwest</
 <tbody><tr class="odd">
 <td align="right">1</td>
 <td align="right">1</td>
-<td align="right">0.33</td>
+<td align="right">0.325</td>
 <td align="right">0</td>
 <td align="right">0</td>
 </tr></tbody>
@@ -2139,28 +2139,35 @@ prefix + first nine digits.<br><strong>Examples:</strong> <code>1225155880</code
 <div class="section level2">
 <h2 id="adding-a-new-detector">Adding a new detector<a class="anchor" aria-label="anchor" href="#adding-a-new-detector"></a>
 </h2>
-<p>New types are added with a copy-paste, bring-your-own-LLM workflow —
-no API key required. Collect 10-25 example values of the new type and
-call [<code>draft_detector_prompt()</code>]. It builds the AutoType test
-cases for your examples and assembles a self-contained prompt (a
-versioned contract + your positives + generated hard negatives) that you
-paste into any LLM:</p>
+<p>A detector is just a pure <code>is_&lt;type&gt;()</code> predicate,
+so adding one is self-contained. Collect 10-25 example values of the new
+type and build the same positive + hard-negative fixture the report
+above uses with [<code><a href="../reference/generate_autotype_test_cases.html">generate_autotype_test_cases()</a></code>] (it
+generates the S1/S2/S3/SP negatives via
+[<code><a href="../reference/generate_autotype_negatives.html">generate_autotype_negatives()</a></code>]):</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">draft_detector_prompt</span><span class="op">(</span></span>
-<span>  examples  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ENSG00000139618"</span>, <span class="st">"ENSMUSG00000102659"</span>, <span class="st">"ENST00000407559"</span><span class="op">)</span>,</span>
-<span>  type_name <span class="op">=</span> <span class="st">"ensembl_id"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>The prompt is printed to the console and written to a
-<code>.md</code> file you can attach to a chat. When the LLM returns an
-<code>is_&lt;type&gt;()</code> function, score it with
-[<code>evaluate_detector()</code>], which runs the same recall/precision
-report used above so you can see how it performs before adopting it.
-Once you are happy, drop the function into an
-<code>R/dt-&lt;family&gt;.R</code> file, add its positive examples to
-<code>data-raw/datatypes/&lt;family&gt;.R</code>, and register one line
-in <code>R/00-data-type-registry.R</code>.</p>
-<p>See <code>?draft_detector_prompt</code> and
-<code>?evaluate_detector</code> for details.</p>
+<code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_autotype_test_cases.html">generate_autotype_test_cases</a></span><span class="op">(</span></span>
+<span>  P         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ENSG00000139618"</span>, <span class="st">"ENSMUSG00000102659"</span>, <span class="st">"ENST00000407559"</span><span class="op">)</span>,</span>
+<span>  data_type <span class="op">=</span> <span class="st">"ensembl_id"</span><span class="op">)</span></span></code></pre></div>
+<p>Write the <code><a href="../reference/is_ensembl_id.html">is_ensembl_id()</a></code> predicate, then score it
+against that fixture with [<code><a href="../reference/build_autotype_results.html">build_autotype_results()</a></code>] and
+[<code><a href="../reference/generate_autotype_report.html">generate_autotype_report()</a></code>] to read the same
+recall/precision table shown here before you adopt it. Once you are
+happy:</p>
+<ol style="list-style-type: decimal">
+<li>Drop the function into an <code>R/dt-&lt;family&gt;.R</code> file (a
+character-in, logical-out predicate that never errors).</li>
+<li>Add its positive examples to
+<code>data-raw/datatypes/&lt;family&gt;.R</code>.</li>
+<li>Register one line in <code>R/00-data-type-registry.R</code> so
+<code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> and <code><a href="../reference/score_data_type.html">score_data_type()</a></code> pick
+it up, and add a row to the ontology
+(<code>inst/extdata/research_data_type_ontology_v6.csv</code>) for its
+semantic type.</li>
+</ol>
+<p>See <code><a href="../reference/generate_autotype_test_cases.html">?generate_autotype_test_cases</a></code>,
+<code><a href="../reference/build_autotype_results.html">?build_autotype_results</a></code>, and
+<code><a href="../reference/generate_autotype_report.html">?generate_autotype_report</a></code> for details.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

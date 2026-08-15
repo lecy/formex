@@ -8,14 +8,17 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
-library(datagoodr)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE, warning = FALSE)
+library(formex)
 ```
 
-Formex is the small language DataGoodr uses to describe, per variable, **how a
-raw value is read, cleaned, and imported**. It lives in the machine-read columns
-of the DGF (`data_format`, `raw_to_stable_transform`, `stable_format`,
-`stable_import_rule`). Every example below is a real row from the type ontology.
+Formex is the small language the formex ontology uses to describe, per semantic
+type, **how a raw value is read, cleaned, and imported**. It lives in the
+machine-read columns of each ontology row (`data_format`,
+`raw_to_stable_transform`, `stable_format`, `stable_import_rule`), and is
+executed by [`fx_transform()`](../reference/fx_transform.html) (run one
+expression) and [`fx_stabilize()`](../reference/fx_stabilize.html) (run a whole
+row's recipe). Every example below is a real row from `fx_ontology()`.
 
 ## The one rule: `{{ … }}` is the parsed part
 
@@ -57,16 +60,22 @@ Each ontology row tells a small story across five columns. Take
 Strip `$` and `,`, keep two decimals; the result is a plain number, so a normal
 read imports it with no extra rule.
 
-A few of these transforms ship today; the fuller `as_*` engine set is
-forthcoming. What works now:
+Run any expression with `fx_transform()`, or a whole row's recipe with
+`fx_stabilize()`. A few of the transform verbs ship today; the fuller set is
+forthcoming (an unimplemented verb returns all-`NA`). What works now:
 
-```{r transforms}
-# same digits: the format's element order decides the date
-as_mmddyyyy("03/04/2019")     # US, month-first -> March 4
-as_ddmmyyyy("03/04/2019")     # EU, day-first   -> April 3
+```{r transforms, echo = TRUE}
+# a US date mask, stabilized to ISO (unambiguous days)
+fx_transform(c("03/15/2019", "12/31/2020"), "{{ as_mmddyyyy }}")
 
-# identifiers stay text; leading zeros preserved
-as_id(c(" 06037 ", "36061"))
+# a currency bundle: strip $ and grouping comma, keep the number
+fx_transform(c("$1,234.50", "-45"), "{{ as_usd }}")
+
+# an EIN mask restores the dropped leading zero and the delimiter
+fx_transform(c("123456789", "01-2345678"), "{{ as_ein }}")
+
+# fx_stabilize() runs the whole recipe for a (semantic_type, format_label)
+fx_stabilize(c("03/15/2019", "12/31/2020"), "calendar")$stable
 ```
 
 ## Numbers: the four-slot bundle
