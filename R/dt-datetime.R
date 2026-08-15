@@ -261,3 +261,80 @@ is_hijri_date <- function(x) {
   out[is.na(x)] <- NA
   out
 }
+
+#' Is it a year-quarter?
+#'
+#' A calendar or fiscal year paired with a quarter, e.g. `2019Q1`, `2019-Q1`,
+#' `Q1 2019`, or `FY2019Q3`. The quarter digit is constrained to 1-4 and the
+#' year to a sane 1900-2099 window, so it does not swallow arbitrary tokens.
+#'
+#' @param x A character vector.
+#' @return Logical vector; `TRUE` for a valid year-quarter.
+#' @examples
+#' is_quarter(c("2019Q1", "Q3 2020", "FY2018Q4", "2019Q5", NA))
+#' @family datetime detectors
+#' @export
+is_quarter <- function(x) {
+  x <- as.character(x)
+  yr <- "(19|20)\\d{2}"
+  year_first <- grepl(paste0("^(FY)?", yr, "[- ]?Q[1-4]$"), x, ignore.case = TRUE)
+  qtr_first  <- grepl(paste0("^Q[1-4][- ]?", yr, "$"), x, ignore.case = TRUE)
+  out <- year_first | qtr_first
+  out[is.na(x)] <- NA
+  out
+}
+
+#' Is it a fiscal (or explicitly labelled) year?
+#'
+#' A year carrying an `FY` label, e.g. `FY2019`, `FY19`, `FY 2020`, or a
+#' crossover span `FY2019-20` / `FY2019/2020`. Only the labelled form is
+#' detected: a bare four-digit year is intentionally excluded because it is
+#' indistinguishable by value from a count, an ID, or an ordinary integer.
+#'
+#' @param x A character vector.
+#' @return Logical vector; `TRUE` for a labelled fiscal year.
+#' @examples
+#' is_fiscal_year(c("FY2019", "FY19", "FY2019-20", "2019", NA))
+#' @family datetime detectors
+#' @export
+is_fiscal_year <- function(x) {
+  x <- as.character(x)
+  out <- grepl("^FY\\s?((19|20)\\d{2}|\\d{2})([-/]((19|20)?\\d{2}))?$",
+               trimws(x), ignore.case = TRUE)
+  out[is.na(x)] <- NA
+  out
+}
+
+#' Is it a day-of-week name?
+#'
+#' @param x A character vector.
+#' @return Logical vector; `TRUE` for a full or three-letter English weekday
+#'   name (`Monday`, `Mon`, ...). Numeric weekday positions are intentionally
+#'   excluded as too ambiguous to detect from values alone.
+#' @examples
+#' is_day_of_week(c("Monday", "TUE", "Wed", "Someday", NA))
+#' @family datetime detectors
+#' @export
+is_day_of_week <- function(x) {
+  x <- as.character(x)
+  out <- grepl(paste0("^", .wd, "$"), trimws(x), ignore.case = TRUE)
+  out[is.na(x)] <- NA
+  out
+}
+
+#' Is it a month-of-year name?
+#'
+#' @param x A character vector.
+#' @return Logical vector; `TRUE` for a full or three-letter English month name
+#'   (`January`, `Jan`, ...). Numeric month positions (`01`-`12`) are
+#'   intentionally excluded as too ambiguous to detect from values alone.
+#' @examples
+#' is_month_of_year(c("January", "feb", "Aug", "Smarch", NA))
+#' @family datetime detectors
+#' @export
+is_month_of_year <- function(x) {
+  x <- as.character(x)
+  out <- grepl(paste0("^", .mon, "$"), trimws(x), ignore.case = TRUE)
+  out[is.na(x)] <- NA
+  out
+}
