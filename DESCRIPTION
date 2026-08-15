@@ -1,9 +1,8 @@
 Package: formex
 Title: Format Expressions and Data-Type Detection for Research Data
 Version: 0.0.0.9000
-Authors@R: c(
-    person("Jesse", "Lecy", email = "jlecy@urban.org", role = c("aut", "cre")),
-    person("Olivia", "Beck", email = "obeck@urban.org", role = "aut"))
+Authors@R:
+    person("Jesse", "Lecy", email = "jlecy@urban.org", role = c("aut", "cre"))
 Description: A vocabulary and detection engine for the data types found in
     research datasets. Provides a library of column detectors (identifiers,
     geographies, temporal formats, currencies, codes, hashes, and more), a
