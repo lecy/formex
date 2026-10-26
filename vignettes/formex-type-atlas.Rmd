@@ -199,7 +199,7 @@ organizations are an open set with no closed recipe.
 ### Number — the detection ceiling (shape)
 
 ```{r number}
-fx_stabilize(c("$2300.00", "17,298$", "-45"), "usd")[c("stable", "import_rule")]
+fx_stabilize(c("$2300.00", "17,298$", "$-45"), "usd")[c("stable", "import_rule")]
 ```
 
 **Keys off:** plain quantities/portions are `shape` — a numeric profile that says

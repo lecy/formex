@@ -9,7 +9,8 @@ fx_stabilize(
   semantic_type,
   format_label = NULL,
   target_format = NULL,
-  ontology = fx_ontology()
+  ontology = fx_ontology(),
+  warn = TRUE
 )
 }
 \arguments{
@@ -27,14 +28,21 @@ planner (\code{\link[=fx_plan_transform]{fx_plan_transform()}}) to the requested
 \code{target_reachable} is \code{FALSE}.}
 
 \item{ontology}{An ontology data frame (defaults to \code{\link[=fx_ontology]{fx_ontology()}}).}
+
+\item{warn}{If \code{TRUE} (default), emit a warning when present values could not
+be stabilized (became \code{NA}), reporting the count and a few examples, so
+silent data loss is surfaced rather than hidden.}
 }
 \value{
 A list: \code{variant_id}, \code{format_mask} (recognition pattern, from
 \code{data_format}), \code{stable} (the canonical transformed values), \code{stable_format}
-(canonical target), \code{import_rule} (how to re-ingest), and the v7 render
-fields \code{rendered} (values in \code{target_format}, or \code{stable} if none/unreached),
+(canonical target), \code{import_rule} (how to re-ingest), the v7 render fields
+\code{rendered} (values in \code{target_format}, or \code{stable} if none/unreached),
 \code{target_format}, and \code{target_reachable} (\code{TRUE}/\code{FALSE}, or \code{NA} when no
-\code{target_format} was requested).
+\code{target_format} was requested), and a \strong{\code{conversion_log}}: a list of \code{n}
+(present values), \code{stabilized}, \code{dropped}, \code{drop_rate}, \code{reason}, and up to
+five dropped \code{examples} --- the audit of which values the recipe could not
+convert and why.
 }
 \description{
 Resolves the recipe row for a \code{semantic_type} (and optional \code{format_label})

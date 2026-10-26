@@ -5,10 +5,24 @@
 test_that("fx_stabilize returns the recipe fields plus the v7 render fields", {
   r <- fx_stabilize(c("03/15/2019", "12/31/2020"), "calendar")
   expect_named(r, c("variant_id", "format_mask", "stable", "stable_format",
-                    "import_rule", "rendered", "target_format", "target_reachable"))
+                    "import_rule", "rendered", "target_format", "target_reachable",
+                    "conversion_log"))
   expect_equal(r$stable, c("2019-03-15", "2020-12-31"))   # dates canonicalize to ISO
   expect_equal(r$rendered, r$stable)                      # no target -> rendered == stable
   expect_true(is.na(r$target_reachable))                  # NA when no target requested
+  expect_equal(r$conversion_log$dropped, 0)               # nothing lost here
+})
+
+test_that("the conversion log counts dropped values and fx_stabilize warns", {
+  expect_warning(
+    r <- fx_stabilize(c("$2,300.00", "17,298$", "-45"), "usd"),  # bare -45 has no symbol
+    "could not be stabilized")
+  expect_equal(r$conversion_log$dropped, 1)
+  expect_equal(r$conversion_log$stabilized, 2)
+  expect_equal(r$conversion_log$examples, "-45")
+  # warn = FALSE silences the warning but still logs the drop
+  expect_silent(r2 <- fx_stabilize(c("$2,300.00", "-45"), "usd", warn = FALSE))
+  expect_equal(r2$conversion_log$dropped, 1)
 })
 
 test_that("target_format renders the canonical values via the planner", {

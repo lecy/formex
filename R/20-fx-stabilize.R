@@ -209,12 +209,18 @@ fx_transform <- function(x, expr){
 #'   `write_*`/`convert_*` path exists yet, `rendered` falls back to `stable` and
 #'   `target_reachable` is `FALSE`.
 #' @param ontology An ontology data frame (defaults to [fx_ontology()]).
+#' @param warn If `TRUE` (default), emit a warning when present values could not
+#'   be stabilized (became `NA`), reporting the count and a few examples, so
+#'   silent data loss is surfaced rather than hidden.
 #' @return A list: `variant_id`, `format_mask` (recognition pattern, from
 #'   `data_format`), `stable` (the canonical transformed values), `stable_format`
-#'   (canonical target), `import_rule` (how to re-ingest), and the v7 render
-#'   fields `rendered` (values in `target_format`, or `stable` if none/unreached),
+#'   (canonical target), `import_rule` (how to re-ingest), the v7 render fields
+#'   `rendered` (values in `target_format`, or `stable` if none/unreached),
 #'   `target_format`, and `target_reachable` (`TRUE`/`FALSE`, or `NA` when no
-#'   `target_format` was requested).
+#'   `target_format` was requested), and a **`conversion_log`**: a list of `n`
+#'   (present values), `stabilized`, `dropped`, `drop_rate`, `reason`, and up to
+#'   five dropped `examples` --- the audit of which values the recipe could not
+#'   convert and why.
 #' @examples
 #' fx_stabilize(c("03/15/2019", "12/31/2020"), "calendar")
 #' fx_stabilize(c("03/15/2019"), "calendar", target_format = "mdy_slash")
@@ -222,7 +228,8 @@ fx_transform <- function(x, expr){
 #' @seealso [fx_transform()], [fx_plan_transform()], [guess_data_type()]
 #' @export
 fx_stabilize <- function(x, semantic_type, format_label = NULL,
-                         target_format = NULL, ontology = fx_ontology()){
+                         target_format = NULL, ontology = fx_ontology(),
+                         warn = TRUE){
   rows <- ontology[ontology$semantic_type == semantic_type, , drop = FALSE]
   if (!nrow(rows)) stop("unknown semantic_type: ", semantic_type)
   if (!is.null(format_label)){
@@ -230,7 +237,34 @@ fx_stabilize <- function(x, semantic_type, format_label = NULL,
     if (!nrow(rows)) stop("no variant with format_label '", format_label, "' for ", semantic_type)
   }
   r      <- rows[1, ]
-  stable <- fx_transform(as.character(x), r$raw_to_stable_transform)
+  xin    <- as.character(x)
+  stable <- fx_transform(xin, r$raw_to_stable_transform)
+
+  ## --- conversion log: which real values the recipe could NOT stabilize ------
+  ## A value that was present but came back NA was *dropped* -- it did not match
+  ## the recipe's format/validation. (An already-missing input is not a drop.)
+  present  <- !is.na(xin) & nzchar(trimws(xin))
+  dropped  <- present & is.na(stable)
+  n_in     <- sum(present)
+  n_drop   <- sum(dropped)
+  examples <- utils::head(unique(xin[dropped]), 5L)
+  report   <- list(
+    n          = n_in,
+    stabilized = n_in - n_drop,
+    dropped    = n_drop,
+    drop_rate  = if (n_in) n_drop / n_in else NA_real_,
+    reason     = if (n_drop)
+                   sprintf("did not match the %s/%s recipe (%s)",
+                           semantic_type, r$format_label, r$raw_to_stable_transform)
+                 else NA_character_,
+    examples   = examples)
+  if (isTRUE(warn) && n_drop > 0)
+    warning(sprintf(
+      "fx_stabilize(%s): %d of %d values (%.0f%%) could not be stabilized and became NA -- %s%s",
+      semantic_type, n_drop, n_in, 100 * n_drop / n_in, report$reason,
+      if (length(examples))
+        paste0("; e.g. ", paste(sprintf('"%s"', examples), collapse = ", ")) else ""),
+      call. = FALSE)
 
   rendered <- stable; reachable <- NA
   if (!is.null(target_format) && nzchar(target_format)){
@@ -248,5 +282,6 @@ fx_stabilize <- function(x, semantic_type, format_label = NULL,
        import_rule      = r$stable_import_rule,
        rendered         = rendered,
        target_format    = target_format %||% NA_character_,
-       target_reachable = reachable)
+       target_reachable = reachable,
+       conversion_log   = report)
 }
