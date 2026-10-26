@@ -2,15 +2,18 @@
 <url><loc>https://lecy.github.io/formex/404.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/data-type-detectors.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/data-type-ontology.html</loc></url>
+<url><loc>https://lecy.github.io/formex/articles/detector-kinds.html</loc></url>
+<url><loc>https://lecy.github.io/formex/articles/feature-engineering.html</loc></url>
+<url><loc>https://lecy.github.io/formex/articles/formex-type-atlas.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/formex.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/guess-data-type.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/index.html</loc></url>
+<url><loc>https://lecy.github.io/formex/articles/testing-libraries.html</loc></url>
 <url><loc>https://lecy.github.io/formex/authors.html</loc></url>
 <url><loc>https://lecy.github.io/formex/index.html</loc></url>
 <url><loc>https://lecy.github.io/formex/LICENSE-text.html</loc></url>
 <url><loc>https://lecy.github.io/formex/LICENSE.html</loc></url>
 <url><loc>https://lecy.github.io/formex/news/index.html</loc></url>
-<url><loc>https://lecy.github.io/formex/ontology_design_principles.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/as_EIN.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/as_mm.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/as_yyyy.html</loc></url>
@@ -24,6 +27,7 @@
 <url><loc>https://lecy.github.io/formex/reference/evaluate_columns.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/eval_summary.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/feasibility_score.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/fx_apply_plan.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_audit_ontology.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_bank_coverage.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_blocks_for_features.html</loc></url>
@@ -33,6 +37,7 @@
 <url><loc>https://lecy.github.io/formex/reference/fx_extract_features.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_extract_features_df.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_feature_manifest.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/fx_format.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_impacted_cases.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_index_bank.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_make_test_case.html</loc></url>
@@ -41,12 +46,15 @@
 <url><loc>https://lecy.github.io/formex/reference/fx_ontology_diff.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_ontology_impact_table.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_path_distance.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/fx_plan_transform.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_relabel_queue.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_roundtrip_check.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_sibling_report.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_signature_distance.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_stabilize.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_transform.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/fx_transformable.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/fx_transforms.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_triage_field.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_type_signature.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/fx_validate_ontology.html</loc></url>
@@ -74,6 +82,7 @@
 <url><loc>https://lecy.github.io/formex/reference/is_country_code.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_county_fips.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_csa.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/is_currency_amount.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_currency_code.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_currency_code_symbol.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_currency_symbol.html</loc></url>
@@ -140,6 +149,7 @@
 <url><loc>https://lecy.github.io/formex/reference/is_us_date.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_us_datetime.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_us_state.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/is_version.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_wkb.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_wkt_geometry.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_yyyymm.html</loc></url>
