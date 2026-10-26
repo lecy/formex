@@ -120,6 +120,7 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
     list(data_type = NA_character_, semantic_family = NA_character_,
          semantic_type = NA_character_, semantic_type_id = NA_character_,
          variant_id = NA_character_, format_label = NA_character_,
+         format_style = NA_character_,
          match_kind = NA_character_, depth = depth, confidence = conf,
          dd_unit = NA_character_, router_method = NA_character_,
          candidates = list(router = router, verified = verified))
@@ -180,6 +181,7 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
       data_type = r$data_type, semantic_family = r$semantic_family,
       semantic_type = r$semantic_type, semantic_type_id = r$semantic_type_id,
       variant_id = r$variant_id, format_label = r$format_label,
+      format_style = r$format_style,
       match_kind = r$match_kind, depth = 4L, confidence = r$confirm,
       dd_unit = if (!is.na(dd) && nzchar(trimws(dd))) dd else NA_character_,
       router_method = router_method,
@@ -265,7 +267,8 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
 #'   }
 #'   and, when `route = TRUE`, a `route` sub-list anchored to the v6 ontology:
 #'   `data_type`, `semantic_family`, `semantic_type`, `semantic_type_id`,
-#'   `variant_id`, `format_label`, `match_kind`, `depth` (0 = unknown, 1 =
+#'   `variant_id`, `format_label`, `format_style` (the v7 written-rendering axis
+#'   of the resolved variant), `match_kind`, `depth` (0 = unknown, 1 =
 #'   data_type, 2 = family, 3 = semantic_type, 4 = leaf/format), `confidence`,
 #'   `dd_unit`, and `candidates` (the `router` shortlist + `verified` table).
 #'

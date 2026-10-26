@@ -21,6 +21,15 @@ test_that("identity is a transformable empty path", {
   expect_length(p$path, 0)
 })
 
+test_that("the registry is generated from the ontology (read_ edges)", {
+  # an ontology leaf's written style parses to canonical via a generated edge
+  p <- fx_plan_transform(fx_format("email", "email"), fx_format("email"))
+  expect_true(p$transformable)
+  expect_equal(fx_apply_plan("Jane@Example.ORG", p), "jane@example.org")
+  # the registry carries far more than the hand-authored seed
+  expect_gt(length(fx_transforms()), length(formex:::.fx_seed_transforms()))
+})
+
 test_that("a unit change with no registered converter is not transformable", {
   p <- fx_plan_transform(fx_format("year", "FYyyyy", "fiscal"),
                          fx_format("year", "bare", "calendar"))

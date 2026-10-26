@@ -53,9 +53,34 @@ print.fx_format <- function(x, ...) {
 .fx_edge  <- function(name, kind, from, to, fn)
   list(name = name, kind = kind, from = from, to = to, fn = fn)
 
-## The default transform registry. A small, real seed -- enough to demonstrate
-## the search; grown as v7 wires the ontology's recipes into read_*/write_*.
-.fx_default_transforms <- function() {
+## Ontology-derived read_ edges: every row with a format_style and a recipe
+## contributes a written->canonical parse, keyed on its semantic_type + style.
+## This connects the planner to the real type system (the read/parse direction);
+## write_ renderers and convert_ edges are still hand-authored in the seed below
+## and grown per style/unit.
+.fx_ontology_transforms <- function(ont = fx_ontology()) {
+  edges <- list()
+  for (i in seq_len(nrow(ont))) {
+    style <- ont$format_style[i]
+    if (is.na(style) || !nzchar(style)) next
+    local({
+      sem  <- ont$semantic_type[i]
+      un   <- ont$unit_type[i]
+      un   <- if (!is.na(un) && nzchar(trimws(un))) un else NA_character_
+      trr  <- ont$raw_to_stable_transform[i]
+      edges[[length(edges) + 1L]] <<- .fx_edge(
+        paste0("read_", style), "read",
+        .fx_wnode(sem, style), .fx_cnode(sem, un),
+        function(x) fx_transform(as.character(x), trr))
+    })
+  }
+  edges
+}
+
+## The hand-authored seed: write_ renderers and convert_ edges (and the read_
+## edges for styles the ontology does not yet name). Merged with the
+## ontology-derived read_ edges by fx_transforms().
+.fx_seed_transforms <- function() {
   edges <- list(); add <- function(...) edges[[length(edges) + 1L]] <<- .fx_edge(...)
 
   ## temperature -- a genuine unit change gated on a registered converter
@@ -104,7 +129,7 @@ print.fx_format <- function(x, ...) {
 #' @export
 fx_transforms <- function() {
   if (is.null(.fx_transform_cache$edges))
-    .fx_transform_cache$edges <- .fx_default_transforms()
+    .fx_transform_cache$edges <- c(.fx_ontology_transforms(), .fx_seed_transforms())
   .fx_transform_cache$edges
 }
 

@@ -69,7 +69,8 @@ A list with the legacy fields:
 }
 and, when \code{route = TRUE}, a \code{route} sub-list anchored to the v6 ontology:
 \code{data_type}, \code{semantic_family}, \code{semantic_type}, \code{semantic_type_id},
-\code{variant_id}, \code{format_label}, \code{match_kind}, \code{depth} (0 = unknown, 1 =
+\code{variant_id}, \code{format_label}, \code{format_style} (the v7 written-rendering axis
+of the resolved variant), \code{match_kind}, \code{depth} (0 = unknown, 1 =
 data_type, 2 = family, 3 = semantic_type, 4 = leaf/format), \code{confidence},
 \code{dd_unit}, and \code{candidates} (the \code{router} shortlist + \code{verified} table).
 }

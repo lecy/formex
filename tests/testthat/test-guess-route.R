@@ -12,7 +12,7 @@ test_that("legacy fields are preserved alongside the route record", {
   g <- guess_data_type(c("USD", "EUR", "JPY", "GBP"))
   expect_equal(g$guess, "currency_code")                 # unchanged contract
   expect_true(all(c("data_type", "semantic_type", "format_label", "depth",
-                    "confidence", "candidates") %in% names(g$route)))
+                    "confidence", "candidates", "format_style") %in% names(g$route)))
   expect_null(guess_data_type(c("USD", "EUR"), route = FALSE)$route)
 })
 
