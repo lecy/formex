@@ -8,6 +8,30 @@
 ## table built by data-raw/build_lookups.R into sysdata.rda.
 
 
+#' Is it a version identifier?
+#'
+#' Tests whether each element is a dotted version string, optionally `v`-prefixed
+#' and with a pre-release/build suffix: `"1.4.0"`, `"v2"`, `"2.10.3"`,
+#' `"v1.0"`, `"3.2.1-rc1"`. A bare integer is not a version (that is a count/id);
+#' at least one dotted component or a `v` prefix is required.
+#'
+#' @param x A character vector of candidate values.
+#' @return A logical vector; `TRUE` for a version string, `FALSE` otherwise, `NA`
+#'   where `x` is `NA`.
+#' @examples
+#' is_version(c("1.4.0", "v2", "2019", "banana", NA))
+#' #> TRUE TRUE FALSE FALSE NA
+#' @seealso [guess_data_type()]
+#' @family code detectors
+#' @export
+is_version <- function(x) {
+  x <- as.character(x)
+  out <- grepl("^[vV]?[0-9]+([.][0-9]+){1,3}([-+][A-Za-z0-9.]+)?$|^[vV][0-9]+$",
+               trimws(x))
+  out[is.na(x)] <- NA
+  out
+}
+
 #' Is it a Roman numeral?
 #'
 #' @param x A character vector.

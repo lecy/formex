@@ -25,10 +25,24 @@ schema and the actual extraction of the moved files out of `datagoodr` (see
 
 ## 2. Implementation coverage (what has a working detector)
 
-Of **96** ontology variants, **36 (38%) are marked `implemented = "yes"`** — a
+Of **96** ontology variants, **46 (48%) are marked `implemented = "yes"`** — a
 wired, exercised detector. The rest are declared recipes (data_format /
 transform / stable_format / import_rule are populated) waiting on a detector,
 verb, or gazetteer.
+
+> **v7 session update.** Coverage rose 36 → 46 by wiring test-backed,
+> foil-selective detectors (`data-raw/wire_detectors_v7.R`): `day_of_week` /
+> `month_of_year` (new `as_dow` / `as_moy`), `first_name`, `quarter`, `domain`,
+> `usd` (new `is_currency_amount` — symbol-required), `place` (`lookup:place`),
+> `min_max` range, and `point` / `polygon` (`is_wkt_geometry`, keyword-gated).
+> Key finding worth carrying forward: a selective recipe is necessary but **not
+> sufficient** to route — the learned router never shortlists very rare `mask`
+> leaves (`array`, `version`, `reporting_period` confirm in isolation but never
+> reach the verifier), so they stay unimplemented until either the router has
+> training cases or they join the verifier's always-on set (as the `geometry`
+> family now does). Two verb bugs were fixed along the way: the DSL arg parser
+> left a trailing `]` on `verb[arg]`, and `as_range` was loose enough to claim
+> nested arrays as ranges.
 
 ### By data type
 

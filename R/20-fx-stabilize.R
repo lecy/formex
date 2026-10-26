@@ -29,7 +29,7 @@
   steps <- if (grepl("^\\[", e)) gsub("^\\[|\\]$", "", regmatches(e, gregexpr("\\[[^]]+\\]", e))[[1]])
            else if (grepl("\\+", e)) strsplit(e, "\\+")[[1]] else e
   lapply(trimws(steps), function(s){
-    if (grepl("\\[", s)) list(verb = sub("\\[.*", "", s), arg = sub("^[^\\[]*\\[|\\]$", "", s))
+    if (grepl("\\[", s)) list(verb = sub("\\[.*", "", s), arg = sub("\\]$", "", sub("^[^\\[]*\\[", "", s)))
     else if (grepl(":", s)){ p <- strsplit(s, ":", fixed = TRUE)[[1]]; list(verb = p[1], arg = paste(p[-1], collapse = ":")) }
     else list(verb = s, arg = NA_character_) })
 }
@@ -97,8 +97,20 @@
     s<-gsub("[€[:space:]]","",x); s<-gsub("\\.","",s); s<-gsub(",",".",s)  # EU: . groups, , decimals
     v<-suppressWarnings(as.numeric(s)); ifelse(!is.na(ok) & ok & !is.na(v), as.character(v), NA) })
   A("as_currency",  function(x,a){ v<-suppressWarnings(as.numeric(gsub("[^0-9.\\-]","",gsub(",","",x)))); ifelse(is.na(v),NA,as.character(v)) })
+  ## structured / version: detector-gated selective recipes (confirm on real
+  ## syntax, NA otherwise) so the verifier can confirm these leaves.
+  A("as_wkt",       function(x,a){ ty<-toupper(a %||% "")
+    ok<-is_wkt_geometry(x) & (!nzchar(ty) | grepl(paste0("^\\s*", ty), toupper(trimws(x))))
+    ifelse(ok, trimws(x), NA) })
+  A("as_json",      function(x,a) ifelse(is_json(x), trimws(x), NA))
+  A("as_version",   function(x,a){ s<-trimws(x); ifelse(is_version(s), sub("^[vV]","",s), NA) })
   A("as_coord",     function(x,a){ v<-.fx_num(x); ifelse(is.na(v)|abs(v)>180,NA,as.character(v)) })
-  A("as_range",     function(x,a) ifelse(grepl("[0-9].*(-|to|,).*[0-9]", x), trimws(x), NA))
+  ## a two-part numeric range only: strip one optional surrounding bracket, then
+  ## require number / separator / number. Rejects nested arrays and dates.
+  A("as_range",     function(x,a){ s<-trimws(x)
+    s<-sub("^[[(][[:space:]]*", "", s); s<-sub("[[:space:]]*[])]$", "", s)
+    ok<-grepl("^[-+]?[0-9]+([.][0-9]+)?[[:space:]]*(,|to|-)[[:space:]]*[-+]?[0-9]+([.][0-9]+)?$", s)
+    ifelse(ok, trimws(x), NA) })
   ## genome / temporal
   A("as_mmddyyyy",  function(x,a) .fx_parse_iso_date(x))
   A("as_datetime",  function(x,a) .fx_parse_iso_date(x, with_time = TRUE))

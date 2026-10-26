@@ -138,7 +138,12 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   ## (genome + mask+lexicon: dates, datetimes, person names). The signature
   ## router confuses these with identifiers/hashes, so their recipes are always
   ## verified regardless of the shortlist; the foil gate blocks false leaves.
-  always <- ont$match_kind %in% c("genome", "mask+lexicon")
+  ## Always-verify the selective kinds the router confuses or never surfaces:
+  ## genome + mask+lexicon (dates, person, FIPS), and the geometry family --
+  ## WKT/GeoJSON are high-precision (is_wkt_geometry leak ~0) but far too rare
+  ## for the router's shortlist, so force their recipes regardless.
+  always <- ont$match_kind %in% c("genome", "mask+lexicon") |
+            ont$semantic_family == "geometry"
   vr <- ont[ont$semantic_type_id %in% unique(router$semantic_type_id) | always, ,
             drop = FALSE]
   vr$confirm <- vapply(vr$raw_to_stable_transform,

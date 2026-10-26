@@ -21,6 +21,8 @@ set_recipe <- function(vid, expr) o$raw_to_stable_transform[o$variant_id == vid]
 set_recipe("n0067-f01", "{{ as_dow }}")
 set_recipe("n0068-f01", "{{ as_moy }}")
 set_recipe("n0029-f01", "lookup:place")   # place: {{ none }} leaks; lookup is selective
+set_recipe("n0081-f01", "{{ as_wkt[point] }}")     # geometry/point   (is_wkt_geometry, keyword-gated)
+set_recipe("n0082-f01", "{{ as_wkt[polygon] }}")   # geometry/polygon (is_wkt_geometry, keyword-gated)
 
 ## usd: as_usd is now gated on is_currency_amount (a $-marked amount), so the
 ## recipe confirms selectively (confirm 1.00 / leak 0.00) on the 16 banked usd
@@ -28,8 +30,17 @@ set_recipe("n0029-f01", "lookup:place")   # place: {{ none }} leaks; lookup is s
 ## implemented=no until the library covers it.
 ## place (lookup:place, selective) and min_max range ({{ as_range }}, already
 ## selective -- the verb the implemented date_range uses) both have test cases.
+## geometry point/polygon (is_wkt_geometry): high-precision and rare, so the
+## router never shortlists them -- the geometry family is added to the verifier's
+## always-on set in R/02-01-guess-data-type.R so as_wkt is confirmed regardless.
+## Deliberately NOT wired (end-to-end blockers, see DEVELOPMENT-STATUS.md):
+##  - collection/array (is_json): as_range is over-permissive and claims
+##    "[[1,2],[3,4]]" as a min_max range -- a false positive to fix first.
+##  - identifier/version (is_version), reporting_period: value-detectable in
+##    isolation but the router does not surface them (too few training cases)
+##    and they are not in the always-verify set, so they never route.
 wired <- c("n0027-f01", "n0063-f01", "n0067-f01", "n0068-f01", "n0035-f01",
-           "n0010-f01", "n0029-f01", "n0016-f01")
+           "n0010-f01", "n0029-f01", "n0016-f01", "n0081-f01", "n0082-f01")
 o$implemented[o$variant_id %in% wired] <- "yes"
 
 probs <- fx_validate_ontology(o)

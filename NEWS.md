@@ -14,9 +14,12 @@
   `domain` had their stale `implemented` flag reconciled; and a new
   `is_currency_amount()` (symbol-required, so bare numbers are not mistaken for
   currency) makes the `as_usd` recipe selective, wiring `usd`; `place` gets a
-  selective `lookup:place` recipe and `min_max` range is confirmed via the
-  existing `as_range`. 36 → 44 of 96 variants implemented. (`as_euro` is likewise
-  selective but stays unflagged until the test library covers it.)
+  selective `lookup:place` recipe, `min_max` range is confirmed via a tightened
+  `as_range`, and `point` / `polygon` are wired via a keyword-gated `as_wkt`
+  (the `geometry` family joins the verifier's always-on set, since the router is
+  too sparse to shortlist it). New `is_version()` detector. 36 → 46 of 96
+  variants implemented. Fixes: the transform-DSL arg parser dropped a trailing
+  `]` on `verb[arg]`; `as_range` no longer claims nested arrays as ranges.
 
 * Recipe/helper fixes from the datagoodr reintegration review:
   - `as_yyyy()` and the `as_yyyy` stabilize verb now strip a fiscal-year prefix

@@ -26,6 +26,7 @@ Other code detectors:
 \code{\link{is_roman}()},
 \code{\link{is_uk_postcode}()},
 \code{\link{is_unix_time}()},
+\code{\link{is_version}()},
 \code{\link{is_zip_code}()}
 }
 \concept{code detectors}
