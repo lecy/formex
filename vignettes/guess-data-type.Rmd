@@ -116,7 +116,7 @@ and three things can go wrong:
 
 ```{r stabilize}
 fx_stabilize(c("03/15/2019", "12/31/2020"), "calendar")[c("stable", "import_rule")]
-fx_stabilize(c("$2,300.00", "17,298$", "-45"), "usd")[c("stable", "import_rule")]
+fx_stabilize(c("$2,300.00", "17,298$", "$-45"), "usd")[c("stable", "import_rule")]
 ```
 
 - The date is normalized to unambiguous **ISO** `2019-03-15`, which every tool
