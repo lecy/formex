@@ -64,17 +64,16 @@ one style and no meaningful unit, both are `NA` and the leaf is the
 `format_style` alone is still depth 4 even if `unit_type` stays `NA` (datagoodr
 renders that as an empty unit facet).
 
-### One refinement to the sketch
+### Settled: order lives in `format_style`
 
-In the calendar example, field-order (`mmddyyyy` vs `ddmmyyyy` vs `yyyymmdd`) was
-placed under `unit_type` and separators under `format_style`. I'd put **both
-order and separator in `format_style`** — together they are the mask the parser
-needs, and order is a parse parameter, not a unit of measure (the unit of a
-calendar date is always day-of-month-of-year, as the sketch itself notes). That
-keeps `unit_type` meaning one coherent thing everywhere: a dimensional/categorical
-unit where a `convert_*` or a metadata gate is meaningful. It is also the one
-axis datagoodr asked to surface resolved on `$route` (their ask 3), so the two
-converge on the same field.
+Date field-order (`mmddyyyy` vs `ddmmyyyy` vs `yyyymmdd`) and separators both
+live in `format_style` — together they are the mask the parser needs, and order
+is a parse parameter, not a unit of measure (the unit of a calendar date is
+always day-of-month-of-year). `unit_type` is reserved for a genuine
+dimensional/categorical unit where a `convert_*` or a metadata gate is
+meaningful. This keeps "resolve the unit" meaning one coherent thing in every
+family, and it is the axis datagoodr asked to surface resolved on `$route`
+(their ask 3), so the two converge on the same field.
 
 ### Worked mapping
 
@@ -133,6 +132,38 @@ Sherlock/GitTables crosswalk; and datagoodr's governance mapping. Sequence:
 3. **`convert_*`** registry, starting with temperature and fiscal/calendar year.
 4. **detector** resolves `format_style` (and `unit_type` where value-detectable)
    as the depth-4 step; router/verifier retrained on the new label axis.
+
+## 5a. Transformability as a path search (prototyped)
+
+With input and output both expressed as a format `(semantic_type, unit_type,
+format_style)`, stabilizing a column is a **graph search**: is there a path from
+the input format to the desired one through the registry of
+`read_`/`write_`/`convert_` edges? A path exists only "if you can get there from
+here" — a unit change needs a registered `convert_*`, so the search *answers* the
+transformability question instead of assuming it.
+
+Nodes are value states; edges are the three operations:
+
+```
+written(style_a) --read_a-->  canonical(unit_a) --convert_a_b--> canonical(unit_b) --write_b--> written(style_b)
+```
+
+`R/22-fx-transform-path.R` implements this as a first, additive increment (not
+yet wired into `guess_data_type()`/`fx_stabilize()`):
+
+- `fx_format(semantic_type, format_style, unit_type)` — a format descriptor.
+- `fx_plan_transform(from, to)` — breadth-first search of `fx_transforms()` for
+  the shortest `read :: [convert] :: write` composition; returns an `fx_plan`
+  marked transformable with the path, or not-transformable with a reason.
+- `fx_transformable(from, to)` / `fx_apply_plan(x, plan)`.
+
+The seeded registry demonstrates the three cases: temperature `celsius → C →
+(convert_C_F) → F → fahrenheit` **resolves**; a calendar reformat with no unit
+change resolves; and fiscal-year → calendar-year is reported **unreachable**
+because `convert_fiscal_calendar` (which needs the fiscal-year-end convention) is
+deliberately not registered. v7 grows this registry by generating `read_`/
+`write_` edges from each ontology row's `format_style` and registering
+`convert_` edges per `unit_type` pair as they are defined.
 
 ## 6. Does separating add clarity? — verdict
 
