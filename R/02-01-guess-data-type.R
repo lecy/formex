@@ -136,7 +136,7 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
 .fx_route_verify <- function(u, ont = fx_ontology(), router_k = 8,
                              confirm_thr = 0.80, leak_max = 0.25,
                              margin = 0.50, sig_floor = 0.55,
-                             prefer_router = "auto") {
+                             prefer_router = "auto", uniq = NA_real_) {
   blank <- function(depth = 0L, conf = NA_real_, router = NULL, verified = NULL)
     list(data_type = NA_character_, semantic_family = NA_character_,
          semantic_type = NA_character_, semantic_type_id = NA_character_,
@@ -199,8 +199,21 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
          (is.na(vr$leak) | vr$leak <= leak_max) & vr$selectivity >= margin
   if (any(sel)) {
     rs <- ifelse(is.na(vr$router_sim), 0, vr$router_sim)
-    w  <- which(sel)[order(-tbonus[sel], -vr$selectivity[sel], -vr$confirm[sel],
-                           -rs[sel])[1]]
+    ord <- which(sel)[order(-tbonus[sel], -vr$selectivity[sel], -vr$confirm[sel],
+                            -rs[sel])]
+    w  <- ord[1]
+    ## declared collision: if the top pick and another selected candidate share
+    ## a semantic_type but carry different cardinality rules, let the column's
+    ## uniqueness ratio decide (unique -> the identifier; repeating -> grouping).
+    dsm <- if (is.null(vr$disambiguator)) rep("", nrow(vr)) else ifelse(is.na(vr$disambiguator), "", vr$disambiguator)
+    if (nzchar(dsm[w])) {
+      tie <- ord[vr$semantic_type[ord] == vr$semantic_type[w] &
+                 grepl("^cardinality:", dsm[ord])]
+      if (length(tie) >= 2L) {
+        pick <- .fx_disambiguate(vr[tie, , drop = FALSE], uniq)
+        if (!is.na(pick)) w <- tie[pick]
+      }
+    }
     r  <- vr[w, ]
     dd <- r$unit_type
     out <- list(
@@ -314,6 +327,7 @@ guess_data_type <- function(x, name = NULL, n_sample = 100, threshold = 0.8,
   x <- as.character(x)
   x <- x[!is.na(x) & nzchar(trimws(x))]
   u <- unique(x)
+  uniq <- if (length(x)) length(u) / length(x) else NA_real_   # distinct / n
   if (length(u) > n_sample) {
     if (!is.null(seed)) set.seed(seed)
     u <- sample(u, n_sample)
@@ -357,7 +371,8 @@ guess_data_type <- function(x, name = NULL, n_sample = 100, threshold = 0.8,
                  else tryCatch(.fx_route_verify(u, ont, router_k = router_k,
                                                 confirm_thr = confirm_thr,
                                                 sig_floor = sig_floor,
-                                                prefer_router = router),
+                                                prefer_router = router,
+                                                uniq = uniq),
                                error = function(e) NULL)
   }
   out

@@ -27,6 +27,11 @@ if(!"disambiguator" %in% names(o)) o$disambiguator <- ""
 o$disambiguator[o$semantic_type == "geographic" & o$data_type == "categorical"] <- "cardinality:repeating"
 o$disambiguator[o$semantic_type == "geographic" & o$data_type == "identifier"]  <- "cardinality:unique"
 
+## 2b. make BOTH geographic paths confirm via FIPS validation, so the tie-break
+## actually fires (county_fips categorical, and id/geographic). as_fips rejects
+## a random 5-digit number, so geographic now outranks a bare count.
+o$raw_to_stable_transform[o$variant_id %in% c("n0046-f04", "n0074-f01")] <- "{{ as_fips }}"
+
 ## 3. rename the unknown "mixed" leaf to heterogeneous (kills the collision)
 het <- o$variant_id == "n0083-f01"
 o$semantic_type[het] <- "heterogeneous"

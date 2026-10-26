@@ -21,6 +21,19 @@ test_that("the validator rejects an undeclared collision", {
   expect_true(any(grepl("path collision", fx_validate_ontology(o))))
 })
 
+test_that("cardinality disambiguates geographic end to end", {
+  # same FIPS values repeating across rows -> a grouping (categorical)
+  rep_fips <- guess_data_type(c("06037","36061","06037","17031","36061","06037","17031","06037"))$route
+  expect_equal(rep_fips$data_type, "categorical")
+  expect_equal(rep_fips$semantic_type, "geographic")
+  # unique FIPS per row -> a key (identifier)
+  uniq_fips <- guess_data_type(c("06037","36061","17031","48201","53033","04013","12086","25017"))$route
+  expect_equal(uniq_fips$data_type, "identifier")
+  expect_equal(uniq_fips$semantic_type, "geographic")
+  # a random 5-digit number is not a valid FIPS -> not geographic at all
+  expect_false(isTRUE(guess_data_type(c("12309","88421","55012","73418","29100","61234"))$route$semantic_type == "geographic"))
+})
+
 test_that(".fx_disambiguate applies the cardinality rule", {
   rows <- data.frame(
     variant_id = c("cat", "id"),

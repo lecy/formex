@@ -9,14 +9,18 @@
   a `read_`/`write_`/`convert_` registry generated from the ontology recipes;
   `fx_stabilize(..., target_format=)` renders to a chosen style (with
   `rendered` / `target_reachable`), and `$route` now reports `format_style`.
-* **Disambiguator (started).** The ontology now carries a `disambiguator`
-  column declaring the tie-break for every path collision, and
-  `fx_validate_ontology()` fails on an *undeclared* one. `geographic` (a
-  categorical grouping vs. an identifier key) declares `cardinality:repeating` /
-  `cardinality:unique`; the colliding `unknown/.../mixed` leaf is renamed
-  `heterogeneous` so only the boolean `mixed` keeps the name. The pure rule
-  (`.fx_disambiguate()`) is implemented and tested; wiring it into the live
-  verifier (which needs the column's uniqueness ratio plumbed through) is next.
+* **Disambiguator.** The ontology carries a `disambiguator` column declaring the
+  tie-break for every path collision, and `fx_validate_ontology()` fails on an
+  *undeclared* one. `geographic` (a categorical grouping vs. an identifier key)
+  declares `cardinality:repeating` / `cardinality:unique`; the colliding
+  `unknown/.../mixed` leaf is renamed `heterogeneous` so only the boolean
+  `mixed` keeps the name. The rule is **wired live**: `guess_data_type()` passes
+  the column's uniqueness ratio to the verifier, which applies it when two
+  confirmed candidates collide — so a repeating FIPS column routes to the
+  categorical `geographic` grouping and a unique-per-row FIPS column to the
+  `identifier` key. A new FIPS-validating `as_fips` recipe also fixes an upstream
+  gap (a county FIPS column used to fall through to `count`; a random 5-digit
+  number is now correctly rejected as geographic).
 * **Detectors wired (test-case-backed):** `day_of_week` and `month_of_year`
   gain selective `as_dow` / `as_moy` recipes; `first_name`, `quarter`, and
   `domain` had their stale `implemented` flag reconciled; and a new
