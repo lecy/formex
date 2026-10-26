@@ -165,6 +165,34 @@ deliberately not registered. v7 grows this registry by generating `read_`/
 `write_` edges from each ontology row's `format_style` and registering
 `convert_` edges per `unit_type` pair as they are defined.
 
+## Status (2026-10-26)
+
+Done and shipped on `main`:
+
+- **Schema** — `format_style`, `unit_type` (renamed from `dd_data_unit`),
+  `desired_default_format` added; `format_label` kept derived. Validation clean.
+- **Planner** — `fx_format` / `fx_plan_transform` / `fx_transformable` /
+  `fx_apply_plan`, with canonical endpoints.
+- **Registry** — generated from the ontology (a `read_<style>` edge per row) and
+  merged with the hand-authored `write_`/`convert_` seed.
+- **Stabilizer** — `fx_stabilize(..., target_format=)` renders via the planner;
+  `$route` carries `format_style`.
+- **Detectors** — `day_of_week` / `month_of_year` wired with selective `as_dow` /
+  `as_moy`; `first_name` / `quarter` / `domain` reconciled. 41/96 implemented.
+
+The migration and the new API surface are complete. Deferred (next release, each
+its own effort):
+
+- **Router retrain** — not needed now (the router trains on `format_label`, which
+  is retained); required only when `format_label` is finally removed.
+- **Broad `write_` renderers** — the registry's write side is a seed; grow it so
+  `target_format` works beyond temporal/temperature.
+- **True multi-style detection** — `$route` carries the resolved variant's
+  `format_style`; sniffing a column to choose among several styles within one
+  semantic_type (mdy vs dmy vs ymd) is a detector enhancement.
+- **Currency-amount detector** + `convert_` edges per unit pair (temperature done;
+  fiscal/calendar year needs the fiscal-year-end convention from datagoodr).
+
 ## 6. Does separating add clarity? — verdict
 
 Yes. It removes a redundancy that affects most of the ontology, turns an

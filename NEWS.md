@@ -1,5 +1,19 @@
 # formex 0.0.0.9000
 
+* **v7 ontology + transform API.** The leaf gains two orthogonal axes —
+  `format_style` (how a value is written) and `unit_type` (renamed from
+  `dd_data_unit`; what it means) — plus `desired_default_format`. Additive:
+  `format_label` is kept (derived) so the router and verifier are unchanged.
+  A transform planner (`fx_format()`, `fx_plan_transform()`, `fx_transformable()`,
+  `fx_apply_plan()`, `fx_transforms()`) models stabilization as a path search over
+  a `read_`/`write_`/`convert_` registry generated from the ontology recipes;
+  `fx_stabilize(..., target_format=)` renders to a chosen style (with
+  `rendered` / `target_reachable`), and `$route` now reports `format_style`.
+* **Detectors wired (test-case-backed):** `day_of_week` and `month_of_year`
+  gain selective `as_dow` / `as_moy` recipes; `first_name`, `quarter`, and
+  `domain` had their stale `implemented` flag reconciled. 36 → 41 of 96 variants
+  implemented.
+
 * Recipe/helper fixes from the datagoodr reintegration review:
   - `as_yyyy()` and the `as_yyyy` stabilize verb now strip a fiscal-year prefix
     (`"FY2019"` → `"2019"`) instead of returning the raw string / `NA`.

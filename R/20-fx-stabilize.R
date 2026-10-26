@@ -124,6 +124,17 @@
   A("none",         function(x,a){ s<-trimws(x); ifelse(nzchar(s), s, NA) })
   A("as_factor",    function(x,a){ s<-trimws(x); ifelse(nzchar(s), s, NA) })
   A("as_ordered",   function(x,a){ s<-trimws(x); ifelse(nzchar(s), s, NA) })
+  ## phase: selective name -> numeric position (NA for non-matches), so the
+  ## verifier can confirm day_of_week / month_of_year instead of truncating.
+  A("as_dow",       function(x,a){ d<-tolower(trimws(x))
+    m<-c(monday=1,tuesday=2,wednesday=3,thursday=4,friday=5,saturday=6,sunday=7,
+         mon=1,tue=2,tues=2,wed=3,weds=3,thu=4,thur=4,thurs=4,fri=5,sat=6,sun=7)
+    as.character(unname(m[d])) })
+  A("as_moy",       function(x,a){ mo<-tolower(trimws(x))
+    m<-c(january=1,february=2,march=3,april=4,may=5,june=6,july=7,august=8,
+         september=9,october=10,november=11,december=12,
+         jan=1,feb=2,mar=3,apr=4,jun=6,jul=7,aug=8,sep=9,sept=9,oct=10,nov=11,dec=12)
+    as.character(unname(m[mo])) })
   A("as_boolean",   function(x,a){ b<-tolower(trimws(x))
     map<-c(yes="TRUE",no="FALSE",y="TRUE",n="FALSE","true"="TRUE","false"="FALSE",t="TRUE",f="FALSE","1"="TRUE","0"="FALSE","on"="TRUE","off"="FALSE")
     unname(map[b]) })
