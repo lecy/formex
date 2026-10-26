@@ -7,4 +7,6 @@
 ^\.gitignore$
 ^README\.md$
 ^LICENSE\.md$
+^DEVELOPMENT-STATUS\.md$
+^ONTOLOGY-V7-PLAN\.md$
 ^\.github$

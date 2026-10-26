@@ -1,0 +1,239 @@
+---
+title: "The Type Atlas"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{The Type Atlas}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = TRUE, comment = "#>",
+                      message = FALSE, warning = FALSE)
+library(formex)
+```
+
+This article is a field guide to the data types formex knows: for each one, a
+worked example, the signal its detector keys off, what it hands back to a
+consumer such as `datagoodr`, and an honest rating of how hard it is to detect,
+stabilize, and round-trip through a CSV. For implementation status and coverage
+gaps, see the companion `DEVELOPMENT-STATUS.md` note at the repository root.
+
+All counts below are computed live from the shipped ontology, so they track the
+package rather than this prose.
+
+```{r onto}
+o <- fx_ontology()
+c(variants = nrow(o),
+  families = length(unique(paste(o$data_type, o$semantic_family))),
+  implemented = sum(o$implemented == "yes"))
+```
+
+## The organizing idea: six detection mechanisms
+
+Every variant carries a `match_kind` — *how* its detector decides. It is the
+single best predictor of accuracy and of whether stabilization is reliable.
+
+```{r mk}
+table(o$match_kind)
+```
+
+| `match_kind` | confirm\* | how it decides |
+|---|---|---|
+| **genome** | ~0.97 | Full parse. Tries a library of date/time formats built from a format "genome"; a value matches only if some format parses it to a valid, in-range value **and** round-trips. |
+| **shape** | ~0.81 | Numeric value profile — range, sign, decimals. Recognizes "a number" but not *which* numeric subtype. |
+| **mask** | ~0.72 | Positional character-class / regex mask (`9(2)-9(7)`); some add a checksum (EIN, DEA) or a fixed length + alphabet (hashes). |
+| **lexicon** | ~0.64 | Membership in a curated reference list — given names, surnames, US cities, ISO-3166, USPS. Coverage-limited. |
+| **mask+lexicon** | ~0.25 | Shape *and* a reference lookup — postal addresses, FIPS keys. The hardest combinations. |
+| **none** | n/a | Not value-detectable by construction. The role lives in the header or codebook, not the values. |
+
+\* "confirm" is the per-mechanism *recipe reliability given a correct label* —
+`confirm_if_true` from the `dev/stabilize_rate.R` harness: the share of
+correctly-labeled columns whose recipe normalizes and validates to a non-NA
+stable value. It is a column-level yield, not a detection-accuracy or a
+per-variant figure.
+
+### Failure is graceful everywhere
+
+The verifier is **foil-selective**: each candidate recipe must confirm the
+column *and* reject a fixed junk foil. A permissive recipe (a numeric coerce, a
+free-text `as_factor`) that also accepts the foil cannot claim a leaf, so the
+column truncates to the deepest path it can defend (`depth` 0–4) with lower
+confidence instead of forcing a false guess.
+
+```{r truncate}
+# a clean date resolves all the way to a leaf (depth 4)
+guess_data_type(c("03/15/2019", "12/31/2020"))$route$depth
+# a bare integer column cannot defend a leaf and truncates
+guess_data_type(c("1", "2", "3", "4", "5"))$route$depth
+```
+
+## What crosses the wire to a consumer
+
+formex is stateless and answers one column at a time; `datagoodr` orchestrates
+and holds the governance state. They meet only at the ontology's stable keys,
+`semantic_type_id` and `variant_id`.
+
+```
+ 1. PROFILE    fx_extract_features(col)                     [formex]
+ 2. CLASSIFY   guess_data_type(col, name)  router→verifier  [formex]
+ 3. GOVERN     append governance row; auto-accept or flag   [datagoodr]
+ 4. STABILIZE  fx_stabilize(col, type, label)               [formex]
+ 5. EMIT       cleaned dataset + import-rule sidecar         [datagoodr]
+```
+
+**Classification (2) is probabilistic; transformation (4) is a pure function of
+the confirmed recipe.** A human override in step 3 changes which recipe step 4
+runs, nothing else.
+
+### The functions a consumer calls
+
+| function | needs | returns |
+|---|---|---|
+| `guess_data_type(x, name)` | column values `x`; optional header `name` (a tiebreak / for metadata-gated classes) | legacy `$guess`/`$ontology`/`$confidence` **plus** a `$route` record. Values-first: a real value signature always wins over the name |
+| `fx_stabilize(x, semantic_type, format_label)` | raw values and the confirmed `(semantic_type, format_label)` — i.e. the `variant_id` written into the governance file | `variant_id`, `format_mask`, `stable` (normalized values), `stable_format`, `import_rule` |
+| `fx_extract_features(x, col_name)` | the column values; optional name | the ~477-number value profile the learned router consumes |
+| `as_mm()`, `as_EIN()`, autotype helpers | values to coerce / test cases to build | format-coerced vectors and detector benchmark fixtures |
+
+### The export record: `$route`
+
+This is the object that lands in the governance file as the `guess_*` fields. A
+human then confirms or overrides `final_variant_id`, the only thing that steers
+`fx_stabilize`.
+
+```{r route}
+str(guess_data_type(c("03/15/2019", "12/31/2020", "01/01/2021"))$route[
+  c("data_type", "semantic_family", "semantic_type", "format_label",
+    "variant_id", "match_kind", "depth", "confidence", "dd_unit")])
+```
+
+`depth` is `0` unknown · `1` data_type · `2` family · `3` semantic_type · `4`
+leaf. `dd_unit` is metadata the row declares (e.g. a currency), never a value
+prediction — units are not value-detectable in general (`100` could be lb or
+kg).
+
+## Every family, rated
+
+Green is favorable, amber is caution, red is a known hard spot, grey is a
+neutral fact — nuance is not a defect. **Desired form** asks whether the final
+analysis-ready version is one predictable shape (uniform) or has several valid
+presentations, units, or encodings (nuanced).
+
+| family | mechanism | detect | accuracy | stabilize | CSV round-trip\* | desired form |
+|---|---|---|---|---|---|---|
+| **date** `temporal` | genome | easy | excellent | straightforward | yes · ISO | uniform |
+| **time** `temporal` | genome | easy | excellent | straightforward | yes · ISO | uniform |
+| **period** `temporal` | mask | medium | good | straightforward | yes | mostly uniform (fiscal vs. calendar) |
+| **phase** `temporal` | lexicon/mask | medium | mixed | moderate | label lost (stores numeric position) | nuanced |
+| **interval** `temporal` | mask | medium | good | splits column | needs rule (→ _start/_end) | nuanced |
+| **id** `identifier` | mask / mask+lex | med–high | scheme-dependent (hash/UUID high, surrogate low) | moderate | **needs rule** (leading zeros · `as_id`) | uniform per scheme |
+| **contact** `text` | mask | low–med | high (email/phone) | high | yes | email uniform, phone nuanced |
+| **web** `text` | mask | low–med | good | moderate | yes | mostly uniform |
+| **color** `text` | mask | low | high | hex only (rgb/hsl/cmyk pass through) | yes | uniform per space |
+| **name** `text` | lexicon | **hard** | low–med (gazetteer-limited) | pass-through | yes | nuanced |
+| **postal** `text` | mask+lex | **hard** | **low · 0.25** | pass-through | yes | nuanced |
+| **text (free)** `text` | none | hard (residual) | low | pass-through | yes | uniform · preserve |
+| **quantity** `number` | shape | **hard** (subtype not value-visible) | low | low | class undetermined | nuanced · units vary |
+| **currency** `number` | mask | medium | straightforward | straightforward | unit lost (→ `dd_unit`) | nuanced |
+| **portion** `number` | shape | low | moderate (needs class) | yes | nuanced (0–1 vs 0–100) |
+| **range** `number` | mask | medium | splits column | needs rule (→ _lo/_hi) | nuanced |
+| **coordinate** `number` | mask | med–high | moderate (splits · CRS) | needs rule | nuanced (order · CRS) |
+| **mutually exclusive** `categorical` | lex / none | mixed (geo/NAICS yes, nominal no) | mixed | needs levels | **needs codebook** | nuanced |
+| **scale** `categorical` | none | **hard** | low | needs levels | **needs codebook** | nuanced |
+| **multiselect** `categorical` | none | **hard** | low | splits to list | needs rule | nuanced |
+| **binary** `boolean` | mask | medium (loose · 0/1 ≈ numeric) | medium | straightforward (→ TRUE/FALSE) | encoding map | uniform output, inputs vary |
+| **collection** `structured` | mask | low–med | pass-through | opaque as text | yes · text | nuanced |
+| **record** `structured` | mask | low–med | pass-through | opaque as text | yes · text | nuanced |
+| **geometry** `structured` | mask | medium | pass-through | opaque as text | yes · WKT | nuanced |
+| **unknown** `unknown` | none | — residual | graceful floor | none · retain | yes · text | uniform · preserve |
+
+\* "CSV round-trip without rules" — whether the stable value reads back
+correctly from a plain CSV with no import rule. The classic failure is an
+identifier: write `06037` and a spreadsheet reads it as the number `6037`. The
+`import_rule` the engine returns (`as_id`, `as_factor` with levels, …) is what
+makes the file self-describing.
+
+## By data type
+
+For each type: a representative example, what the detector reads, what trips it
+up, and the stable value + import rule that go back to the consumer. The
+`fx_stabilize()` output below is live.
+
+### Temporal — the strong corner (genome)
+
+```{r temporal}
+fx_stabilize(c("03/15/2019", "3-15-2019"), "calendar")[c("stable", "import_rule")]
+```
+
+**Keys off:** not one regex per shape — a *library* of formats built from the
+date genome (component order × month form × delimiter). A value is a date only
+if some format parses it to a valid in-range date and the parse round-trips.
+**Trips it up:** ambiguous `mm/dd` vs `dd/mm`; two-digit years; a bare four-digit
+year is excluded on purpose (indistinguishable from a count or ID).
+
+### Identifier — strong patterns, but the CSV hazard
+
+```{r id}
+fx_stabilize(c("6037", "06037"), "geographic", "county_fips")[c("stable", "import_rule")]
+```
+
+**Keys off:** positional masks, sharpened where possible — EIN/DEA/Chinese-ID
+validate a check digit; hashes by fixed length + hex alphabet (MD5 32, SHA-1 40,
+SHA-256 64); FIPS by a lexicon anchored on a valid 2-digit state prefix.
+**Trips it up:** surrogate/record keys are value-undetectable (a bare integer key
+looks like a count — stays ~0% by design); leading-zero loss on import.
+
+### Text — strong on contact/web, limited on names
+
+```{r text}
+rbind(
+  email = fx_stabilize("Jane@Example.ORG", "email")["stable"],
+  phone = fx_stabilize("(605) 348-9999", "phone")["stable"])
+```
+
+**Keys off:** masks for email/phone/URL/IP/MAC/color (clear patterns); lexicons
+for person and place names. Free text, labels and titles are `none` — a residual,
+not a signature. **Trips it up:** names outside the gazetteer are invisible;
+organizations are an open set with no closed recipe.
+
+### Number — the detection ceiling (shape)
+
+```{r number}
+fx_stabilize(c("$2300.00", "17,298$", "-45"), "usd")[c("stable", "import_rule")]
+```
+
+**Keys off:** plain quantities/portions are `shape` — a numeric profile that says
+"a number" but not which subtype. Currency/range/coordinate add a mask.
+**Trips it up:** the core limit of the engine — `100` could be a count, score,
+index, or lb/kg; `0.05` a probability, rate, or ratio. These route shallow and
+wait for the header. Note `usd` strips the symbol and grouping to a bare number;
+the currency itself rides along as `dd_unit`, carried not predicted.
+
+### Categorical — only closed sets confirm by value
+
+```{r cat}
+fx_stabilize(c("California", "TX", "Ohio"), "geographic", "us_state")[c("stable", "import_rule")]
+```
+
+**Keys off:** only closed-set members confirm by value — geography (USPS/FIPS)
+and classification codes (NAICS). Nominal, ordinal, Likert and rating scales are
+`none`: the category *role* is a header/codebook fact. **Trips it up:** codes look
+like IDs or small integers; ordering and level labels cannot be recovered from
+values, so a factor needs its declared level set to read back from a CSV.
+
+### Boolean, structured, unknown
+
+Boolean keys off a small two-state vocabulary (`1/0`, `y/n`, `t/f`, checkbox);
+`is_boolean()` is marked loose because `0/1` overlaps numeric codes, and the
+boolean *class* (indicator vs. presence vs. status vs. response) needs the name.
+Structured keys off serialization syntax (JSON, key-value, WKT/WKB/GeoJSON) and
+is preserved as a literal — it round-trips as text but stays opaque to the frame.
+Unknown is the explicit resting place for graceful truncation: retain the source
+text, log parse errors, do not coerce.
+
+## See also
+
+- `vignette("guess-data-type")` — the classifier in depth.
+- `vignette("data-type-ontology")` — the vocabulary the two verbs speak.
+- `DEVELOPMENT-STATUS.md` (repo root) — implementation gaps, unimplemented
+  detectors, and the test-data library.
