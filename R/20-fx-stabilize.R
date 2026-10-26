@@ -87,9 +87,16 @@
   A("as_rank",      function(x,a) get("as_integer",V)(x,a))
   A("as_percent",   function(x,a){ v<-.fx_num(x); ifelse(is.na(v),NA,as.character(v)) })
   A("as_probability",function(x,a){ v<-.fx_num(x); ifelse(is.na(v)|v< -0.001|v>1.001,NA,as.character(v)) })
-  A("as_usd",       function(x,a){ v<-suppressWarnings(as.numeric(gsub("[^0-9.\\-]","",gsub(",","",x)))); ifelse(is.na(v),NA,as.character(v)) })
-  A("as_euro",      function(x,a) get("as_usd",V)(x,a))
-  A("as_currency",  function(x,a) get("as_usd",V)(x,a))
+  ## as_usd is SELECTIVE: a $-marked amount strips to a bare number; a non-$
+  ## value (bare number, foil) is NA, so the verifier can confirm usd instead of
+  ## leaking on every number. (balance is the symbol-less, metadata-gated case.)
+  A("as_usd",       function(x,a){ ok<-is_currency_amount(x) & grepl("[$]", x)
+    v<-suppressWarnings(as.numeric(gsub("[^0-9.\\-]","",gsub(",","",x))))
+    ifelse(!is.na(ok) & ok & !is.na(v), as.character(v), NA) })
+  A("as_euro",      function(x,a){ ok<-is_currency_amount(x) & grepl("€", x)
+    s<-gsub("[€[:space:]]","",x); s<-gsub("\\.","",s); s<-gsub(",",".",s)  # EU: . groups, , decimals
+    v<-suppressWarnings(as.numeric(s)); ifelse(!is.na(ok) & ok & !is.na(v), as.character(v), NA) })
+  A("as_currency",  function(x,a){ v<-suppressWarnings(as.numeric(gsub("[^0-9.\\-]","",gsub(",","",x)))); ifelse(is.na(v),NA,as.character(v)) })
   A("as_coord",     function(x,a){ v<-.fx_num(x); ifelse(is.na(v)|abs(v)>180,NA,as.character(v)) })
   A("as_range",     function(x,a) ifelse(grepl("[0-9].*(-|to|,).*[0-9]", x), trimws(x), NA))
   ## genome / temporal

@@ -43,8 +43,9 @@ test_that("non-selective columns truncate instead of claiming a false leaf", {
   expect_true(is.na(ft$format_label))
   expect_true(ft$depth <= 3L)
 
-  # numeric subtype is not value-distinguishable -> truncate to number
-  usd <- rt(c("$1,234.50", "$99.00", "$12.30", "$5000"))
-  expect_equal(usd$data_type, "number")
-  expect_true(is.na(usd$format_label))
+  # a BARE numeric subtype is not value-distinguishable -> truncate to number
+  # (a $-marked column now resolves to usd; see test-currency.R)
+  num <- rt(c("1234.50", "99.00", "12.30", "5000"))
+  expect_equal(num$data_type, "number")
+  expect_true(is.na(num$format_label))
 })

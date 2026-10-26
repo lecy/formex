@@ -128,3 +128,35 @@ is_currency_code_symbol <- function(x) {
   out[is.na(x)] <- NA
   out
 }
+
+#' Is it a monetary amount?
+#'
+#' Tests whether each element is a currency *amount* — a numeric value carrying
+#' a currency symbol (`$`, `€`, `£`, `¥`) as a prefix or suffix, with optional
+#' sign, grouping separators, decimals and interior spaces: `"$-45"`,
+#' `"$2300.00"`, `"17,298$"`, `"2300,00€"`, `"€ 17.298"`, `"-45€"`, `"$1,000"`.
+#'
+#' The symbol is required. A bare number (`"1234"`, `"-45.10"`) is deliberately
+#' **not** a currency amount at the value level — it is indistinguishable from a
+#' count or any other quantity (that is the symbol-less `balance` case, which is
+#' metadata-gated). Requiring the symbol is what makes the detector selective.
+#'
+#' @param x A character vector of candidate values.
+#' @return A logical vector: `TRUE` for a symbol-bearing numeric amount, `FALSE`
+#'   otherwise, `NA` where `x` is `NA`.
+#' @examples
+#' is_currency_amount(c("$2300.00", "17,298$", "-45€", "1234", NA))
+#' #> TRUE TRUE TRUE FALSE NA
+#' @seealso [is_currency_symbol()], [is_currency_code()], [guess_data_type()]
+#' @family currency detectors
+#' @export
+is_currency_amount <- function(x) {
+  x <- as.character(x)
+  s <- trimws(x)
+  has_sym <- grepl("[$€£¥]", s)
+  core    <- gsub("[$€£¥[:space:]]", "", s)         # drop symbol + spaces
+  numish  <- grepl("^[-+]?\\(?\\d[0-9.,]*\\)?$", core) & grepl("[0-9]", core)
+  out <- has_sym & numish
+  out[is.na(x)] <- NA
+  out
+}

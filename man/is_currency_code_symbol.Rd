@@ -35,6 +35,7 @@ is_currency_code_symbol(c("USD$12.30", "ZZZ$1", "USD 10", NA))
 \code{\link[=is_currency_code]{is_currency_code()}}, \code{\link[=is_currency_symbol]{is_currency_symbol()}}, \code{\link[=guess_data_type]{guess_data_type()}}
 
 Other currency detectors: 
+\code{\link{is_currency_amount}()},
 \code{\link{is_currency_code}()},
 \code{\link{is_currency_symbol}()}
 }

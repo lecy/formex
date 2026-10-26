@@ -21,7 +21,11 @@ set_recipe <- function(vid, expr) o$raw_to_stable_transform[o$variant_id == vid]
 set_recipe("n0067-f01", "{{ as_dow }}")
 set_recipe("n0068-f01", "{{ as_moy }}")
 
-wired <- c("n0027-f01", "n0063-f01", "n0067-f01", "n0068-f01", "n0035-f01")
+## usd: as_usd is now gated on is_currency_amount (a $-marked amount), so the
+## recipe confirms selectively (confirm 1.00 / leak 0.00) on the 16 banked usd
+## columns. euro's verb is likewise selective but has no test cases, so it stays
+## implemented=no until the library covers it.
+wired <- c("n0027-f01", "n0063-f01", "n0067-f01", "n0068-f01", "n0035-f01", "n0010-f01")
 o$implemented[o$variant_id %in% wired] <- "yes"
 
 probs <- fx_validate_ontology(o)

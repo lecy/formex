@@ -7,6 +7,22 @@
 # mutates only digits and regenerates valid amounts (AutoType's Section 6
 # caveat), so it is not a meaningful negative here.
 
+test_that("is_currency_amount keys on a symbol; bare numbers are not currency", {
+  expect_equal(is_currency_amount(c("$2300.00", "17,298$", "-45€", "$1,000", "€ 17.298")),
+               rep(TRUE, 5))
+  expect_equal(is_currency_amount(c("1234", "-45.10", "banana", "$", "")),
+               rep(FALSE, 5))
+  expect_true(is.na(is_currency_amount(NA)))
+})
+
+test_that("the usd recipe is selective and strips to a bare number", {
+  expect_equal(fx_transform(c("$2300.00", "17,298$", "$-45"), "{{ as_usd }}"),
+               c("2300", "17298", "-45"))
+  expect_true(all(is.na(fx_transform(c("1234", "banana"), "{{ as_usd }}"))))  # no symbol -> NA
+  expect_equal(guess_data_type(c("$2300.00","$-45","$1,000","$99.50","$12","$450"))$route$semantic_type,
+               "usd")
+})
+
 test_that("is_currency_code is an ISO 4217 lookup", {
   expect_equal(is_currency_code(c("USD", "eur", "ZZZ")),
                c(TRUE, TRUE, FALSE))                 # case-insensitive lookup
