@@ -12,51 +12,89 @@ knitr::opts_chunk$set(echo = FALSE, collapse = TRUE, comment = "#>")
 library(formex)
 ```
 
-## What this is
+## Detectors recognize a *format*, not just a type
 
-`formex` ships a library of **data-type detectors**: small functions that
-answer one yes/no question about a column of values --- *"is each value an
-X?"* --- where X is a semantic type such as an email address, an ISO currency
-code, a census tract GEOID, or an ORCID iD. Each detector is a pure predicate:
+`formex` ships a library of **detectors**: small functions that answer one
+yes/no question about a column --- *"is each value written in format X?"* Each
+is a pure predicate:
 
 * **input:** a character vector `x`
-* **output:** a logical vector the same length as `x` (`TRUE` where the value
-  matches the type, `NA` where `x` is `NA`); detectors never error.
+* **output:** a logical vector the same length (`TRUE` where the value matches,
+  `NA` where `x` is `NA`); detectors never error.
 
-The detectors are deliberately independent of the workflow that *chooses* among
-types (`guess_data_type()`), so each can be tuned in isolation. This guide is
-the catalog of what is implemented today, grouped by family, with a short
-definition, examples, the detection strategy, and a validation report for each
-type.
+The word *format* is doing the work here. "Is this a date?" is too loose to be
+useful --- almost any short string of digits and slashes could be a date. The
+detector that earns its place answers something tighter: *is this a `M/D/YYYY`
+date, with the month first, slashes as separators, and real month and day
+numbers?* That is a **format style**: a specific written shape, with its
+delimiters in specific places, drawn from a specific alphabet, often of a
+specific length, sometimes carrying a self-checking digit. A detector is good
+exactly when it pins that structure and rejects everything that merely
+resembles it.
 
-## How the detectors are validated
+## Stress-testing the format with AutoType
 
-Every type ships with a set of real **positive** examples. To measure whether a
-detector is not just *permissive* but *precise*, we also generate
-plausible-but-wrong **negatives** from those positives, using the mutation
-strategies from the AutoType paper (Yan & He, *SIGMOD* 2018), plus a
-structure-scramble strategy:
+So the hard part is not accepting real values --- it is **rejecting
+plausible-but-wrong ones** that share the data type but break the format. To
+measure that, `formex` borrows the negative-example machinery from the
+**AutoType** framework (Yan & He, *Auto-Type: Synthesizing Type-Detection Logic
+...*, SIGMOD 2018), which synthesizes type detectors and the hard negatives to
+test them. Starting from a handful of real positives, it mutates them into
+near-misses along four tiers --- each one aimed at a different part of the
+format's structure:
 
-| Tier | Name | What it changes | Purpose |
-|------|------|-----------------|---------|
-| **S1** | preserve-structure | replaces only alphanumeric characters, leaving punctuation/delimiters in place | weakest negatives; for loosely-structured types it often regenerates *valid* values |
-| **S2** | preserve-alphabet | replaces any character, drawing only from the alphabet actually observed | corrupts structure while staying "in vocabulary" |
-| **S3** | random | replaces characters with arbitrary printable ASCII | strongest random negatives |
-| **SP** | scramble-structure | keeps the alphanumeric characters and their order, but permutes the *positions* of punctuation/delimiters | catches detectors that check "right characters present" but not "in the right place" (decimal point, grouping, symbol order) |
+| Tier | Name | What it changes | The structure it stresses |
+|------|------|-----------------|---------------------------|
+| **S1** | preserve-structure | replaces only alphanumeric characters, leaving the delimiters in place | the *alphabet / values* (for loose types it often regenerates a valid value, so it stresses little) |
+| **S2** | preserve-alphabet | replaces any character, but only with characters seen in real examples | the *arrangement*, while staying in-vocabulary |
+| **S3** | random | replaces characters with arbitrary printable ASCII | the *alphabet* itself (the easiest negatives) |
+| **SP** | scramble-structure | keeps the alphanumerics and their order, but **permutes where the punctuation/delimiters sit** | the *format style directly* --- a decimal point, a grouping comma, a symbol in the wrong position |
+
+That last tier, **SP**, is the point of this guide's framing: it holds the data
+type constant and attacks only the *format style*, catching a detector that
+checks "the right characters are present" but not "in the right places." In that
+sense the fixtures test **formats more than they test types.**
 
 The frozen mix of valid + labelled negatives is the bundled
-[`data_type_tests`] object. The report below applies each detector to that
-fixture and reports **pass rates** per tier:
+[`data_type_tests`] object. The report below applies each detector to it and
+reports **pass rates** per tier:
 
 * **Recall** --- share of real positives accepted. Should be **1.00**.
-* **S1 / S2 / S3 / SP** --- share of generated negatives *wrongly* accepted (a
+* **S1 / S2 / S3 / SP** --- share of generated near-misses *wrongly* accepted (a
   false-positive rate). Lower is better; blank means that tier produced no
-  distinct negatives for the type.
+  distinct negatives. A **high S1 is expected** for loose formats (mutating the
+  digits of `"$12.30"` to `"$47.99"` is still a valid amount) --- read S2/S3/SP
+  for those.
 
-One caveat to read the numbers correctly: a **high S1** is expected and *not* a
-bug for loosely-structured types. Mutating only the digits of `"$12.30"` yields
-`"$47.99"` --- still a valid amount --- so S1 measures little there. The
-discriminating tiers for such types are S2/S3/SP.
+## What structure a detector leverages
+
+Every detector in the catalogue names its **strategy** --- the structure in the
+data it keys on. There are a handful of recurring kinds, from loosest to
+tightest:
+
+* **exact lookup** --- the value must be a member of a closed reference set
+  (ISO currency codes, USPS states, NAICS codes). The structure *is* the list.
+* **small enum** --- a lookup against a short fixed vocabulary (census regions,
+  NCES locales).
+* **structured regex** --- a positional shape: delimiters and character classes
+  in fixed places (`EIN` = two digits, a dash, seven digits; a `GUID` = the
+  8-4-4-4-12 hex pattern). This is where the SP tier bites hardest.
+* **regex + range** --- a shape *plus* a numeric bound, so the parts have to be
+  real (an IPv4 octet is 0-255; an ISO date's month is 1-12).
+* **anchor + length** --- a fixed width whose prefix must be valid (a county
+  FIPS is five digits whose first two are a real state code).
+* **checksum** --- the value validates its own check digit (ISBN, ORCID, NPI,
+  DEA), so a single wrong character is caught arithmetically. The tightest
+  structure available.
+* **heuristic / composite** --- for loose real-world text (addresses), fires
+  when several weaker components co-occur.
+
+The catalogue below lists the detectors that ship with a frozen AutoType
+fixture, grouped by family, each with its one-line definition, the **strategy**
+(the structure it leverages), real examples, and the stress-test report. (A few
+newer detectors --- `is_currency_amount()`, `is_version()`, `is_boolean()`, the
+phase and geometry detectors --- are wired into the ontology but not yet in this
+frozen fixture, so they are not reported here.)
 
 ```{r helpers}
 groups <- list(
