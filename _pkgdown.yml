@@ -89,6 +89,8 @@ articles:
   contents:
   - formex
   - guess-data-type
+  - detector-kinds
   - data-type-detectors
   - data-type-ontology
+  - feature-engineering
   - formex-type-atlas

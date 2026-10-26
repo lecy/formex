@@ -1,0 +1,175 @@
+---
+title: "How Detectors Recognize a Type"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How Detectors Recognize a Type}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = TRUE, comment = "#>",
+                      message = FALSE, warning = FALSE)
+library(formex)
+```
+
+A **detector** is a small function that looks at a column of values and answers
+one yes/no question: *"is each value a such-and-such?"* It takes a character
+vector and returns `TRUE` / `FALSE` for each value (and `NA` where the value was
+missing). `formex` ships dozens of them --- `is_date()`, `is_ein()`,
+`is_us_state()`, and so on (the *Data-Type Detector Guide* is the full
+catalogue).
+
+But detectors do not all work the same way. A date can be written a hundred
+ways, so its detector has to *parse*; a US state is one of exactly 51 things, so
+its detector just *looks it up*. This guide walks through the handful of
+**detection kinds** --- the strategies detectors use --- and shows, with real
+examples, what makes each one fire or stay silent. Understanding the kinds
+explains both why some columns are easy to recognize and why others are
+impossible to recognize from their values alone.
+
+Every type in the ontology records its kind in a field called `match_kind`.
+There are six.
+
+## genome --- parse it many ways
+
+Dates and times have no single written form: `3/15/2019`, `2019-03-15`, and
+`March 15, 2019` are the same day. A **genome** detector handles this by trying
+a whole library of formats and accepting the value if *some* format parses it
+into a real, in-range date that reads back consistently.
+
+```{r genome}
+is_date(c("03/15/2019", "2019-03-15", "2019-13-45", "banana"))
+```
+
+The first two fire --- different writings of a valid date. The third does
+*not*: there is no 13th month or 45th day, so no format produces a real date.
+The fourth is not a date in any form. The detector is tolerant about *style* but
+strict about *validity*.
+
+## mask --- match a fixed shape
+
+Many identifiers have one rigid shape: an EIN is two digits, a dash, then seven
+digits. A **mask** detector checks that exact pattern. Some masks go further and
+validate a built-in **check digit** --- an extra digit computed from the others,
+so a single typo is caught arithmetically.
+
+```{r mask-ein}
+is_ein(c("01-2345678", "12-3456789", "12-345"))
+```
+
+The first two match the `NN-NNNNNNN` shape; the third is too short and fails.
+Now a check digit in action --- an ISBN carries one, so a value with the wrong
+final digit is rejected even though its shape is perfect:
+
+```{r mask-isbn}
+is_isbn(c("0306406152", "0306406153"))
+```
+
+Same ten-digit shape, but only the first has a valid checksum. This is the
+tightest kind of recognition: the value essentially proves itself.
+
+## lexicon --- look it up in a list
+
+Some types are a closed set: there are exactly 50 states plus DC. A **lexicon**
+detector simply tests membership in a known list (matching case-insensitively).
+
+```{r lexicon-state}
+is_us_state(c("CA", "tx", "ZZ", "California"))
+```
+
+`CA` and `tx` are on the list; `ZZ` is not. Notice `California` fails too ---
+this particular detector recognizes the two-letter *abbreviation*, not the full
+name (a different detector handles spelled-out names). A detector only knows
+what is in its list:
+
+```{r lexicon-name}
+is_first_name(c("James", "Mary", "xzqwt"))
+```
+
+`James` and `Mary` are in the reference list of common given names; `xzqwt` is
+not. Lexicon detectors are precise but only as complete as their list --- a rare
+name that is not in it will be missed. That is a deliberate trade: better to
+stay silent than to guess.
+
+## mask+lexicon --- the right shape *and* a real value
+
+Some types need both: the shape has to be right *and* part of the value has to
+be in a reference list. A county FIPS code is five digits **whose first two are
+a real state code** --- so a random five-digit number does not qualify.
+
+```{r mask-lexicon}
+is_county_fips(c("06037", "36061", "99999", "6037"))
+```
+
+`06037` and `36061` are five digits with valid state prefixes (`06` = CA,
+`36` = NY). `99999` has the right shape but `99` is not a real state. `6037` is
+only four digits. Both halves must pass.
+
+## shape --- the look of the numbers
+
+Some columns cannot be recognized by any single value, only by the *pattern of
+the whole column*. "Is this a count?" is not something you can ask of one number
+--- `42` could be a count, an age, a score. A **shape** kind looks at the
+column's overall numeric profile (are the values whole? non-negative? bounded
+between 0 and 1?) to make a soft call. There is no single `is_count()` that
+fires on one value, because the signal lives in the distribution, not the
+digits.
+
+## none --- not knowable from the values
+
+Finally, some types simply **cannot** be recognized from values at all:
+
+- A membership-ID column is just integers --- indistinguishable from any other
+  integers.
+- A free-text notes column is just text.
+
+These are marked `none`, and no detector claims them. They can only be asserted
+from outside the data --- the column's name, or a data dictionary. Being honest
+about this is a feature: it stops the engine from inventing a confident answer
+where none is possible.
+
+## From detectors to a guess
+
+A single detector answers one question. To guess *what a column is*,
+`guess_data_type()` runs many detectors over a sample of the column and looks at
+the **pass rate** of each --- the share of values it accepted. `score_data_type()`
+exposes that raw step:
+
+```{r scores}
+score_data_type(c("03/15/2019", "12/31/2020", "01/01/2021"))[1:4, ]
+```
+
+Often more than one detector fires. A clean date column is accepted by both the
+US-date detector and the general date detector --- both pass at `1.0`. So a pass
+rate alone is not enough; the guesser needs a way to choose among the winners.
+It does this in two stages:
+
+1. A **router** proposes a short list of the most likely types for the column
+   (using the detector signals plus a broader profile of the column --- see the
+   *Feature Engineering for Type Guessing* vignette).
+2. A **verifier** then re-runs each candidate's full recipe and keeps only the
+   ones that both fit the column *and* reject junk, breaking ties toward the
+   more specific type.
+
+The result is the `$route` --- the type it settled on, reported only as far down
+as the evidence supports:
+
+```{r route}
+guess_data_type(c("03/15/2019", "12/31/2020", "01/01/2021"))$route[
+  c("semantic_type", "format_style", "match_kind", "depth", "confidence")]
+```
+
+The `match_kind` in that answer tells you *how* the type was recognized --- here,
+`genome`, because a date was parsed. A column recognized by `lexicon` would say
+so, and a column that only matched a `none`-kind type would never resolve to a
+leaf at all. In short: the detection kind is not just an implementation detail,
+it tells you how much to trust the guess and why.
+
+## See also
+
+* The **Data-Type Detector Guide** --- the full catalogue of `is_*` detectors,
+  with the structure each one leverages and its stress-test report.
+* **Guessing a Column's Type** --- the router → verifier flow end to end.
+* **Feature Engineering for Type Guessing** --- how a column is turned into the
+  numeric profile the router reads.
