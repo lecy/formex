@@ -20,12 +20,16 @@ o   <- .fx_read_ontology_csv(csv)
 set_recipe <- function(vid, expr) o$raw_to_stable_transform[o$variant_id == vid] <<- expr
 set_recipe("n0067-f01", "{{ as_dow }}")
 set_recipe("n0068-f01", "{{ as_moy }}")
+set_recipe("n0029-f01", "lookup:place")   # place: {{ none }} leaks; lookup is selective
 
 ## usd: as_usd is now gated on is_currency_amount (a $-marked amount), so the
 ## recipe confirms selectively (confirm 1.00 / leak 0.00) on the 16 banked usd
 ## columns. euro's verb is likewise selective but has no test cases, so it stays
 ## implemented=no until the library covers it.
-wired <- c("n0027-f01", "n0063-f01", "n0067-f01", "n0068-f01", "n0035-f01", "n0010-f01")
+## place (lookup:place, selective) and min_max range ({{ as_range }}, already
+## selective -- the verb the implemented date_range uses) both have test cases.
+wired <- c("n0027-f01", "n0063-f01", "n0067-f01", "n0068-f01", "n0035-f01",
+           "n0010-f01", "n0029-f01", "n0016-f01")
 o$implemented[o$variant_id %in% wired] <- "yes"
 
 probs <- fx_validate_ontology(o)

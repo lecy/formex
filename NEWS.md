@@ -13,9 +13,10 @@
   gain selective `as_dow` / `as_moy` recipes; `first_name`, `quarter`, and
   `domain` had their stale `implemented` flag reconciled; and a new
   `is_currency_amount()` (symbol-required, so bare numbers are not mistaken for
-  currency) makes the `as_usd` recipe selective, wiring `usd`. 36 → 42 of 96
-  variants implemented. (`as_euro` is likewise selective but stays unflagged
-  until the test library covers it.)
+  currency) makes the `as_usd` recipe selective, wiring `usd`; `place` gets a
+  selective `lookup:place` recipe and `min_max` range is confirmed via the
+  existing `as_range`. 36 → 44 of 96 variants implemented. (`as_euro` is likewise
+  selective but stays unflagged until the test library covers it.)
 
 * Recipe/helper fixes from the datagoodr reintegration review:
   - `as_yyyy()` and the `as_yyyy` stabilize verb now strip a fiscal-year prefix
