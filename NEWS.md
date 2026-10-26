@@ -1,5 +1,14 @@
 # formex 0.0.0.9000
 
+* Recipe/helper fixes from the datagoodr reintegration review:
+  - `as_yyyy()` and the `as_yyyy` stabilize verb now strip a fiscal-year prefix
+    (`"FY2019"` → `"2019"`) instead of returning the raw string / `NA`.
+  - `as_EIN()` and the `as_ein` verb now emit the canonical `"NN-NNNNNNN"` form
+    and restore a leading zero lost to numeric coercion (`"12345678"` →
+    `"01-2345678"`).
+  - Removed the stale duplicate `data-types/research_data_type_ontology_v6.csv`;
+    `fx_ontology()` reads `inst/extdata/` (the 96-row authority).
+
 * Two-stage `guess_data_type()` (router → verifier), anchored to the v6
   ontology and returned as a `$route` record alongside the unchanged legacy
   fields:

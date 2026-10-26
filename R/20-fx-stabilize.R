@@ -95,14 +95,14 @@
   ## genome / temporal
   A("as_mmddyyyy",  function(x,a) .fx_parse_iso_date(x))
   A("as_datetime",  function(x,a) .fx_parse_iso_date(x, with_time = TRUE))
-  A("as_yyyy",      function(x,a) ifelse(grepl("^(1[89]\\d{2}|20\\d{2})$", trimws(x)), trimws(x), NA))
+  A("as_yyyy",      function(x,a){ y<-sub("^(?:FY|fy)\\s*","",trimws(x)); ifelse(grepl("^(1[89]\\d{2}|20\\d{2})$", y), y, NA) })
   A("as_yyyymm",    function(x,a){ d<-.fx_parse_iso_date(x); ifelse(is.na(d),NA,substr(d,1,7)) })
   A("as_quarter",   function(x,a){ q<-toupper(gsub("\\s","",x)); ifelse(grepl("^(Q[1-4]-?\\d{4}|\\d{4}-?Q[1-4])$", q), q, NA) })
   A("as_clock",     function(x,a) ifelse(grepl("^\\s*\\d{1,2}:\\d{2}(:\\d{2})?\\s*([AaPp][.]?[Mm][.]?)?\\s*$", x), trimws(x), NA))
   ## mask / identifier
   A("as_email",     function(x,a){ e<-tolower(trimws(x)); ifelse(is_email(e), e, NA) })
   A("as_url",       function(x,a) ifelse(is_url(x) | is_url(paste0("http://",x)), trimws(x), NA))
-  A("as_ein",       function(x,a){ d<-gsub("\\D","",x); ifelse(nchar(d)==9, paste0(substr(d,1,2),"-",substr(d,3,9)), NA) })
+  A("as_ein",       function(x,a){ d<-gsub("\\D","",x); p<-stringr::str_pad(d,9,"left","0"); ifelse(nchar(d)%in%c(8L,9L), paste0(substr(p,1,2),"-",substr(p,3,9)), NA) })
   A("as_phone",     function(x,a){ d<-gsub("\\D","",x); ifelse(nchar(d)%in%c(10,11), d, NA) })
   A("as_hex",       function(x,a) ifelse(is_hex_color(x), toupper(trimws(x)), NA))
   A("as_id",        function(x,a){ s<-trimws(x); ifelse(nzchar(s), s, NA) })

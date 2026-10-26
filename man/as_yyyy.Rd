@@ -10,11 +10,16 @@ as_yyyy(x)
 \item{x}{A single year value (numeric or character).}
 }
 \value{
-The year as a character string, or \code{NA} if \code{x} is \code{NA}.
+The four-digit year as a character string, or \code{NA} if \code{x} is \code{NA}.
 }
 \description{
 Coerces a year to character, warning if it has more than four digits. \code{NA}
 is returned unchanged.
+}
+\details{
+A fiscal-year prefix (\code{"FY2019"}, \code{"FY 2019"}) is stripped and the
+embedded four-digit year returned. A value that already is a four-digit
+year passes through; anything else warns and is returned unchanged.
 }
 \seealso{
 \code{\link[=as_mm]{as_mm()}}, \code{\link[=as_yyyymm]{as_yyyymm()}}

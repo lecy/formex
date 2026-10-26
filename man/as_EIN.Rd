@@ -2,7 +2,7 @@
 % Please edit documentation in R/02-01-format-functions.R
 \name{as_EIN}
 \alias{as_EIN}
-\title{Format a value as a zero-padded 9-digit EIN}
+\title{Format a value as a canonical hyphenated EIN}
 \usage{
 as_EIN(x)
 }
@@ -10,11 +10,15 @@ as_EIN(x)
 \item{x}{A single EIN value (numeric or character).}
 }
 \value{
-A 9-character EIN string, or \code{NA} if \code{x} is \code{NA}.
+A canonical EIN string \code{"NN-NNNNNNN"}, or \code{NA} if \code{x} is \code{NA}. Any
+non-digits (a prefix, an existing hyphen) are stripped first, and an
+8-digit value (a leading zero lost to numeric coercion) is zero-padded back
+to nine before the hyphen is inserted.
 }
 \description{
-Left-pads an Employer Identification Number to nine digits with leading
-zeros. \code{NA} is returned unchanged.
+Normalizes an Employer Identification Number to the canonical \code{"NN-NNNNNNN"}
+form, restoring a leading zero lost to numeric coercion. \code{NA} is returned
+unchanged.
 }
 \seealso{
 \code{\link[=as_mm]{as_mm()}}, \code{\link[=as_yyyy]{as_yyyy()}}, \code{\link[=as_yyyymm]{as_yyyymm()}}

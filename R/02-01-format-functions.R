@@ -4,20 +4,27 @@
 # counterparts to user-supplied "polishing" functions such as dollarize().
 
 
-#' Format a value as a zero-padded 9-digit EIN
+#' Format a value as a canonical hyphenated EIN
 #'
-#' Left-pads an Employer Identification Number to nine digits with leading
-#' zeros. `NA` is returned unchanged.
+#' Normalizes an Employer Identification Number to the canonical `"NN-NNNNNNN"`
+#' form, restoring a leading zero lost to numeric coercion. `NA` is returned
+#' unchanged.
 #'
 #' @param x A single EIN value (numeric or character).
 #'
-#' @return A 9-character EIN string, or `NA` if `x` is `NA`.
+#' @return A canonical EIN string `"NN-NNNNNNN"`, or `NA` if `x` is `NA`. Any
+#'   non-digits (a prefix, an existing hyphen) are stripped first, and an
+#'   8-digit value (a leading zero lost to numeric coercion) is zero-padded back
+#'   to nine before the hyphen is inserted.
 #' @seealso [as_mm()], [as_yyyy()], [as_yyyymm()]
 #' @export
 #' @importFrom stringr str_pad
 as_EIN <- function(x) {
   if (is.na(x)) return(x)
-  stringr::str_pad(x, 9, side = "left", pad = "0")
+  d <- gsub("\\D", "", as.character(x))
+  if (!nchar(d) %in% c(8L, 9L)) return(NA_character_)
+  d <- stringr::str_pad(d, 9, side = "left", pad = "0")
+  paste0(substr(d, 1, 2), "-", substr(d, 3, 9))
 }
 
 
@@ -45,12 +52,17 @@ as_mm <- function(x) {
 #'
 #' @param x A single year value (numeric or character).
 #'
-#' @return The year as a character string, or `NA` if `x` is `NA`.
+#' @details A fiscal-year prefix (`"FY2019"`, `"FY 2019"`) is stripped and the
+#'   embedded four-digit year returned. A value that already is a four-digit
+#'   year passes through; anything else warns and is returned unchanged.
+#' @return The four-digit year as a character string, or `NA` if `x` is `NA`.
 #' @seealso [as_mm()], [as_yyyymm()]
 #' @export
 as_yyyy <- function(x) {
   if (is.na(x)) return(x)
-  x <- as.character(x)
+  x <- trimws(as.character(x))
+  y <- sub("^(?:FY|fy)\\s*", "", x)
+  if (grepl("^(1[89]\\d{2}|20\\d{2})$", y)) return(y)
   if (max(nchar(x)) > 4) warning("YYYY elements have nchar > 4")
   x
 }
