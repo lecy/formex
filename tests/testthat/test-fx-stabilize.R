@@ -1,10 +1,27 @@
 # fx_stabilize() executes an ontology recipe (raw_to_stable_transform DSL) and
-# returns the recipe's four outputs. Verbs reuse the package detectors/lexicons.
+# returns the recipe outputs plus the v7 render fields. Verbs reuse the package
+# detectors/lexicons.
 
-test_that("fx_stabilize returns the recipe's four fields", {
+test_that("fx_stabilize returns the recipe fields plus the v7 render fields", {
   r <- fx_stabilize(c("03/15/2019", "12/31/2020"), "calendar")
-  expect_named(r, c("variant_id", "format_mask", "stable", "stable_format", "import_rule"))
+  expect_named(r, c("variant_id", "format_mask", "stable", "stable_format",
+                    "import_rule", "rendered", "target_format", "target_reachable"))
   expect_equal(r$stable, c("2019-03-15", "2020-12-31"))   # dates canonicalize to ISO
+  expect_equal(r$rendered, r$stable)                      # no target -> rendered == stable
+  expect_true(is.na(r$target_reachable))                  # NA when no target requested
+})
+
+test_that("target_format renders the canonical values via the planner", {
+  r <- fx_stabilize("03/15/2019", "calendar", target_format = "mdy_slash")
+  expect_true(r$target_reachable)
+  expect_equal(r$stable, "2019-03-15")       # canonical is unchanged
+  expect_equal(r$rendered, "03/15/2019")     # rendered to the requested style
+})
+
+test_that("an unreachable target_format falls back to canonical", {
+  r <- fx_stabilize("03/15/2019", "calendar", target_format = "no_such_style")
+  expect_false(r$target_reachable)
+  expect_equal(r$rendered, r$stable)
 })
 
 test_that("recipe granularity: ISBN normalizes then validates", {

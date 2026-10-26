@@ -4,7 +4,13 @@
 \alias{fx_stabilize}
 \title{Stabilize a column via its ontology recipe}
 \usage{
-fx_stabilize(x, semantic_type, format_label = NULL, ontology = fx_ontology())
+fx_stabilize(
+  x,
+  semantic_type,
+  format_label = NULL,
+  target_format = NULL,
+  ontology = fx_ontology()
+)
 }
 \arguments{
 \item{x}{A character vector (one column of raw values).}
@@ -14,12 +20,21 @@ fx_stabilize(x, semantic_type, format_label = NULL, ontology = fx_ontology())
 \item{format_label}{Optional variant within the type, e.g. \code{"isbn"}. If \code{NULL}
 the first variant of the semantic_type is used.}
 
+\item{target_format}{Optional \code{format_style} to render the stabilized values
+into (v7). The canonical \code{stable} values are passed through the transform
+planner (\code{\link[=fx_plan_transform]{fx_plan_transform()}}) to the requested written form; when no
+\verb{write_*}/\verb{convert_*} path exists yet, \code{rendered} falls back to \code{stable} and
+\code{target_reachable} is \code{FALSE}.}
+
 \item{ontology}{An ontology data frame (defaults to \code{\link[=fx_ontology]{fx_ontology()}}).}
 }
 \value{
 A list: \code{variant_id}, \code{format_mask} (recognition pattern, from
-\code{data_format}), \code{stable} (the transformed values), \code{stable_format} (canonical
-target), and \code{import_rule} (how to re-ingest, from \code{stable_import_rule}).
+\code{data_format}), \code{stable} (the canonical transformed values), \code{stable_format}
+(canonical target), \code{import_rule} (how to re-ingest), and the v7 render
+fields \code{rendered} (values in \code{target_format}, or \code{stable} if none/unreached),
+\code{target_format}, and \code{target_reachable} (\code{TRUE}/\code{FALSE}, or \code{NA} when no
+\code{target_format} was requested).
 }
 \description{
 Resolves the recipe row for a \code{semantic_type} (and optional \code{format_label})
@@ -27,9 +42,9 @@ and runs its \code{raw_to_stable_transform}, returning the recipe's four outputs
 }
 \examples{
 fx_stabilize(c("03/15/2019", "12/31/2020"), "calendar")
+fx_stabilize(c("03/15/2019"), "calendar", target_format = "mdy_slash")
 fx_stabilize(c("isbn 0395629764"), "administrative", "isbn")
-fx_stabilize(c("California", "TX"), "geographic", "us_state")
 }
 \seealso{
-\code{\link[=fx_transform]{fx_transform()}}, \code{\link[=guess_data_type]{guess_data_type()}}
+\code{\link[=fx_transform]{fx_transform()}}, \code{\link[=fx_plan_transform]{fx_plan_transform()}}, \code{\link[=guess_data_type]{guess_data_type()}}
 }

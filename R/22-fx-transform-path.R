@@ -128,8 +128,13 @@ fx_transforms <- function() {
 fx_plan_transform <- function(from, to, registry = NULL) {
   stopifnot(inherits(from, "fx_format"), inherits(to, "fx_format"))
   edges <- if (is.null(registry)) fx_transforms() else registry
-  start <- .fx_wnode(from$semantic_type, from$format_style)
-  goal  <- .fx_wnode(to$semantic_type,   to$format_style)
+  ## a format with no style IS the canonical value (a c| node); a style names a
+  ## written form (a w| node). This lets a plan start or end at the canonical.
+  node_of <- function(f)
+    if (is.na(f$format_style) || !nzchar(f$format_style))
+      .fx_cnode(f$semantic_type, f$unit_type) else .fx_wnode(f$semantic_type, f$format_style)
+  start <- node_of(from)
+  goal  <- node_of(to)
   res <- function(ok, path, reason = NA_character_)
     structure(list(transformable = ok, path = path, from = from, to = to,
                    reason = reason), class = "fx_plan")

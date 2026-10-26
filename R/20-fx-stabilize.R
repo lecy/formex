@@ -168,27 +168,50 @@ fx_transform <- function(x, expr){
 #' @param semantic_type The ontology leaf, e.g. `"calendar"`, `"administrative"`.
 #' @param format_label Optional variant within the type, e.g. `"isbn"`. If `NULL`
 #'   the first variant of the semantic_type is used.
+#' @param target_format Optional `format_style` to render the stabilized values
+#'   into (v7). The canonical `stable` values are passed through the transform
+#'   planner ([fx_plan_transform()]) to the requested written form; when no
+#'   `write_*`/`convert_*` path exists yet, `rendered` falls back to `stable` and
+#'   `target_reachable` is `FALSE`.
 #' @param ontology An ontology data frame (defaults to [fx_ontology()]).
 #' @return A list: `variant_id`, `format_mask` (recognition pattern, from
-#'   `data_format`), `stable` (the transformed values), `stable_format` (canonical
-#'   target), and `import_rule` (how to re-ingest, from `stable_import_rule`).
+#'   `data_format`), `stable` (the canonical transformed values), `stable_format`
+#'   (canonical target), `import_rule` (how to re-ingest), and the v7 render
+#'   fields `rendered` (values in `target_format`, or `stable` if none/unreached),
+#'   `target_format`, and `target_reachable` (`TRUE`/`FALSE`, or `NA` when no
+#'   `target_format` was requested).
 #' @examples
 #' fx_stabilize(c("03/15/2019", "12/31/2020"), "calendar")
+#' fx_stabilize(c("03/15/2019"), "calendar", target_format = "mdy_slash")
 #' fx_stabilize(c("isbn 0395629764"), "administrative", "isbn")
-#' fx_stabilize(c("California", "TX"), "geographic", "us_state")
-#' @seealso [fx_transform()], [guess_data_type()]
+#' @seealso [fx_transform()], [fx_plan_transform()], [guess_data_type()]
 #' @export
-fx_stabilize <- function(x, semantic_type, format_label = NULL, ontology = fx_ontology()){
+fx_stabilize <- function(x, semantic_type, format_label = NULL,
+                         target_format = NULL, ontology = fx_ontology()){
   rows <- ontology[ontology$semantic_type == semantic_type, , drop = FALSE]
   if (!nrow(rows)) stop("unknown semantic_type: ", semantic_type)
   if (!is.null(format_label)){
     rows <- rows[rows$format_label == format_label, , drop = FALSE]
     if (!nrow(rows)) stop("no variant with format_label '", format_label, "' for ", semantic_type)
   }
-  r <- rows[1, ]
-  list(variant_id    = r$variant_id,
-       format_mask   = r$data_format,
-       stable        = fx_transform(as.character(x), r$raw_to_stable_transform),
-       stable_format = r$stable_format,
-       import_rule   = r$stable_import_rule)
+  r      <- rows[1, ]
+  stable <- fx_transform(as.character(x), r$raw_to_stable_transform)
+
+  rendered <- stable; reachable <- NA
+  if (!is.null(target_format) && nzchar(target_format)){
+    unit <- if (!is.null(r$unit_type) && !is.na(r$unit_type) && nzchar(trimws(r$unit_type))) r$unit_type else NA_character_
+    plan <- fx_plan_transform(fx_format(semantic_type, NA_character_, unit),
+                              fx_format(semantic_type, target_format, unit))
+    reachable <- isTRUE(plan$transformable)
+    if (reachable) rendered <- fx_apply_plan(stable, plan)
+  }
+
+  list(variant_id       = r$variant_id,
+       format_mask      = r$data_format,
+       stable           = stable,
+       stable_format    = r$stable_format,
+       import_rule      = r$stable_import_rule,
+       rendered         = rendered,
+       target_format    = target_format %||% NA_character_,
+       target_reachable = reachable)
 }
