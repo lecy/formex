@@ -54,12 +54,22 @@ data_type  ›  semantic_family  ›  semantic_type  ›  format_label
   `name`, `date`, `geographic`).
 * **`semantic_type`** --- the specific meaning that carries the validation and
   the render treatment (e.g. `usd`, `person`, `calendar`, `us_state`).
-* **`format_label`** --- the surface *form* the file happens to use for that
-  meaning; one semantic type can have several (e.g. an ISBN written 10-digit,
-  13-digit, or hyphenated). The `format_label` selects the recipe row.
+* **`format_label`** --- the recipe-row label; one semantic type can have
+  several (e.g. an ISBN written 10-digit, 13-digit, or hyphenated). It selects
+  the recipe row and is retained (derived) for backward compatibility.
+
+Since v7 the leaf is split into two orthogonal axes that together name the
+surface form, so most of the work `format_label` used to carry now lives in a
+pair:
+
+* **`format_style`** --- how the value is *written*: field order and
+  separators, suffix-scaling, abbreviated-vs-full. This is what the `read_*` /
+  `write_*` transforms key on.
+* **`unit_type`** --- what the value *means* dimensionally (`USD`, `C`/`F`,
+  `fiscal`); see below.
 
 `data_type` through `semantic_type` say what a column **is** --- its intended
-meaning, stable across file versions. `format_label` describes how the *current*
+meaning, stable across file versions. `format_style` describes how the *current*
 file writes it. That is why `guess_data_type()` can return a **path prefix** when
 it is confident about the type but not the exact format: it stops at the deepest
 coordinate the values actually support.
