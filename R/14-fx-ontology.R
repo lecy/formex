@@ -131,6 +131,23 @@ fx_validate_ontology <- function(ont = fx_ontology()){
     if(length(bad)) p <- c(p, paste("unknown match_kind:", paste(bad, collapse=", ")))
   }
 
+  ## 7. a label (format_label or semantic_type) that maps to >1 path is a
+  ##    collision: every such row must declare a `disambiguator` rule, so a
+  ##    leaf-only consumer has a defined tie-break. An undeclared collision
+  ##    fails (rename a leaf, or declare the rule).
+  dis <- if("disambiguator" %in% names(ont)) ont$disambiguator else rep("", nrow(ont))
+  dis[is.na(dis)] <- ""
+  collide <- function(key){
+    if(!key %in% names(ont)) return(character(0))
+    vals <- unique(ont[[key]])
+    vals[vapply(vals, function(v){ i <- ont[[key]] == v
+      length(unique(path[i])) > 1L && any(!nzchar(dis[i])) }, logical(1))]
+  }
+  coll <- unique(c(collide("semantic_type"), collide("format_label")))
+  if(length(coll))
+    p <- c(p, paste("undeclared path collision (needs a disambiguator):",
+                    paste(coll, collapse=", ")))
+
   p
 }
 

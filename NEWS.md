@@ -9,6 +9,14 @@
   a `read_`/`write_`/`convert_` registry generated from the ontology recipes;
   `fx_stabilize(..., target_format=)` renders to a chosen style (with
   `rendered` / `target_reachable`), and `$route` now reports `format_style`.
+* **Disambiguator (started).** The ontology now carries a `disambiguator`
+  column declaring the tie-break for every path collision, and
+  `fx_validate_ontology()` fails on an *undeclared* one. `geographic` (a
+  categorical grouping vs. an identifier key) declares `cardinality:repeating` /
+  `cardinality:unique`; the colliding `unknown/.../mixed` leaf is renamed
+  `heterogeneous` so only the boolean `mixed` keeps the name. The pure rule
+  (`.fx_disambiguate()`) is implemented and tested; wiring it into the live
+  verifier (which needs the column's uniqueness ratio plumbed through) is next.
 * **Detectors wired (test-case-backed):** `day_of_week` and `month_of_year`
   gain selective `as_dow` / `as_moy` recipes; `first_name`, `quarter`, and
   `domain` had their stale `implemented` flag reconciled; and a new

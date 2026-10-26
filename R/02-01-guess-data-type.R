@@ -110,6 +110,27 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   mean(!is.na(st))
 }
 
+## Disambiguate a declared path collision. Given candidate rows that share a
+## `semantic_type` but sit on different paths (each carrying a `disambiguator`
+## rule from the ontology) and the column's uniqueness ratio (distinct / n),
+## return the index of the row the rule prefers, or NA if it does not resolve.
+## Currently the one rule is `cardinality:unique` (a key, uniqueness ~1) vs
+## `cardinality:repeating` (a grouping that repeats). Kept pure and separate so
+## the rule is tested on its own; the verifier consults it only when two
+## confirmed candidates actually collide.
+#' @keywords internal
+#' @noRd
+.fx_disambiguate <- function(rows, uniq, thr = 0.95) {
+  d <- rows$disambiguator
+  if (is.null(d)) return(NA_integer_)
+  d[is.na(d)] <- ""
+  if (length(d) < 2 || !all(grepl("^cardinality:", d)) || is.na(uniq))
+    return(NA_integer_)
+  want <- if (uniq >= thr) "cardinality:unique" else "cardinality:repeating"
+  w <- which(d == want)
+  if (length(w) == 1L) w else NA_integer_
+}
+
 #' @keywords internal
 #' @noRd
 .fx_route_verify <- function(u, ont = fx_ontology(), router_k = 8,
