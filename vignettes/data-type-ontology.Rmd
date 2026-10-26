@@ -144,11 +144,15 @@ a value into a type a plain CSV reader cannot infer (a ZIP that must stay a
 
 The remaining columns are documentation the engine carries but does not parse:
 
-* **`dd_data_unit`** --- an interpretive unit an analyst needs but a type does
-  not (`USD`, `kg`, `EPSG:4326`). It is proposed only when the semantic type
-  declares one. Crucially it does **not** carry temporal *grain*: a date's grain
-  (calendar vs month vs day-of-week) selects the render graphic, so it lives in
-  `semantic_type`, not in a unit.
+* **`unit_type`** (formerly `dd_data_unit`) --- the dimensional or categorical
+  unit an analyst needs but a type does not (`USD`, `kg`, `EPSG:4326`). It sits
+  beside `format_style` as the second leaf axis: `format_style` is how a value is
+  *written* (field order, separators, suffixes), `unit_type` is what it *means*.
+  It is proposed only when the semantic type declares one, and it does **not**
+  carry temporal *grain*: a date's grain (calendar vs month vs day-of-week)
+  selects the render graphic, so it lives in `semantic_type`, not in a unit.
+* **`desired_default_format`** --- the output format the stabilizer pre-fills
+  when the human expresses no preference (e.g. `yyyymmdd` for a calendar date).
 * **`validation`**, **`default_storage`**, **`short_desc`** / **`detail`** ---
   the human-facing description, the storage class a stabilized value round-trips
   to, and the checks a value should pass.

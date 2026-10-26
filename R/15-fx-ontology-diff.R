@@ -52,7 +52,8 @@ fx_ontology_diff <- function(old, new){
 
   old_ids <- unique(old$semantic_type_id); new_ids <- unique(new$semantic_type_id)
   attr_cols <- intersect(c("examples","data_format","raw_to_stable_transform",
-                           "stable_format","stable_import_rule","dd_data_unit",
+                           "stable_format","stable_import_rule","desired_default_format",
+                           "format_style","unit_type",
                            "short_desc","detail","validation","default_storage"),
                          intersect(names(old), names(new)))
   rows <- list()

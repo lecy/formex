@@ -175,7 +175,7 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
     w  <- which(sel)[order(-tbonus[sel], -vr$selectivity[sel], -vr$confirm[sel],
                            -rs[sel])[1]]
     r  <- vr[w, ]
-    dd <- r$dd_data_unit
+    dd <- r$unit_type
     out <- list(
       data_type = r$data_type, semantic_family = r$semantic_family,
       semantic_type = r$semantic_type, semantic_type_id = r$semantic_type_id,
