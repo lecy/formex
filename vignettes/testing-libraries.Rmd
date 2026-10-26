@@ -1,0 +1,143 @@
+---
+title: "The Testing Libraries"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{The Testing Libraries}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = TRUE, comment = "#>",
+                      message = FALSE, warning = FALSE)
+library(formex)
+```
+
+`formex` has two jobs --- recognizing a single value with a **detector**, and
+classifying a whole **column** with the guesser --- and it is built and tested
+against two matching libraries of examples. One ships inside the package; the
+other is a larger development-only corpus. This guide explains where each came
+from, how they were standardized, and what they are used for now.
+
+## Why two libraries
+
+The two jobs need different kinds of test data:
+
+- A **detector** answers *is this one value an X?* To test it you need many
+  individual values of type X --- and, just as important, many
+  *plausible-but-wrong* values that should be rejected.
+- The **classifier** answers *what is this whole column?* To test it you need
+  many real columns, each labeled with the type it actually is.
+
+So there is a **value library** for detectors and a **column library** for the
+classifier.
+
+## Library 1 --- the detector fixture (`data_type_tests`)
+
+This one ships with the package. It is a labeled set of example *values* for
+every detector, and you can open it directly:
+
+```{r fixture}
+length(data_type_tests)                 # one entry per detector type
+head(names(data_type_tests), 6)
+head(data_type_tests[["ein"]], 3)       # each entry: the value + its label
+```
+
+**How it was acquired.** For each type, a small set of real, correct example
+values (the `valid` label) was collected --- real EINs, real dates, real ORCID
+iDs. Hand-collected positives are cheap but they only test *recall* (does the
+detector accept real values?). The hard half --- *precision* (does it reject
+near-misses?) --- needs wrong-but-believable values, and those are expensive to
+find by hand.
+
+**How it was standardized.** Rather than hunt for negatives, `formex` *generates*
+them from the positives using the **AutoType** method (see *How Detectors
+Recognize a Type*): each real value is mutated into near-misses along four tiers
+(`S1`, `S2`, `S3`, `SP`) that each break a different part of the value's
+structure. Every type then has the same uniform shape --- a table of `case`
+values each tagged `valid` or with its mutation tier --- and the whole thing is
+**frozen** so the numbers are reproducible:
+
+```{r fixture-labels}
+table(data_type_tests[["ein"]]$label)   # valid positives + generated negatives
+sum(vapply(data_type_tests, nrow, 0L))   # total cases across all types
+```
+
+**What it is used for now.** It is the bench every detector is tested on: the
+*Data-Type Detector Guide* runs each `is_*` function over this fixture and
+reports recall and per-tier false-positive rates. It is also the **development
+environment for a new detector** --- you collect a handful of positives, call
+`generate_autotype_test_cases()` to build the same positive + hard-negative mix,
+and tune your predicate against it before adopting it.
+
+## Library 2 --- the column bank (development only)
+
+The classifier is trained and measured against a much larger library of real
+**columns**, each labeled with its type. This one is development scaffolding ---
+it is regenerated from its sources rather than shipped in the package --- but it
+is what makes the learned router possible.
+
+**How it was acquired.** It draws on three sources, for about **4,000 labeled
+columns** in total:
+
+| source | columns | what it contributes |
+|---|---|---|
+| **Sherlock / VizNet** | ~3,400 | real-world columns from a large public collection; labels come from the original headers, so they are realistically noisy |
+| **synthetic (temporal)** | ~440 | generated date/time columns with *exact* known labels, to give the sparse temporal types a dense, balanced set to learn from |
+| **GitTables** | ~180 | real columns that keep their own independent headers, usable for testing the name-based side too |
+
+The Sherlock collection has well over a hundred thousand columns --- far too
+many, and mostly redundant. Rather than take a random sample, `formex` picks a
+**diverse** subset: it profiles each column and chooses ones that are as
+different from each other as possible, which maximizes variety and deliberately
+surfaces hard, confusable cases.
+
+**How it was standardized for integration.** The three sources arrive in
+completely different formats, so a small, shared pipeline turns each into one
+uniform shape:
+
+1. **Read** each source column into a common record (its values, its header).
+2. **Crosswalk** the source's own label vocabulary onto the `formex` ontology,
+   so a Sherlock "city" label and a GitTables "city" label both land on the same
+   `formex` type.
+3. **Bank** each column as a uniform test case, logging any that are rejected.
+4. **Profile** every banked column with `fx_extract_features()` and attach its
+   ontology labels, producing one big labeled table --- roughly 4,000 rows, one
+   per column, with the ~477 features from the *Feature Engineering* vignette
+   plus the answer key.
+
+That final table is the substrate the router and verifier are trained and
+scored on.
+
+**What it is used for now.** The column bank is the **development environment for
+classifiers**: it is where the learned router is trained, where new routing or
+verification ideas are measured before they ship, and where coverage gaps are
+found. (At the current development snapshot, about half of the ontology's types
+have at least one real column in the bank; the thinly-covered ones --- rare
+geometries, some coordinates --- are flagged as places where a confident
+accuracy claim would rest on too few examples.) It is also where a *new*
+classifier feature earns its place: you add the feature, re-fit on the bank, and
+check whether it actually separates the types it was meant to.
+
+## The two libraries, side by side
+
+| | detector fixture | column bank |
+|---|---|---|
+| tests | one **value** at a time | a whole **column** |
+| unit of data | labeled values (+ generated negatives) | labeled real columns |
+| negatives | generated by AutoType mutation | naturally occurring (other columns) |
+| ships in the package? | **yes** (`data_type_tests`) | no (development scaffolding) |
+| develops | new **detectors** | new **classifier** features / routers |
+
+Together they mirror the two halves of the engine: the value library keeps the
+detectors precise, and the column library keeps the guesser honest about which
+types it can actually tell apart.
+
+## See also
+
+* **How Detectors Recognize a Type** and the **Data-Type Detector Guide** ---
+  the detectors the value library tests, and the AutoType mutation tiers.
+* **Feature Engineering for Type Guessing** --- the column profile the bank is
+  built from and the model is trained on.
+* `generate_autotype_test_cases()`, `build_autotype_results()` --- the tools for
+  building a new detector's fixture.
