@@ -20,7 +20,11 @@
   categorical `geographic` grouping and a unique-per-row FIPS column to the
   `identifier` key. A new FIPS-validating `as_fips` recipe also fixes an upstream
   gap (a county FIPS column used to fall through to `count`; a random 5-digit
-  number is now correctly rejected as geographic).
+  number is now correctly rejected as geographic). A `collision_group` column
+  extends this to *cross-type* collisions — a column of city names is a
+  geographic grouping when the values repeat and a `text/name/place` column when
+  they are mostly unique — using the same cardinality rule across leaves that
+  share no `semantic_type`.
 * **Detectors wired (test-case-backed):** `day_of_week` and `month_of_year`
   gain selective `as_dow` / `as_moy` recipes; `first_name`, `quarter`, and
   `domain` had their stale `implemented` flag reconciled; and a new

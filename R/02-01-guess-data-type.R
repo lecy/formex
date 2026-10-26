@@ -206,9 +206,13 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
     ## a semantic_type but carry different cardinality rules, let the column's
     ## uniqueness ratio decide (unique -> the identifier; repeating -> grouping).
     dsm <- if (is.null(vr$disambiguator)) rep("", nrow(vr)) else ifelse(is.na(vr$disambiguator), "", vr$disambiguator)
+    ## collision key: an explicit collision_group spans leaves that do not share
+    ## a semantic_type (e.g. place vs geographic/us_city); otherwise the shared
+    ## semantic_type groups them (e.g. categorical vs identifier geographic).
+    grp <- if (is.null(vr$collision_group)) rep("", nrow(vr)) else ifelse(is.na(vr$collision_group), "", vr$collision_group)
+    key <- ifelse(nzchar(grp), grp, vr$semantic_type)
     if (nzchar(dsm[w])) {
-      tie <- ord[vr$semantic_type[ord] == vr$semantic_type[w] &
-                 grepl("^cardinality:", dsm[ord])]
+      tie <- ord[key[ord] == key[w] & grepl("^cardinality:", dsm[ord])]
       if (length(tie) >= 2L) {
         pick <- .fx_disambiguate(vr[tie, , drop = FALSE], uniq)
         if (!is.na(pick)) w <- tie[pick]

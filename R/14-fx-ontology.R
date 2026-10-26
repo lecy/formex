@@ -148,6 +148,15 @@ fx_validate_ontology <- function(ont = fx_ontology()){
     p <- c(p, paste("undeclared path collision (needs a disambiguator):",
                     paste(coll, collapse=", ")))
 
+  ## 8. every member of a declared collision_group must carry a disambiguator
+  if("collision_group" %in% names(ont)){
+    g <- ifelse(is.na(ont$collision_group), "", ont$collision_group)
+    bad <- unique(g[nzchar(g) & !nzchar(dis)])
+    if(length(bad))
+      p <- c(p, paste("collision_group member missing a disambiguator:",
+                      paste(bad, collapse=", ")))
+  }
+
   p
 }
 

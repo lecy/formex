@@ -34,6 +34,18 @@ test_that("cardinality disambiguates geographic end to end", {
   expect_false(isTRUE(guess_data_type(c("12309","88421","55012","73418","29100","61234"))$route$semantic_type == "geographic"))
 })
 
+test_that("a cross-type collision_group disambiguates place vs geographic", {
+  o <- fx_ontology()
+  grp <- o[o$collision_group == "geo_place" & nzchar(o$collision_group), ]
+  expect_setequal(grp$semantic_type, c("place", "geographic"))   # different semantic_types
+  expect_true(all(nzchar(grp$disambiguator)))                    # all declared
+  # repeating cities -> a geographic grouping; unique city names -> place names
+  expect_equal(guess_data_type(c("Chicago","Boston","Chicago","Austin","Boston","Chicago","Austin","Boston"))$route$semantic_type,
+               "geographic")
+  expect_equal(guess_data_type(c("Chicago","Boston","Austin","Denver","Miami","Seattle","Portland","Atlanta"))$route$data_type,
+               "text")
+})
+
 test_that(".fx_disambiguate applies the cardinality rule", {
   rows <- data.frame(
     variant_id = c("cat", "id"),

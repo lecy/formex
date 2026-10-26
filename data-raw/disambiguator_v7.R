@@ -32,6 +32,16 @@ o$disambiguator[o$semantic_type == "geographic" & o$data_type == "identifier"]  
 ## a random 5-digit number, so geographic now outranks a bare count.
 o$raw_to_stable_transform[o$variant_id %in% c("n0046-f04", "n0074-f01")] <- "{{ as_fips }}"
 
+## 2c. a cross-TYPE collision: a column of city names is validly a place NAME
+## (text/name/place) or a geographic GROUPING (categorical/.../us_city) -- same
+## lookup:place recipe, so both confirm. They share no label, so declare them a
+## collision_group and resolve by cardinality (repeating -> grouping, unique ->
+## names), reusing the same rule as the geographic/identifier split.
+if(!"collision_group" %in% names(o)) o$collision_group <- ""
+o$collision_group[o$variant_id %in% c("n0029-f01", "n0046-f03")] <- "geo_place"
+o$disambiguator[o$variant_id == "n0029-f01"] <- "cardinality:unique"      # place names
+## n0046-f03 (us_city) already carries cardinality:repeating from the geographic rule
+
 ## 3. rename the unknown "mixed" leaf to heterogeneous (kills the collision)
 het <- o$variant_id == "n0083-f01"
 o$semantic_type[het] <- "heterogeneous"
@@ -44,6 +54,7 @@ move_after <- function(df, move, anchor){
   keep <- setdiff(names(df), move); i <- match(anchor, keep); df[, append(keep, move, after = i)] }
 anchor <- if("unit_type" %in% names(o)) "unit_type" else "format_label"
 o <- move_after(o, "disambiguator", anchor)
+o <- move_after(o, "collision_group", "disambiguator")
 
 ## re-derive node_label, validate (guard now active), persist
 o$node_label <- .fx_derive_node_label(o)
