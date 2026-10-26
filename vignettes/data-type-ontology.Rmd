@@ -14,74 +14,148 @@ library(formex)
 o <- fx_ontology()
 ```
 
-## Why a column needs more than a type
+## Why "it's a number" is not enough
 
-A CSV cell like `47401` is just text. Is it a ZIP code, a county FIPS, a count
-of something? A single "type" label cannot capture that: `47401` and `06037` are
-both five-digit geographic codes (same *type*), but one is a ZIP and one is a
-county (different *meaning*), and neither should be summed like a number
-(different *treatment*). formex pulls these apart onto a small set of
-coordinates, held in the **research data-type ontology** --- the shared
-vocabulary that [`guess_data_type()`](../reference/guess_data_type.html) and
-[`fx_stabilize()`](../reference/fx_stabilize.html) both speak.
+Suppose you load a survey file into R and one column looks like this:
 
-Read the ontology with `fx_ontology()`; it ships as a diff-able CSV
-(`inst/extdata/research_data_type_ontology_v6.csv`) and a parsed `data/ontology.rda`,
-and a package test asserts the two agree.
+```
+47401
+06037
+90210
+```
+
+R will probably call this column *numeric*. But that label is not just
+unhelpful, it is dangerous:
+
+- `06037` is a **county code** (Los Angeles County). Treated as a number, its
+  leading zero disappears and it becomes `6037` --- a different, wrong code.
+- `47401` is a **ZIP code**. You would never want its *average*.
+- If you save the column and a colleague reopens it in Excel, the zeros vanish
+  again and the codes are quietly corrupted.
+
+So "what type is this?" is really three questions at once: how should the value
+be *treated* (is it a quantity you can add up, or a label you must leave alone?),
+what does it *mean* (a ZIP? a county?), and how is it *written* (five digits with
+a leading zero that must survive)? A single type word cannot answer all three.
+
+`formex` answers them by placing each column in a small, shared catalog of data
+types --- the **ontology**. Think of "ontology" as nothing fancier than a
+labeled map of every kind of column research data contains, together with the
+instructions for handling each one. Two functions read this same map:
+`guess_data_type()` (which figures out where a column belongs) and
+`fx_stabilize()` (which cleans the column up using the instructions stored
+there).
 
 ```{r ontology-shape, echo = TRUE}
 o <- fx_ontology()
-dim(o)
+dim(o)   # one row per written form of a type; columns described below
 ```
 
-Each **row is one format variant** of a semantic type. The columns fall into
-four groups: the **path** (what a column *is*), the **detection kind** (how it
-is recognized), the **recipe** (how raw values are stabilized), and
-**metadata** (units, validation, lifecycle).
+## Typing is walking down a decision tree
 
-## The path: four coordinates
-
-A column is placed on a four-level path, coarse to fine:
+The map is organized as a **decision tree**. Typing a column means starting at
+the top and walking down, answering one narrowing question at a time. Each step
+down is more specific than the last:
 
 ```
-data_type  ›  semantic_family  ›  semantic_type  ›  format_label
- treatment      broad role         specific meaning     surface form
+LEVEL 1  data_type         how should it be treated?     number · text · temporal · ...
+LEVEL 2  semantic_family   what broad kind within that?  date · currency · geographic · ...
+LEVEL 3  semantic_type     what exactly does it mean?    calendar date · US dollars · ...
+LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 ```
 
-* **`data_type`** --- how a value is *treated*: `number`, `text`, `boolean`,
-  `temporal`, `categorical`, `identifier`, `structured`, `unknown`.
-* **`semantic_family`** --- the broad role within a type (e.g. `currency`,
-  `name`, `date`, `geographic`).
-* **`semantic_type`** --- the specific meaning that carries the validation and
-  the render treatment (e.g. `usd`, `person`, `calendar`, `us_state`).
-* **`format_label`** --- the recipe-row label; one semantic type can have
-  several (e.g. an ISBN written 10-digit, 13-digit, or hyphenated). It selects
-  the recipe row and is retained (derived) for backward compatibility.
+Here is the walk for a column of dates like `03/15/2019`:
 
-Since v7 the leaf is split into two orthogonal axes that together name the
-surface form, so most of the work `format_label` used to carry now lives in a
-pair:
+1. **Level 1 --- `data_type`.** These are not words, counts, or categories; they
+   are points in time. → `temporal`.
+2. **Level 2 --- `semantic_family`.** Within time, is it a clock time, a span, a
+   calendar date? → `date`.
+3. **Level 3 --- `semantic_type`.** A plain calendar date (not a fiscal quarter,
+   not a timestamp with a clock). → `calendar`.
+4. **Level 4 --- `format_style`.** *How* is the date written? Month first, with
+   slashes. → `mdy_slash`.
 
-* **`format_style`** --- how the value is *written*: field order and
-  separators, suffix-scaling, abbreviated-vs-full. This is what the `read_*` /
-  `write_*` transforms key on.
-* **`unit_type`** --- what the value *means* dimensionally (`USD`, `C`/`F`,
-  `fiscal`); see below.
+Getting to **level 4 is the goal**, and it is worth saying why.
 
-`data_type` through `semantic_type` say what a column **is** --- its intended
-meaning, stable across file versions. `format_style` describes how the *current*
-file writes it. That is why `guess_data_type()` can return a **path prefix** when
-it is confident about the type but not the exact format: it stops at the deepest
-coordinate the values actually support.
+## Why the bottom of the tree matters
 
-Every semantic type also carries a stable `semantic_type_id` (e.g. `n0059`), and
-each variant a `variant_id` (e.g. `n0059-f01`). Ids are allocated once and never
-renumbered, so banked test cases and downstream governance files stay valid
-across ontology versions.
+Only at level 4 does `formex` know enough to handle the column *safely*. "Safely"
+means three specific things, and all three need the exact written form:
 
-### The full hierarchy
+- **Read it in correctly.** `03/15/2019` has to be parsed as March 15, not as
+  some other order. You cannot know the order until you are at the leaf.
+- **Clean it up (stabilize it).** Rewrite every value into one standard form ---
+  here, the unambiguous `2019-03-15` --- so the column is consistent.
+- **Write it back without future corruption.** Store it so that when anyone
+  reopens the file --- in R, in Excel, years later --- it loads back as the
+  right thing, with no lost leading zeros, no numbers silently turned into
+  dates, no dates silently turned into numbers.
 
-Built live from `fx_ontology()` --- `data_type › semantic_family : semantic_types`:
+That last point is the whole payoff. A column that has reached level 4 can be
+put into a *protected* form: a value plus a stored rule for re-reading it, so the
+file is self-describing and cannot be corrupted by a careless reopen. (The
+*Guessing a Column's Type* vignette walks through this "stabilizing" step in
+detail.) A column stuck higher up the tree can still be stored, but only under a
+more cautious, general rule.
+
+### Level 4 is really two questions: how it's written, and what unit it's in
+
+Older versions of `formex` had a single label at the bottom of the tree. Version
+7 splits it into two, because they are genuinely different questions:
+
+- **`format_style` --- how the value is *written*.** The same date can appear as
+  `03/15/2019`, `2019-03-15`, or `15 Mar 2019`. Same date, three writing styles.
+  Style controls how you read the value in and how you write it back out.
+- **`unit_type` --- what the value is *measured in*.** `2300` could be dollars or
+  euros; `20` could be Celsius or Fahrenheit; `2019` could be a calendar year or
+  a *fiscal* year. The unit does not change how the value is written, but it
+  changes what it means --- and whether converting it (say, Celsius to
+  Fahrenheit) is even possible.
+
+Sometimes you only need one. A plain calendar date has a writing style but no
+meaningful unit. A temperature reading has a unit (°C) that matters more than its
+writing. Reaching *either* one counts as getting to level 4, because either is
+enough to handle the column.
+
+## Failure is meant to be graceful
+
+Real data is messy, and often the values simply do not say enough to reach the
+bottom. A column of bare five-digit numbers could be ZIPs, counties, or counts
+--- nothing in the values themselves decides. `formex` is **designed to stop**
+at the lowest level it can actually defend, rather than guess and risk
+corrupting the column.
+
+This is the key design principle: **each level has a fallback.** If `formex`
+cannot name the exact writing style, it still knows the family or the broad type,
+and can fall back to the safe, general rule for that level:
+
+- Reached level 4? Use the exact recipe --- the best, lossless handling.
+- Only level 3 or 2? Apply the family's general rule (e.g. "it's a date of some
+  kind --- keep it as text but flag it for a human to confirm the format").
+- Reached only level 1, or nothing at all? Fall all the way back to the safest
+  possible rule: **treat the value as plain text and change nothing.** The
+  original value is preserved exactly.
+
+So the worst case is never corruption --- it is simply a column left untouched,
+marked "I'm not sure," waiting for a person or a data dictionary to settle it.
+A confident wrong guess would be far more damaging than an honest "this far and
+no further," so the tree always prefers to stop early.
+
+```{r truncation, echo = TRUE}
+# a clean date column reaches the leaf (depth 4)
+guess_data_type(c("03/15/2019", "12/31/2020"))$route$depth
+# a column of bare numbers cannot be pinned down -> it stops short
+guess_data_type(c("1", "2", "3", "4", "5"))$route$depth
+```
+
+The `depth` number above is exactly how far down the tree the column got:
+`4` = all the way to the writing style, `3` = the specific meaning, `2` = the
+family, `1` = the broad type, `0` = unknown.
+
+## The whole tree
+
+Here is the actual map, built live from the installed ontology, read as
+`data_type` → `family` : the specific types inside it:
 
 ```{r hierarchy, results = "asis"}
 h <- unique(o[order(o$data_type, o$semantic_family, o$semantic_type),
@@ -96,111 +170,115 @@ for (dt in unique(h$data_type)) {
 }
 ```
 
-## The detection kind
+## How a type is spotted from the values
 
-`match_kind` records *how* a semantic type is recognized from values --- which
-is also what decides whether a column can be typed from its contents at all.
+Not every type can be recognized just by looking at the values, and the ontology
+is honest about which can. Each type records *how* it is detected, in a column
+called `match_kind`:
 
 ```{r match-kind}
 knitr::kable(as.data.frame(table(match_kind = o$match_kind),
                            responseName = "rows"))
 ```
 
-| `match_kind` | recognized by | examples |
+| `match_kind` | spotted by | examples |
 |---|---|---|
-| **`genome`** | a tolerant multi-format parser | `calendar`, `timestamp`, `clock` |
-| **`mask`** | a regex / format mask (often checksum-validated) | `ein`, `isbn`, `phone`, `usd` |
-| **`lexicon`** | membership in a controlled vocabulary | `us_state`, `iso_country`, `first_name` |
-| **`mask+lexicon`** | a shape gate, then a vocabulary check | `person` (name-shaped *and* in the gazetteer) |
-| **`shape`** | a numeric distribution | `count`, `ratio`, `probability` |
-| **`none`** | not value-detectable; only metadata can assert it | `record` keys, free `text`, `unknown` |
+| **`genome`** | a flexible date/time reader that tries many formats | `calendar`, `timestamp`, `clock` |
+| **`mask`** | a fixed written shape, sometimes with a self-checking digit | `ein`, `isbn`, `phone`, `usd` |
+| **`lexicon`** | membership in a known list of allowed values | `us_state`, `iso_country`, `first_name` |
+| **`mask+lexicon`** | the right shape *and* a match in a known list | `person` (looks like a name *and* is a known name) |
+| **`shape`** | the overall look of the numbers | `count`, `ratio`, `probability` |
+| **`none`** | cannot be told from the values alone --- only context can | record keys, free `text`, `unknown` |
 
-`none`-kind types are the reason some columns can never be pinned from values
-alone: a surrogate record key is just an integer, and free text is just text.
-Those are asserted by context (a column name, a data dictionary), not by
-`guess_data_type()`.
+The last row is important for honesty. A membership-number column is just
+integers; a notes column is just text. No amount of looking at the values will
+reveal what they are --- that only comes from the column's name or a data
+dictionary. The ontology marks these `none` so the engine knows not to pretend.
 
-## The recipe: raw → stable → import
+## The handling instructions stored at each leaf
 
-Four columns encode how a raw column is turned into a canonical, analysis-ready
-form. They use the **formex** expression syntax (`{{ ... }}`); the *Formex*
-vignette is the full guide.
+Once a column reaches a leaf, the ontology hands back the recipe for handling it
+safely --- four short instructions written in `formex`'s little expression
+language (the `{{ ... }}` notation; the *Formex* vignette is the full guide):
 
-| column | holds | example |
+| column | what it tells you | example |
 |---|---|---|
-| **`data_format`** | the mask the *raw* file matches | `{{ mmddyyyy }}`, `{{ [strip:$,][dec:.2] }}` |
-| **`raw_to_stable_transform`** | a *lossless* rewrite to canonical form | `{{ as_mmddyyyy }}`, `{{ as_usd }}`, `lookup:usps` |
-| **`stable_format`** | what a stabilized value looks like | `2019-03-15`, `CA` |
-| **`stable_import_rule`** | how to read the stable column into its type | `{{ as_yyyymmdd }}`, `{{ as_integer }}` |
+| **`data_format`** | the pattern the *raw* file uses | `{{ mmddyyyy }}` |
+| **`raw_to_stable_transform`** | how to rewrite it into the clean standard form | `{{ as_mmddyyyy }}` |
+| **`stable_format`** | what that clean form looks like | `2019-03-15` |
+| **`stable_import_rule`** | how to re-read the clean value as the right type | `{{ as_yyyymmdd }}` |
 
-A few real rows, straight from the ontology:
+A few real leaves, straight from the ontology:
 
 ```{r recipe-table}
-# unique semantic types spanning the match kinds (genome / mask / mask+lexicon / shape)
 show <- c("calendar", "administrative", "usd", "person", "count")
 r <- do.call(rbind, lapply(show, function(st) o[o$semantic_type == st, ][1, ]))
-knitr::kable(r[, c("semantic_type", "format_label", "match_kind",
+knitr::kable(r[, c("semantic_type", "format_style", "match_kind",
                    "data_format", "raw_to_stable_transform", "stable_format")],
              row.names = FALSE)
 ```
 
-The split has a purpose: push as much as possible into the *lossless* reformat
-(`raw_to_stable_transform`), which every downstream tool benefits from, and
-reserve `stable_import_rule` for the genuinely schema-dependent step of coercing
-a value into a type a plain CSV reader cannot infer (a ZIP that must stay a
-`categorical`, an EIN that must stay an `identifier`).
+The split between the last two instructions has a purpose. The rewrite step
+(`raw_to_stable_transform`) is *lossless* and helps everyone downstream, so
+`formex` pushes as much work there as it can. The re-reading step
+(`stable_import_rule`) is held back for the one thing a plain CSV reader gets
+wrong on its own: forcing a value to *stay* the right type --- a ZIP that must
+stay a label, a county code that must keep its leading zero --- so the file
+survives the next reopen.
 
-## Metadata: units, validation, lifecycle
+A couple of extra fields round out a leaf:
 
-The remaining columns are documentation the engine carries but does not parse:
+- **`desired_default_format`** --- the writing style to use when nobody states a
+  preference (for a calendar date, ISO `yyyymmdd`).
+- **`validation`**, **`default_storage`**, **`short_desc`** --- a plain-English
+  description, the R storage class the cleaned value lands in, and the checks a
+  value should pass.
 
-* **`unit_type`** (formerly `dd_data_unit`) --- the dimensional or categorical
-  unit an analyst needs but a type does not (`USD`, `kg`, `EPSG:4326`). It sits
-  beside `format_style` as the second leaf axis: `format_style` is how a value is
-  *written* (field order, separators, suffixes), `unit_type` is what it *means*.
-  It is proposed only when the semantic type declares one, and it does **not**
-  carry temporal *grain*: a date's grain (calendar vs month vs day-of-week)
-  selects the render graphic, so it lives in `semantic_type`, not in a unit.
-* **`desired_default_format`** --- the output format the stabilizer pre-fills
-  when the human expresses no preference (e.g. `yyyymmdd` for a calendar date).
-* **`validation`**, **`default_storage`**, **`short_desc`** / **`detail`** ---
-  the human-facing description, the storage class a stabilized value round-trips
-  to, and the checks a value should pass.
-* **`implemented`** --- whether a value-level detector/recipe is wired up yet, so
-  the ontology can name a type before its machinery exists.
-* **`version_added`** / **`version_deprecated`** / **`superseded_by`** ---
-  lifecycle. Rows are deprecated, never deleted, so old labels remain resolvable.
+## When two branches both fit: the tie-breaker
 
-## How the engine uses the ontology
+Occasionally a column fits two leaves equally well. A column of city names could
+reasonably be a **place name** (free text) *or* a **geographic grouping** (a
+category you'd analyze by). The values alone cannot decide. For these known
+overlaps the ontology stores a **tie-breaker rule** in a `disambiguator` column,
+and the engine applies it. The current rule is cardinality --- whether the
+values repeat or are unique:
 
-**`guess_data_type()`** anchors a column to these coordinates. The `$route`
-record is the ontology path it resolved to, only as deep as it is confident:
+```{r disambiguate, echo = TRUE}
+# repeating city values read as a grouping; mostly-unique values read as names
+guess_data_type(c("Chicago","Boston","Chicago","Austin","Boston","Chicago","Austin","Boston"))$route$data_type
+guess_data_type(c("Chicago","Boston","Austin","Denver","Miami","Seattle","Portland","Atlanta"))$route$data_type
+```
+
+## Putting it together in R
+
+`guess_data_type()` walks a column down the tree and reports where it landed, as
+a `$route` --- only as far down as it is sure:
 
 ```{r guess, echo = TRUE}
 r <- guess_data_type(c("03/15/2019", "12/31/2020", "01/01/2021"))$route
-r[c("data_type", "semantic_family", "semantic_type", "format_label", "match_kind", "depth")]
+r[c("data_type", "semantic_family", "semantic_type", "format_style", "depth")]
 ```
 
-**`fx_stabilize()`** looks up the recipe for a `(semantic_type, format_label)`
-pair and runs it, returning the stable values plus the format mask and import
-rule from that row:
+`fx_stabilize()` then takes that landing spot and runs the stored recipe,
+returning the cleaned values and the rule for reloading them safely:
 
 ```{r stabilize, echo = TRUE}
 fx_stabilize(c("California", "TX", "Ohio"), "geographic", "us_state")[
   c("stable", "stable_format", "import_rule")]
 ```
 
-Because both functions read the *same* `fx_ontology()`, a column typed by
-`guess_data_type()` can be handed straight to `fx_stabilize()` using the
-`semantic_type` and `format_label` it returned.
+Because both functions read the *same* ontology, whatever
+`guess_data_type()` decides can be handed straight to `fx_stabilize()`. Every
+type also keeps a stable id (`semantic_type_id` like `n0059`, and `variant_id`
+like `n0059-f01`) that is assigned once and never reused, and old types are
+retired rather than deleted --- so a label you recorded today still means the
+same thing years from now.
 
 ## See also
 
-* The **Guessing a Column's Type** vignette --- the router → verifier flow that
-  produces the `$route` path above.
-* The **Data-Type Detector Guide** --- the `is_*` predicates behind the
-  `mask` / `lexicon` / `genome` match kinds.
-* `fx_ontology()`, `fx_validate_ontology()`, and
-  `inst/extdata/research_data_type_ontology_v6.csv` --- the accessor, the
-  integrity check, and the full diff-able catalog.
-```
+* The **Guessing a Column's Type** vignette --- how a column is walked down the
+  tree, and what "stabilizing" a column into safe, protected form means.
+* The **Data-Type Detector Guide** --- the individual recognizers behind the
+  `mask`, `lexicon`, and `genome` detection kinds.
+* `fx_ontology()` reads the whole map; `fx_validate_ontology()` checks it is
+  internally consistent.
