@@ -71,8 +71,16 @@ detectors (<code><a href="is_hex_color.html">is_hex_color()</a></code> etc.) han
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Logical vector; <code>TRUE</code> for a known color word (case-insensitive),
-<code>FALSE</code> otherwise, <code>NA</code> where <code>x</code> is <code>NA</code>.</p>
+    <p>Logical vector; <code>TRUE</code> for a known color word or an all-color
+compound (case-insensitive), <code>FALSE</code> otherwise, <code>NA</code> where <code>x</code> is <code>NA</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Compound values count too: a value whose parts are <strong>all</strong> color words
+(<code>"brown, grey"</code>, <code>"blue-gray"</code>, <code>"dark brown"</code>) is a color, so hair/eye
+columns that mix single and compound colors still read as colors. A
+multi-word phrase that is itself in the lexicon (<code>"salt and pepper"</code>) is
+matched whole first. Non-color fillers (<code>"none"</code>, <code>"unknown"</code>) are <code>FALSE</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -86,8 +94,8 @@ detectors (<code><a href="is_hex_color.html">is_hex_color()</a></code> etc.) han
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">is_color_name</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Brown"</span>, <span class="st">"hazel"</span>, <span class="st">"blond"</span>, <span class="st">"Chicago"</span>, <span class="cn">NA</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in is_color_name(c("Brown", "hazel", "blond", "Chicago", NA)):</span> could not find function "is_color_name"</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">is_color_name</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Brown"</span>, <span class="st">"brown, grey"</span>, <span class="st">"blue-gray"</span>, <span class="st">"Chicago"</span>, <span class="cn">NA</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in is_color_name(c("Brown", "brown, grey", "blue-gray", "Chicago",     NA)):</span> could not find function "is_color_name"</span>
 <span class="r-in"><span><span class="co">#&gt; TRUE TRUE TRUE FALSE NA</span></span></span>
 </code></pre></div>
     </div>
