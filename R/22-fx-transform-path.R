@@ -117,15 +117,23 @@ print.fx_format <- function(x, ...) {
   add("convert_F_C",      "convert", .fx_cnode("temperature","F"),        .fx_cnode("temperature","C"),
       function(x) (as.numeric(x) - 32) * 5/9)
 
-  ## calendar date -- reformat only (canonical is ISO; no unit axis)
-  add("read_mdy_slash",   "read",  .fx_wnode("calendar","mdy_slash"), .fx_cnode("calendar", NA),
-      function(x) .fx_parse_iso_date(x))
-  add("read_ymd_dash",    "read",  .fx_wnode("calendar","ymd_dash"),  .fx_cnode("calendar", NA),
-      function(x) .fx_parse_iso_date(x))
-  add("write_ymd_dash",   "write", .fx_cnode("calendar", NA), .fx_wnode("calendar","ymd_dash"),
-      function(x) as.character(x))
-  add("write_mdy_slash",  "write", .fx_cnode("calendar", NA), .fx_wnode("calendar","mdy_slash"),
-      function(x) format(as.Date(x), "%m/%d/%Y"))
+  ## calendar date -- a vocabulary of written styles. The canonical value is an
+  ## ISO date; each style gets a READ edge (parse any written form to canonical,
+  ## via the date genome) and a WRITE edge (canonical -> that style), so a date
+  ## column can be rendered to, or read from, any of these: mdy_slash,
+  ## ymd_dash, dmy_slash, mon_mdy ("Mar 15, 2019"), etc.
+  date_styles <- c(ymd_dash = "%Y-%m-%d", ymd_slash = "%Y/%m/%d",
+                   mdy_slash = "%m/%d/%Y", dmy_slash = "%d/%m/%Y",
+                   mdy_dash  = "%m-%d-%Y", dmy_dash  = "%d-%m-%Y",
+                   ymd_compact = "%Y%m%d", mon_mdy = "%b %d, %Y",
+                   mon_dmy = "%d %b %Y")
+  for (s in names(date_styles)) local({
+    style <- s; fmt <- date_styles[[s]]
+    add(paste0("read_", style),  "read",  .fx_wnode("calendar", style), .fx_cnode("calendar", NA),
+        function(x) .fx_parse_iso_date(x))
+    add(paste0("write_", style), "write", .fx_cnode("calendar", NA), .fx_wnode("calendar", style),
+        function(x){ d <- as.Date(x); ifelse(is.na(d), NA_character_, format(d, fmt)) })
+  })
 
   ## fiscal year -- convert_fiscal_calendar is deliberately NOT registered, so a
   ## fiscal->calendar request is reported unreachable rather than guessed.
