@@ -1,5 +1,15 @@
 # formex 0.0.0.9000
 
+* Fixes from the political-org 527 registry (Form 8871):
+  - **Email no longer loses to `organization`/`domain`.** The `contact/email`
+    leaf joins the verifier's always-on set, so an email column resolves to
+    `text/contact/email` (the router was too sparse to shortlist it, and
+    `is_email` never competed on content — `is_url` does not match an `@` string).
+  - **A 4-digit code is no longer mislabelled a county FIPS.** `as_fips` now
+    requires a genuine 5-digit code instead of zero-padding a 4-digit value
+    (`8871` → `08871` had a valid state prefix but a non-existent county), so a
+    `FORM_TYPE` column stops being `geographic`.
+
 * **Tag sets.** New `is_tags()` detector + `as_tags` verb wire the
   `categorical/multiselect/tags` leaf, so a flat delimited set (`"a|b|c"`,
   `"Volunteer;Donor;Board"` — a list column collapsed to a string) is

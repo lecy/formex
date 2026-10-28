@@ -144,9 +144,11 @@
   A("zeropad5",     function(x,a){ d<-gsub("\\D","",x); ifelse(nchar(d)>=1 & nchar(d)<=5, sprintf("%05d", suppressWarnings(as.integer(d))), NA) })
   ## zero-pad to a 5-digit county FIPS AND validate the state prefix, so a
   ## random 5-digit number is rejected (makes geographic outrank a bare count).
+  ## county FIPS must be a real 5-digit code. is_county_fips validates the width
+  ## and the state prefix (not the county), so a 4-digit code (a form number like
+  ## 8871) must NOT be zero-padded into a bogus county -- require 5 digits.
   A("as_fips",      function(x,a){ d<-gsub("\\D","",x)
-    p<-ifelse(nchar(d)>=4 & nchar(d)<=5, sprintf("%05d", suppressWarnings(as.integer(d))), NA)
-    ifelse(!is.na(p) & is_county_fips(p), p, NA) })
+    ifelse(nchar(d)==5 & is_county_fips(d), d, NA) })
   A("lookup",       function(x,a){ m<-.fx_maps()[[a]]; if(is.null(m)) return(rep(NA_character_,length(x))); unname(m[tolower(trimws(x))]) })
   ## categorical / identity
   A("none",         function(x,a){ s<-trimws(x); ifelse(nzchar(s), s, NA) })

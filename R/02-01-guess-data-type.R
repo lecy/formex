@@ -166,7 +166,8 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   always <- ont$match_kind %in% c("genome", "mask+lexicon") |
             ont$semantic_family == "geometry" |
             (ont$semantic_family == "color" & ont$semantic_type == "color_name") |
-            ont$semantic_family == "multiselect"
+            ont$semantic_family == "multiselect" |
+            (ont$semantic_family == "contact" & ont$semantic_type == "email")
   vr <- ont[ont$semantic_type_id %in% unique(router$semantic_type_id) | always, ,
             drop = FALSE]
   vr$confirm <- vapply(vr$raw_to_stable_transform,
