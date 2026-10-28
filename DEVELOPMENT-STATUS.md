@@ -11,7 +11,7 @@
 
 ## 1. Where the engine stands
 
-The two public verbs are both wired and pass the suite (118 tests, 0 failures):
+The two public verbs are both wired and pass the suite (121 tests, 0 failures):
 
 - `guess_data_type()` — two-stage router → verifier, returning the `$route`
   record plus the legacy fields.
@@ -25,7 +25,7 @@ schema and the actual extraction of the moved files out of `datagoodr` (see
 
 ## 2. Implementation coverage (what has a working detector)
 
-Of **97** ontology variants, **47 (48%) are marked `implemented = "yes"`** — a
+Of **97** ontology variants, **48 (49%) are marked `implemented = "yes"`** — a
 wired, exercised detector. The rest are declared recipes (data_format /
 transform / stable_format / import_rule are populated) waiting on a detector,
 verb, or gazetteer.
@@ -52,8 +52,9 @@ verb, or gazetteer.
 > values are dropped to `NA`, so silent data loss is surfaced. From datagoodr's
 > `dplyr::starwars` report: a named-color leaf (`text/color/color_name` +
 > `is_color_name()`) fixes color words leaking to `geographic`, and a
-> `write_numeric` edge lets plain measurements stabilize to numeric. Coverage is
-> now **47/97**; 91 detectors; 118 tests.
+> `write_numeric` edge lets plain measurements stabilize to numeric; and a
+> `tags` detector (`is_tags`) wires `categorical/multiselect/tags` for delimited
+> list columns. Coverage is now **48/97**; 92 detectors; 121 tests.
 
 ### By data type
 
@@ -123,7 +124,7 @@ grade_level}`, `multiselect/tags`, `mutually_exclusive/missingness_reason` — a
   `inst/extdata/research_data_type_ontology_v6.csv` (96 rows, with `match_kind`),
   which `fx_ontology()` loads. The `data-types/` copy should be regenerated or
   retired to avoid confusion.
-- **No CI.** There is no `.github/` workflow, so the build and the 118 tests are
+- **No CI.** There is no `.github/` workflow, so the build and the 121 tests are
   not checked on push.
 - **Version** is still `0.0.0.9000`; nothing published.
 - The benign `NAs introduced by coercion to integer range` warning fires ~18×

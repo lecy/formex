@@ -23,4 +23,8 @@ the outer shape may pass, which is acceptable for column-level typing.
 \examples{
 is_json(c('{"a":1,"b":[2,3]}', "[1,2,3]", "not json", NA))
 }
+\seealso{
+Other serialized detectors: 
+\code{\link{is_tags}()}
+}
 \concept{serialized detectors}

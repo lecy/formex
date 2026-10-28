@@ -185,7 +185,8 @@ column + a cardinality tie-break in the verifier, resolving the `geographic` and
 place↔geographic collisions, guarded by `fx_validate_ontology()`); a
 **`conversion_log`** + warning on `fx_stabilize()` for dropped values; a
 **named-color leaf** (`text/color/color_name` + `is_color_name()`); and a
-**`write_numeric`** edge so plain numbers stabilize to numeric. Coverage 47/97.
+**`write_numeric`** edge so plain numbers stabilize to numeric; and a **`tags`**
+detector (`is_tags` / `as_tags`) for delimited list columns. Coverage 48/97.
 
 The migration and the new API surface are complete. Deferred (next release, each
 its own effort):
@@ -201,9 +202,8 @@ its own effort):
 - **`convert_` edges per unit pair** — temperature done; fiscal/calendar year
   needs the fiscal-year-end convention from datagoodr. (The currency-amount
   detector is done — `usd` / `is_currency_amount`.)
-- **A `tags` detector** — a flat delimited set (`a|b|c`) is
-  `categorical/multiselect/tags`, recognizable by a consistent delimiter that
-  splits into repeated members; not built (datagoodr starwars report).
+  (The `tags` detector is now done — `is_tags` / `as_tags` wire
+  `categorical/multiselect/tags`.)
 
 ## 6. Does separating add clarity? — verdict
 

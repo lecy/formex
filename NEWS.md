@@ -1,5 +1,10 @@
 # formex 0.0.0.9000
 
+* **Tag sets.** New `is_tags()` detector + `as_tags` verb wire the
+  `categorical/multiselect/tags` leaf, so a flat delimited set (`"a|b|c"`,
+  `"Volunteer;Donor;Board"` — a list column collapsed to a string) is
+  recognized and normalized to a `;`-joined form, instead of going unrecognized.
+
 * Fixes from datagoodr's `dplyr::starwars` detection-quality report:
   - **Named colors.** New `is_color_name()` detector + a curated color-word
     lexicon (CSS/X11 + descriptive and hair/eye terms) and a `text/color/color_name`
