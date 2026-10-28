@@ -1,6 +1,7 @@
 # formex
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/lecy/formex/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/lecy/formex/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 **formex** (*format expressions*) is a vocabulary + detection + transformation

@@ -119,13 +119,12 @@ grade_level}`, `multiselect/tags`, `mutually_exclusive/missingness_reason` — a
 
 ## 4. Repo hygiene gaps
 
-- **Ontology drift.** `data-types/research_data_type_ontology_v6.csv` is an
-  older snapshot (87 rows, no `match_kind` column). The authoritative one is
-  `inst/extdata/research_data_type_ontology_v6.csv` (96 rows, with `match_kind`),
-  which `fx_ontology()` loads. The `data-types/` copy should be regenerated or
-  retired to avoid confusion.
-- **No CI.** There is no `.github/` workflow, so the build and the 121 tests are
-  not checked on push.
+- ~~**Ontology drift.**~~ Resolved: the stale `data-types/…_v6.csv` duplicate
+  was removed; `fx_ontology()` reads `inst/extdata/` (the authority). (Older
+  design snapshots `…_v2/v3/v4.csv` remain for history.)
+- ~~**No CI.**~~ Resolved: a standard r-lib **R-CMD-check** workflow
+  (`.github/workflows/R-CMD-check.yaml`) builds the package, runs the suite, and
+  builds the vignettes on push / PR to `main`.
 - **Version** is still `0.0.0.9000`; nothing published.
 - The benign `NAs introduced by coercion to integer range` warning fires ~18×
   across the suite (numeric-coercion paths) — cosmetic, worth bounding.
