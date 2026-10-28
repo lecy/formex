@@ -180,18 +180,30 @@ Done and shipped on `main`:
 - **Detectors** — `day_of_week` / `month_of_year` wired with selective `as_dow` /
   `as_moy`; `first_name` / `quarter` / `domain` reconciled. 41/96 implemented.
 
+Since shipped: the **disambiguator** (a `disambiguator` / `collision_group`
+column + a cardinality tie-break in the verifier, resolving the `geographic` and
+place↔geographic collisions, guarded by `fx_validate_ontology()`); a
+**`conversion_log`** + warning on `fx_stabilize()` for dropped values; a
+**named-color leaf** (`text/color/color_name` + `is_color_name()`); and a
+**`write_numeric`** edge so plain numbers stabilize to numeric. Coverage 47/97.
+
 The migration and the new API surface are complete. Deferred (next release, each
 its own effort):
 
 - **Router retrain** — not needed now (the router trains on `format_label`, which
   is retained); required only when `format_label` is finally removed.
-- **Broad `write_` renderers** — the registry's write side is a seed; grow it so
-  `target_format` works beyond temporal/temperature.
+- **Broad `write_` renderers** — the registry's write side is still mostly a
+  seed (`write_numeric` and the calendar/temperature styles exist); grow it so
+  `target_format` works for more styles.
 - **True multi-style detection** — `$route` carries the resolved variant's
   `format_style`; sniffing a column to choose among several styles within one
   semantic_type (mdy vs dmy vs ymd) is a detector enhancement.
-- **Currency-amount detector** + `convert_` edges per unit pair (temperature done;
-  fiscal/calendar year needs the fiscal-year-end convention from datagoodr).
+- **`convert_` edges per unit pair** — temperature done; fiscal/calendar year
+  needs the fiscal-year-end convention from datagoodr. (The currency-amount
+  detector is done — `usd` / `is_currency_amount`.)
+- **A `tags` detector** — a flat delimited set (`a|b|c`) is
+  `categorical/multiselect/tags`, recognizable by a consistent delimiter that
+  splits into repeated members; not built (datagoodr starwars report).
 
 ## 6. Does separating add clarity? — verdict
 
