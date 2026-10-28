@@ -16,11 +16,13 @@ Language: en-US
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports:
+    datasets,
     stats,
     stringr,
     utils
 Suggests:
     ISOcodes,
+    jsonlite,
     knitr,
     maps,
     readxl,

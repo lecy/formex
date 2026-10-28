@@ -49,7 +49,7 @@ returning a list with at least \code{guess}, \code{confidence}, and \code{ontolo
 \code{NULL}, falls back to the rule-based \code{\link[=guess_column]{guess_column()}}.}
 
 \item{detectors}{Named list of detector functions; pass the result of
-\code{\link[=data_type_detectors]{data_type_detectors()}} once in a batch to avoid re-resolving ~90 functions
+\code{data_type_detectors()} once in a batch to avoid re-resolving ~90 functions
 per column. Ignored when \code{cascade} is supplied.}
 
 \item{lexicons}{Lexicon set for the lexicon block; defaults to

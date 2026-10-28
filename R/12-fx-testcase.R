@@ -238,8 +238,21 @@ shortlist_candidates <- function(x, ontology, k = 8, weights = SIGNATURE_WEIGHTS
 #'
 #' @param x A column (coerced to character).
 #' @param case_number Integer index used to mint the case id.
-#' @param data_type,semantic_family,semantic_type,... Label fields and options
-#'   (a later labelling pass may overwrite them).
+#' @param data_type,semantic_family,semantic_type,semantic_type_id,variant_id,depth_labeled
+#'   Ontology label fields (a later labelling pass may overwrite them).
+#' @param label_confidence,label_method,reviewer,relabeled,relabel_reason,label_notes
+#'   Labelling provenance for the case's ground truth.
+#' @param difficulty,difficulty_rationale,noise_markers Difficulty annotation
+#'   (`difficulty` is one of `"easy"`, `"medium"`, `"hard"`, or `NA`).
+#' @param corpus,corpus_version,original_header,original_label,table_id,parent_case_id
+#'   Source-corpus provenance recorded with the case.
+#' @param ontology,ontology_version,ontology_status,proposed_parent,detector_exists,hard_negative_for
+#'   Ontology binding: the ontology to validate the label against, its version
+#'   and status, and whether a detector exists for the labelled type.
+#' @param order_is_signal,mutations_allowed,mutations_forbidden,mutation_target
+#'   Mutation contract governing how the case may be perturbed for training.
+#' @param outdir Directory the JSON case is written to.
+#' @param n_candidates Number of signature-distance candidates to store.
 #' @return Invisibly, a list with the written `path` and the case `obj`.
 #' @seealso [fx_index_bank()], [fx_bank_coverage()]
 #' @export

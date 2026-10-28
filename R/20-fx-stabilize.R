@@ -93,8 +93,8 @@
   A("as_usd",       function(x,a){ ok<-is_currency_amount(x) & grepl("[$]", x)
     v<-suppressWarnings(as.numeric(gsub("[^0-9.\\-]","",gsub(",","",x))))
     ifelse(!is.na(ok) & ok & !is.na(v), as.character(v), NA) })
-  A("as_euro",      function(x,a){ ok<-is_currency_amount(x) & grepl("€", x)
-    s<-gsub("[€[:space:]]","",x); s<-gsub("\\.","",s); s<-gsub(",",".",s)  # EU: . groups, , decimals
+  A("as_euro",      function(x,a){ eu<-intToUtf8(0x20acL); ok<-is_currency_amount(x) & grepl(eu, x)
+    s<-gsub(paste0("[",eu,"[:space:]]"),"",x); s<-gsub("\\.","",s); s<-gsub(",",".",s)  # EU: . groups, , decimals
     v<-suppressWarnings(as.numeric(s)); ifelse(!is.na(ok) & ok & !is.na(v), as.character(v), NA) })
   A("as_currency",  function(x,a){ v<-suppressWarnings(as.numeric(gsub("[^0-9.\\-]","",gsub(",","",x)))); ifelse(is.na(v),NA,as.character(v)) })
   ## structured / version: detector-gated selective recipes (confirm on real

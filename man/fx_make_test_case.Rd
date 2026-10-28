@@ -47,8 +47,23 @@ fx_make_test_case(
 
 \item{case_number}{Integer index used to mint the case id.}
 
-\item{data_type, semantic_family, semantic_type, ...}{Label fields and options
-(a later labelling pass may overwrite them).}
+\item{data_type, semantic_family, semantic_type, semantic_type_id, variant_id, depth_labeled}{Ontology label fields (a later labelling pass may overwrite them).}
+
+\item{label_confidence, label_method, reviewer, relabeled, relabel_reason, label_notes}{Labelling provenance for the case's ground truth.}
+
+\item{difficulty, difficulty_rationale, noise_markers}{Difficulty annotation
+(\code{difficulty} is one of \code{"easy"}, \code{"medium"}, \code{"hard"}, or \code{NA}).}
+
+\item{corpus, corpus_version, original_header, original_label, table_id, parent_case_id}{Source-corpus provenance recorded with the case.}
+
+\item{ontology, ontology_version, ontology_status, proposed_parent, detector_exists, hard_negative_for}{Ontology binding: the ontology to validate the label against, its version
+and status, and whether a detector exists for the labelled type.}
+
+\item{order_is_signal, mutations_allowed, mutations_forbidden, mutation_target}{Mutation contract governing how the case may be perturbed for training.}
+
+\item{outdir}{Directory the JSON case is written to.}
+
+\item{n_candidates}{Number of signature-distance candidates to store.}
 }
 \value{
 Invisibly, a list with the written \code{path} and the case \code{obj}.

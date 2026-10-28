@@ -9,6 +9,11 @@
 ## To add a family, drop an R/dt-<family>.R file with its is_*() detectors,
 ## a data-raw/datatypes/<family>.R file with its positive examples, and one
 ## line per type in R/00-data-type-registry.R.
+##
+## Currency symbols as a regex character-class body, built from code points so
+## the R source stays ASCII (R CMD check flags non-ASCII in code as a WARNING):
+## $ U+0024, euro U+20AC, yen U+00A5, pound U+00A3.
+.currency_symbols <- intToUtf8(c(0x24L, 0x20acL, 0xa5L, 0xa3L))
 
 
 #' ISO 4217 currency codes (alpha-3)
@@ -88,7 +93,7 @@ is_currency_code <- function(x) {
 #' @export
 is_currency_symbol <- function(x) {
   x <- as.character(x)
-  out <- grepl("^[$€¥£]\\d+(\\.\\d{1,2})?$", x)
+  out <- grepl(paste0("^[", .currency_symbols, "]\\d+(\\.\\d{1,2})?$"), x)
   out[is.na(x)] <- NA
   out
 }
@@ -120,7 +125,7 @@ is_currency_symbol <- function(x) {
 #' @export
 is_currency_code_symbol <- function(x) {
   x <- as.character(x)
-  m <- regmatches(x, regexec("^([A-Z]{3})[$€¥£]\\d+(\\.\\d{1,2})?$", x))
+  m <- regmatches(x, regexec(paste0("^([A-Z]{3})[", .currency_symbols, "]\\d+(\\.\\d{1,2})?$"), x))
   ok_syntax <- lengths(m) > 0
   code <- vapply(m, function(mm) if (length(mm) >= 2) mm[2] else NA_character_,
                  character(1))
@@ -153,8 +158,8 @@ is_currency_code_symbol <- function(x) {
 is_currency_amount <- function(x) {
   x <- as.character(x)
   s <- trimws(x)
-  has_sym <- grepl("[$€£¥]", s)
-  core    <- gsub("[$€£¥[:space:]]", "", s)         # drop symbol + spaces
+  has_sym <- grepl(paste0("[", .currency_symbols, "]"), s)
+  core    <- gsub(paste0("[", .currency_symbols, "[:space:]]"), "", s)  # drop symbol + spaces
   numish  <- grepl("^[-+]?\\(?\\d[0-9.,]*\\)?$", core) & grepl("[0-9]", core)
   out <- has_sym & numish
   out[is.na(x)] <- NA

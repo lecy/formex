@@ -6,7 +6,11 @@
 ^\.git$
 ^\.gitignore$
 ^README\.md$
+^LICENSE$
 ^LICENSE\.md$
+^docs$
+^_pkgdown\.yml$
+^pkgdown$
 ^DEVELOPMENT-STATUS\.md$
 ^ONTOLOGY-V7-PLAN\.md$
 ^\.github$

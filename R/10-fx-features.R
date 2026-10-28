@@ -82,9 +82,9 @@ default_lexicons <- function(){
     first_name    = if (exists(".first_names")) .first_names else character(0),
     last_name     = if (exists(".last_names"))  .last_names  else character(0),
     us_city       = if (exists(".us_cities"))
-                      unique(c(.us_cities, tolower(state.name))) else tolower(state.name),
-    us_state_name = tolower(state.name),
-    us_state_abb  = tolower(state.abb),
+                      unique(c(.us_cities, tolower(datasets::state.name))) else tolower(datasets::state.name),
+    us_state_name = tolower(datasets::state.name),
+    us_state_abb  = tolower(datasets::state.abb),
     month_name    = tolower(c(month.name, month.abb)),
     day_name      = tolower(c("monday","tuesday","wednesday","thursday","friday",
                               "saturday","sunday","mon","tue","wed","thu","fri","sat","sun")),

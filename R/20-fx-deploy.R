@@ -107,7 +107,7 @@
 #'   returning a list with at least `guess`, `confidence`, and `ontology`. When
 #'   `NULL`, falls back to the rule-based [guess_column()].
 #' @param detectors Named list of detector functions; pass the result of
-#'   [data_type_detectors()] once in a batch to avoid re-resolving ~90 functions
+#'   `data_type_detectors()` once in a batch to avoid re-resolving ~90 functions
 #'   per column. Ignored when `cascade` is supplied.
 #' @param lexicons Lexicon set for the lexicon block; defaults to
 #'   [default_lexicons()].
