@@ -91,7 +91,7 @@
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">o</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_ontology.html">fx_ontology</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">o</span><span class="op">)</span>   <span class="co"># one row per written form of a type; columns described below</span></span>
-<span><span class="co">#&gt; [1] 96 27</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 97 29</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="typing-is-walking-down-a-decision-tree">Typing is walking down a decision tree<a class="anchor" aria-label="anchor" href="#typing-is-walking-down-a-decision-tree"></a>
@@ -239,7 +239,7 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <p><strong><code>text</code></strong></p>
 <ul>
 <li>
-<code>color</code> — <code>cmyk</code>, <code>hex</code>, <code>hsl</code>, <code>rgb</code>
+<code>color</code> — <code>cmyk</code>, <code>color_name</code>, <code>hex</code>, <code>hsl</code>, <code>rgb</code>
 </li>
 <li>
 <code>contact</code> — <code>email</code>, <code>phone</code>
@@ -260,7 +260,7 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <p><strong><code>unknown</code></strong></p>
 <ul>
 <li>
-<code>unknown</code> — <code>malformed</code>, <code>mixed</code>, <code>unclassified</code>
+<code>unknown</code> — <code>heterogeneous</code>, <code>malformed</code>, <code>unclassified</code>
 </li>
 </ul>
 </div>
@@ -280,11 +280,11 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 </tr>
 <tr class="even">
 <td align="left">lexicon</td>
-<td align="right">10</td>
+<td align="right">11</td>
 </tr>
 <tr class="odd">
 <td align="left">mask</td>
-<td align="right">48</td>
+<td align="right">49</td>
 </tr>
 <tr class="even">
 <td align="left">mask+lexicon</td>
@@ -292,7 +292,7 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 </tr>
 <tr class="odd">
 <td align="left">none</td>
-<td align="right">16</td>
+<td align="right">15</td>
 </tr>
 <tr class="even">
 <td align="left">shape</td>
@@ -473,7 +473,7 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chicago"</span>,<span class="st">"Boston"</span>,<span class="st">"Chicago"</span>,<span class="st">"Austin"</span>,<span class="st">"Boston"</span>,<span class="st">"Chicago"</span>,<span class="st">"Austin"</span>,<span class="st">"Boston"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">$</span><span class="va">data_type</span></span>
 <span><span class="co">#&gt; [1] "categorical"</span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chicago"</span>,<span class="st">"Boston"</span>,<span class="st">"Austin"</span>,<span class="st">"Denver"</span>,<span class="st">"Miami"</span>,<span class="st">"Seattle"</span>,<span class="st">"Portland"</span>,<span class="st">"Atlanta"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">$</span><span class="va">data_type</span></span>
-<span><span class="co">#&gt; [1] "categorical"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "text"</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="putting-it-together-in-r">Putting it together in R<a class="anchor" aria-label="anchor" href="#putting-it-together-in-r"></a>
