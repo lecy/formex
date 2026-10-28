@@ -772,6 +772,20 @@ fx_extract_features <- function( x, col_name = NULL,
 .finalize <- function(f){
   f <- lapply(f, function(z){ z <- suppressWarnings(as.numeric(z))
     if(length(z)!=1 || !is.finite(z)) NA_real_ else z })
+  ## as.data.frame() over this ~480-element list dominated a feature extraction
+  ## (~15 of ~25 ms), almost all of it name-checking and per-column coercion we
+  ## do not need: every element is already a length-1 double, and the feature
+  ## names are generated internally, so they are syntactic and unique. Build the
+  ## one-row data frame directly in that case (identical() to the as.data.frame
+  ## result), and fall back to as.data.frame() if a caller's block ever supplies
+  ## a name that would have been repaired or duplicated.
+  nms <- names(f)
+  if(length(f) && !is.null(nms) && !anyDuplicated(nms) &&
+     identical(nms, make.names(nms))){
+    attr(f, "row.names") <- .set_row_names(1L)
+    class(f) <- "data.frame"
+    return(f)
+  }
   out <- as.data.frame(f, stringsAsFactors=FALSE)
   rownames(out) <- NULL
   out

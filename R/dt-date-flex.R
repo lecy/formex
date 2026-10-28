@@ -40,6 +40,50 @@
   as.vector(outer(cores, times, paste0))
 })
 
+## ---------------------------------------------------------------------------
+## Format-library PRE-FILTER (performance only -- never changes a verdict).
+##
+## Trying all ~730 formats is the hottest thing in the detection path: a column
+## that is NOT a date pays every one of them, because the loops below only stop
+## early once every value has parsed. Two NECESSARY conditions let us drop
+## formats that provably cannot parse ANY value in the vector:
+##
+##   * a format containing a literal ":" (i.e. every time suffix) can only match
+##     a value that itself contains ":";
+##   * a format containing %b / %B / %p needs a month name or an AM/PM marker,
+##     i.e. at least one ASCII letter in the value.
+##
+## Both follow from strptime's literal/named-field matching, not from the
+## locale, and the test is taken over the WHOLE vector (`any` value), so the
+## filter is conservative: a dropped format could not have parsed anything, and
+## the survivors keep their original order, so `parsed`/`out` -- including WHICH
+## format wins a value -- are identical to the unfiltered loop. Checked per
+## format against the whole library and over an 8,000-string random sweep.
+## (Delimiters are deliberately NOT filtered: a literal " " in a format matches
+## zero whitespace, so "%Y %m %d" really does parse "20200315".)
+##
+## The four subsets are materialized at load, so a call costs two greps over the
+## values instead of ~700 extra strptime invocations.
+#' @keywords internal
+#' @noRd
+.DATE_FORMAT_SUBSETS <- local({
+  has_time  <- grepl(":", .DATE_FORMATS, fixed = TRUE)
+  has_alpha <- grepl("%b|%B|%p", .DATE_FORMATS)
+  list(`TRUE|TRUE`   = .DATE_FORMATS,
+       `TRUE|FALSE`  = .DATE_FORMATS[!has_alpha],
+       `FALSE|TRUE`  = .DATE_FORMATS[!has_time],
+       `FALSE|FALSE` = .DATE_FORMATS[!has_time & !has_alpha])
+})
+
+## the formats worth trying for these (already normalized, non-blank) values
+#' @keywords internal
+#' @noRd
+.date_formats_for <- function(x0){
+  if(!length(x0)) return(character(0))
+  .DATE_FORMAT_SUBSETS[[paste0(any(grepl(":", x0, fixed = TRUE)), "|",
+                               any(grepl("[A-Za-z]", x0)))]]
+}
+
 ## fold weekday prefix, ordinal day, fractional seconds, ISO T, Zulu Z, numeric
 ## offset and named tz to a canonical space-joined shape
 #' @keywords internal
@@ -85,7 +129,7 @@ is_date <- function(x, min_year = 1900, max_year = 2100){
   x0 <- .date_norm_input(x)
   parsed <- rep(FALSE, length(x))
   live <- !is.na(x0) & nzchar(x0)
-  for(f in .DATE_FORMATS){
+  for(f in .date_formats_for(x0[live])){
     todo <- which(live & !parsed); if(!length(todo)) break
     p <- suppressWarnings(strptime(x0[todo], f, tz = "UTC"))
     ok <- which(!is.na(p$year))

@@ -110,6 +110,40 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   mean(!is.na(st))
 }
 
+## Rate of a recipe over a FIXED set of values, memoised on the expression.
+## `.FX_FOIL` is a constant and `.fx_confirm_rate` is pure, so a variant's LEAK
+## is entirely input-independent -- yet the verifier recomputed it for ~20
+## candidates on every single guess_data_type() call (~50 ms, the largest single
+## slice of the per-column floor, most of it the date-genome recipes grinding
+## the foil through the whole strptime library). Cache it for the session.
+#' @keywords internal
+#' @noRd
+.fx_leak_cache <- new.env(parent = emptyenv())
+
+#' @keywords internal
+#' @noRd
+.fx_foil_leak <- function(expr) {
+  key <- paste0("e:", if (is.na(expr)) "\001NA" else expr)
+  hit <- .fx_leak_cache[[key]]
+  if (!is.null(hit)) return(hit)
+  val <- .fx_confirm_rate(.FX_FOIL, expr)
+  assign(key, val, envir = .fx_leak_cache)
+  val
+}
+
+## Apply .fx_confirm_rate once per DISTINCT recipe, then fan the answers back out
+## over `exprs`. Same value (and the same names vapply() would have attached) as
+## vapply(exprs, ...), but a repeated recipe -- `{{ none }}` alone covers four
+## ontology rows -- is only executed once.
+#' @keywords internal
+#' @noRd
+.fx_rate_by_recipe <- function(vals, exprs) {
+  u <- unique(exprs)
+  r <- vapply(u, function(e) .fx_confirm_rate(vals, e), numeric(1),
+              USE.NAMES = FALSE)
+  stats::setNames(r[match(exprs, u)], exprs)
+}
+
 ## Disambiguate a declared path collision. Given candidate rows that share a
 ## `semantic_type` but sit on different paths (each carrying a `disambiguator`
 ## rule from the ontology) and the column's uniqueness ratio (distinct / n),
@@ -209,10 +243,8 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
             (ont$semantic_family == "contact" & ont$semantic_type == "email")
   vr <- ont[ont$semantic_type_id %in% unique(router$semantic_type_id) | always, ,
             drop = FALSE]
-  vr$confirm <- vapply(vr$raw_to_stable_transform,
-                       function(e) .fx_confirm_rate(u, e), numeric(1))
-  vr$leak    <- vapply(vr$raw_to_stable_transform,
-                       function(e) .fx_confirm_rate(.FX_FOIL, e), numeric(1))
+  vr$confirm <- .fx_rate_by_recipe(u, vr$raw_to_stable_transform)
+  vr$leak    <- vapply(vr$raw_to_stable_transform, .fx_foil_leak, numeric(1))
   vr$selectivity <- vr$confirm - ifelse(is.na(vr$leak), 0, vr$leak)
   vr$router_sim  <- router$router_sim[match(vr$semantic_type_id,
                                             router$semantic_type_id)]

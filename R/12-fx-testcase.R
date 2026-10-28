@@ -208,13 +208,35 @@ store_values <- function( x, order_is_signal = FALSE, seed = 1 ){
 ## Computed in pass 1 and STORED, so the labeller's input set is reproducible
 ## and its errors are auditable: it could only have chosen from this list.
 
-shortlist_candidates <- function(x, ontology, k = 8, weights = SIGNATURE_WEIGHTS){
-  sig <- fx_type_signature(x)
-  ex  <- lapply(strsplit(ontology$examples, " *;; *"),
+## The signatures of the ontology's OWN examples depend only on the `examples`
+## column, not on the column being classified -- yet they were recomputed on
+## every call: ~95 full fx_type_signature() extractions, ~0.95 s, which is what
+## made the model-free signature router unusable as a fallback. Cache them,
+## keyed on the examples column so a different (or edited) ontology recomputes.
+#' @keywords internal
+#' @noRd
+.fx_example_sig_cache <- new.env(parent = emptyenv())
+
+#' @keywords internal
+#' @noRd
+.fx_example_sigs <- function(examples){
+  hit <- .fx_example_sig_cache$sigs
+  if(!is.null(hit) && identical(hit$key, examples)) return(hit)
+  ex  <- lapply(strsplit(examples, " *;; *"),
                 function(z) z[nchar(trimws(z)) > 0])
   ok  <- which(lengths(ex) > 0)
-  d <- vapply(ok, function(i)
-         fx_signature_distance(sig, fx_type_signature(ex[[i]]), weights), numeric(1))
+  out <- list(key = examples, ok = ok,
+              sig = lapply(ok, function(i) fx_type_signature(ex[[i]])))
+  .fx_example_sig_cache$sigs <- out
+  out
+}
+
+shortlist_candidates <- function(x, ontology, k = 8, weights = SIGNATURE_WEIGHTS){
+  sig <- fx_type_signature(x)
+  cached <- .fx_example_sigs(ontology$examples)
+  ok  <- cached$ok
+  d <- vapply(seq_along(ok), function(j)
+         fx_signature_distance(sig, cached$sig[[j]], weights), numeric(1))
   keep <- order(d)[seq_len(min(k, length(d)))]
   lapply(seq_along(keep), function(j){
     i <- ok[keep[j]]
