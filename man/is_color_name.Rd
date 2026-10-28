@@ -10,8 +10,8 @@ is_color_name(x)
 \item{x}{A character vector.}
 }
 \value{
-Logical vector; \code{TRUE} for a known color word (case-insensitive),
-\code{FALSE} otherwise, \code{NA} where \code{x} is \code{NA}.
+Logical vector; \code{TRUE} for a known color word or an all-color
+compound (case-insensitive), \code{FALSE} otherwise, \code{NA} where \code{x} is \code{NA}.
 }
 \description{
 Tests membership in a curated set of common color WORDS (CSS/X11 named colors
@@ -19,8 +19,15 @@ plus descriptive and hair/eye-color vocabulary). For columns whose values are
 color names (\code{hair_color}, \code{eye_color}) rather than hex/rgb codes. The symbol
 detectors (\code{\link[=is_hex_color]{is_hex_color()}} etc.) handle coded colors; this one handles words.
 }
+\details{
+Compound values count too: a value whose parts are \strong{all} color words
+(\code{"brown, grey"}, \code{"blue-gray"}, \code{"dark brown"}) is a color, so hair/eye
+columns that mix single and compound colors still read as colors. A
+multi-word phrase that is itself in the lexicon (\code{"salt and pepper"}) is
+matched whole first. Non-color fillers (\code{"none"}, \code{"unknown"}) are \code{FALSE}.
+}
 \examples{
-is_color_name(c("Brown", "hazel", "blond", "Chicago", NA))
+is_color_name(c("Brown", "brown, grey", "blue-gray", "Chicago", NA))
 #> TRUE TRUE TRUE FALSE NA
 }
 \seealso{

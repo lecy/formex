@@ -106,18 +106,30 @@ is_cmyk_color <- function(x) {
 #' color names (`hair_color`, `eye_color`) rather than hex/rgb codes. The symbol
 #' detectors ([is_hex_color()] etc.) handle coded colors; this one handles words.
 #'
+#' Compound values count too: a value whose parts are **all** color words
+#' (`"brown, grey"`, `"blue-gray"`, `"dark brown"`) is a color, so hair/eye
+#' columns that mix single and compound colors still read as colors. A
+#' multi-word phrase that is itself in the lexicon (`"salt and pepper"`) is
+#' matched whole first. Non-color fillers (`"none"`, `"unknown"`) are `FALSE`.
+#'
 #' @param x A character vector.
-#' @return Logical vector; `TRUE` for a known color word (case-insensitive),
-#'   `FALSE` otherwise, `NA` where `x` is `NA`.
+#' @return Logical vector; `TRUE` for a known color word or an all-color
+#'   compound (case-insensitive), `FALSE` otherwise, `NA` where `x` is `NA`.
 #' @examples
-#' is_color_name(c("Brown", "hazel", "blond", "Chicago", NA))
+#' is_color_name(c("Brown", "brown, grey", "blue-gray", "Chicago", NA))
 #' #> TRUE TRUE TRUE FALSE NA
 #' @seealso [is_hex_color()], [guess_data_type()]
 #' @family color detectors
 #' @export
 is_color_name <- function(x) {
   x <- as.character(x)
-  out <- tolower(trimws(x)) %in% .color_names
-  out[is.na(x)] <- NA
-  out
+  one <- function(v) {
+    if (is.na(v)) return(NA)
+    w <- tolower(trimws(v))
+    if (w %in% .color_names) return(TRUE)                      # whole value (incl. phrases)
+    toks <- strsplit(gsub("[,/&-]|\\band\\b", " ", w), "\\s+")[[1]]
+    toks <- toks[nzchar(toks)]
+    length(toks) >= 1 && all(toks %in% .color_names)           # every part is a color
+  }
+  vapply(x, one, logical(1), USE.NAMES = FALSE)
 }

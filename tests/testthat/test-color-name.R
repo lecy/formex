@@ -7,6 +7,22 @@ test_that("is_color_name recognizes color words, not places", {
   expect_true(is.na(is_color_name(NA)))
 })
 
+test_that("is_color_name accepts all-color compounds, rejects mixed/fillers", {
+  expect_equal(is_color_name(c("brown, grey", "blue-gray", "dark brown", "auburn, white")),
+               rep(TRUE, 4))                                   # every part is a color
+  expect_equal(is_color_name(c("none", "unknown", "red flag", "blue sky")),
+               rep(FALSE, 4))                                  # filler or a non-color part
+})
+
+test_that("real hair/eye columns (fillers + compounds) route to color_name", {
+  hair <- guess_data_type(c("blond","none","none","brown","brown, grey","black",
+                            "auburn, grey","blonde","auburn","white","grey","none"))$route
+  expect_equal(hair$semantic_type, "color_name")
+  eye <- guess_data_type(c("blue","yellow","red","brown","blue-gray","black",
+                           "orange","hazel","unknown","red, blue","green, yellow"))$route
+  expect_equal(eye$semantic_type, "color_name")
+})
+
 test_that("as_color_name stabilizes to a lowercased color word, NA otherwise", {
   expect_equal(fx_transform(c("Blond", "Brown", "Chicago"), "{{ as_color_name }}"),
                c("blond", "brown", NA))
