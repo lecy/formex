@@ -32,6 +32,16 @@ test_that("target_format renders the canonical values via the planner", {
   expect_equal(r$rendered, "03/15/2019")     # rendered to the requested style
 })
 
+test_that("stabilizing to the canonical default format is reachable (identity)", {
+  # a date (written or ISO) renders to its yyyymmdd default -- the baseball
+  # birthDate / debut case that used to be "not transformable"
+  r <- fx_stabilize(c("Dec 27, 1981", "1975-01-05"), "calendar", target_format = "yyyymmdd")
+  expect_true(r$target_reachable)
+  expect_equal(r$rendered, c("1981-12-27", "1975-01-05"))
+  expect_true(fx_transformable(fx_format("measurement"), fx_format("measurement", "numeric")))
+  expect_true(fx_transformable(fx_format("year"), fx_format("year", "yyyy")))
+})
+
 test_that("an unreachable target_format falls back to canonical", {
   r <- fx_stabilize("03/15/2019", "calendar", target_format = "no_such_style")
   expect_false(r$target_reachable)

@@ -79,15 +79,19 @@ print.fx_format <- function(x, ...) {
         paste0("read_", style), "read",
         .fx_wnode(sem, style), .fx_cnode(sem, un),
         function(x) fx_transform(as.character(x), trr))
-      ## number types: the canonical IS the number, so it renders to a plain
-      ## "numeric" form by identity. This gives measurements etc. a write edge,
-      ## so stabilizing to numeric is reachable rather than "no path".
-      if (identical(ont$data_type[i], "number"))
+      ## The canonical value fx_stabilize() produces IS already the type's
+      ## default written form (an ISO date, a bare number), so rendering to that
+      ## default is identity. Generate a write edge to the row's
+      ## desired_default_format, so stabilizing to the default (what consumers
+      ## pre-fill as target_format) is reachable instead of "no path" -- a date
+      ## to yyyymmdd, a measurement to numeric. Non-default styles still need the
+      ## hand-authored renderers in the seed.
+      ddf <- ont$desired_default_format[i]
+      if (!is.na(ddf) && nzchar(ddf))
         edges[[length(edges) + 1L]] <<- .fx_edge(
-          "write_numeric", "write",
-          .fx_cnode(sem, un), .fx_wnode(sem, "numeric"),
-          function(x){ v <- suppressWarnings(as.numeric(gsub("[^0-9.eE+-]", "", as.character(x))))
-                       ifelse(is.na(v), NA_character_, as.character(v)) })
+          paste0("write_", ddf), "write",
+          .fx_cnode(sem, un), .fx_wnode(sem, ddf),
+          function(x) as.character(x))
     })
   }
   edges
