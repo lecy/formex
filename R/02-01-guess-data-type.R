@@ -164,7 +164,8 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   ## WKT/GeoJSON are high-precision (is_wkt_geometry leak ~0) but far too rare
   ## for the router's shortlist, so force their recipes regardless.
   always <- ont$match_kind %in% c("genome", "mask+lexicon") |
-            ont$semantic_family == "geometry"
+            ont$semantic_family == "geometry" |
+            (ont$semantic_family == "color" & ont$semantic_type == "color_name")
   vr <- ont[ont$semantic_type_id %in% unique(router$semantic_type_id) | always, ,
             drop = FALSE]
   vr$confirm <- vapply(vr$raw_to_stable_transform,

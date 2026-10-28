@@ -124,6 +124,7 @@
   A("as_ein",       function(x,a){ d<-gsub("\\D","",x); p<-stringr::str_pad(d,9,"left","0"); ifelse(nchar(d)%in%c(8L,9L), paste0(substr(p,1,2),"-",substr(p,3,9)), NA) })
   A("as_phone",     function(x,a){ d<-gsub("\\D","",x); ifelse(nchar(d)%in%c(10,11), d, NA) })
   A("as_hex",       function(x,a) ifelse(is_hex_color(x), toupper(trimws(x)), NA))
+  A("as_color_name",function(x,a) ifelse(is_color_name(x), tolower(trimws(x)), NA))
   A("as_id",        function(x,a){ s<-trimws(x); ifelse(nzchar(s), s, NA) })
   A("as_serial",    function(x,a) get("as_id",V)(x,a))
   A("as_handle",    function(x,a){ s<-trimws(x); ifelse(grepl("^@?[A-Za-z0-9_.]{2,}$", s), sub("^@","",s), NA) })

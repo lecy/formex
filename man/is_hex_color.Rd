@@ -21,6 +21,7 @@ is_hex_color(c("#4d9cf8", "#fff", "4d9cf8", NA))
 \seealso{
 Other color detectors: 
 \code{\link{is_cmyk_color}()},
+\code{\link{is_color_name}()},
 \code{\link{is_hsl_color}()},
 \code{\link{is_rgb_color}()}
 }

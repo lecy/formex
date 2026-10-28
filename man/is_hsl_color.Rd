@@ -21,6 +21,7 @@ is_hsl_color(c("195, 100\%, 27\%", "0, 0\%, 0\%", "195, 100, 27", NA))
 \seealso{
 Other color detectors: 
 \code{\link{is_cmyk_color}()},
+\code{\link{is_color_name}()},
 \code{\link{is_hex_color}()},
 \code{\link{is_rgb_color}()}
 }

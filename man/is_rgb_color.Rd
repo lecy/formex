@@ -21,6 +21,7 @@ is_rgb_color(c("220,220,220", "128, 64, 32", "300,0,0", NA))
 \seealso{
 Other color detectors: 
 \code{\link{is_cmyk_color}()},
+\code{\link{is_color_name}()},
 \code{\link{is_hex_color}()},
 \code{\link{is_hsl_color}()}
 }

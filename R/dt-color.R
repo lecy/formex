@@ -70,3 +70,54 @@ is_cmyk_color <- function(x) {
   out[is.na(x)] <- NA
   out
 }
+
+
+## ---------------------------------------------------------------------------
+## Named colors (lexicon) -------------------------------------------------
+## A curated set of common color WORDS, for columns like `hair_color` /
+## `eye_color` whose values are color names rather than hex/rgb codes. The set
+## unions three canonical bases -- the CSS/X11 named colors and R's own
+## colors() cover standard colors but miss descriptive/hair-eye vocabulary, so
+## a small curated group (blond, brunette, auburn, hazel, ...) is added. Kept to
+## COMMON words for precision (a column that is mostly these is a color column).
+## Lower-cased; matched case-insensitively.
+.color_names <- c(
+  ## CSS / X11 basic + extended (common subset)
+  "black","white","gray","grey","silver","red","maroon","crimson","scarlet",
+  "pink","rose","salmon","coral","orange","tangerine","peach","apricot","amber",
+  "gold","golden","yellow","cream","ivory","beige","tan","khaki","brown","tawny",
+  "chestnut","chocolate","coffee","mahogany","sienna","umber","ochre","rust",
+  "bronze","copper","green","olive","lime","mint","emerald","jade","forest",
+  "teal","cyan","aqua","aquamarine","turquoise","blue","navy","azure","cobalt",
+  "cerulean","sapphire","indigo","periwinkle","purple","violet","lavender",
+  "lilac","mauve","plum","magenta","fuchsia","orchid","burgundy","wine","ruby",
+  "charcoal","slate","taupe","sand","mustard","chartreuse","hazel","hazelnut",
+  ## hair / eye / descriptive colors not in the standard lists
+  "blond","blonde","brunette","auburn","ginger","redhead","platinum","raven",
+  "strawberry","honey","caramel","dirty blonde","salt and pepper","graying",
+  "greying","dark","light","pale","deep","bright","dull","multicolor",
+  "multicolored","multicoloured","rainbow","clear","transparent","translucent",
+  "metallic","pearl","opal")
+
+#' Is it a named color?
+#'
+#' Tests membership in a curated set of common color WORDS (CSS/X11 named colors
+#' plus descriptive and hair/eye-color vocabulary). For columns whose values are
+#' color names (`hair_color`, `eye_color`) rather than hex/rgb codes. The symbol
+#' detectors ([is_hex_color()] etc.) handle coded colors; this one handles words.
+#'
+#' @param x A character vector.
+#' @return Logical vector; `TRUE` for a known color word (case-insensitive),
+#'   `FALSE` otherwise, `NA` where `x` is `NA`.
+#' @examples
+#' is_color_name(c("Brown", "hazel", "blond", "Chicago", NA))
+#' #> TRUE TRUE TRUE FALSE NA
+#' @seealso [is_hex_color()], [guess_data_type()]
+#' @family color detectors
+#' @export
+is_color_name <- function(x) {
+  x <- as.character(x)
+  out <- tolower(trimws(x)) %in% .color_names
+  out[is.na(x)] <- NA
+  out
+}

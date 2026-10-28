@@ -1,5 +1,16 @@
 # formex 0.0.0.9000
 
+* Fixes from datagoodr's `dplyr::starwars` detection-quality report:
+  - **Named colors.** New `is_color_name()` detector + a curated color-word
+    lexicon (CSS/X11 + descriptive and hair/eye terms) and a `text/color/color_name`
+    leaf, so `hair_color` / `eye_color` columns resolve to a color type instead
+    of leaking to `geographic` (the color words "brown", "auburn", "orange" are
+    also US place names). The leaf joins the verifier's always-on set.
+  - **Measurements stabilize to numeric.** A plain-number measurement now has a
+    `write_numeric` edge, so `fx_stabilize(x, "measurement", target_format =
+    "numeric")` is reachable instead of "no path"; unit *menus* (e.g.
+    `unit-specific (kg;;m;;C;;L)`) collapse to no unit for planning.
+
 * **v7 ontology + transform API.** The leaf gains two orthogonal axes —
   `format_style` (how a value is written) and `unit_type` (renamed from
   `dd_data_unit`; what it means) — plus `desired_default_format`. Additive:
