@@ -44,7 +44,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9000" id="formex-0009000">formex 0.0.0.9000<a class="anchor" aria-label="anchor" href="#formex-0009000"></a></h2>
-<ul><li>
+<ul><li><p><strong>Tag sets.</strong> New <code><a href="../reference/is_tags.html">is_tags()</a></code> detector + <code>as_tags</code> verb wire the <code>categorical/multiselect/tags</code> leaf, so a flat delimited set (<code>"a|b|c"</code>, <code>"Volunteer;Donor;Board"</code> — a list column collapsed to a string) is recognized and normalized to a <code>;</code>-joined form, instead of going unrecognized.</p></li>
+<li>
 <p>Fixes from datagoodr’s <code><a href="https://dplyr.tidyverse.org/reference/starwars.html" class="external-link">dplyr::starwars</a></code> detection-quality report:</p>
 <ul><li>
 <strong>Named colors.</strong> New <code><a href="../reference/is_color_name.html">is_color_name()</a></code> detector + a curated color-word lexicon (CSS/X11 + descriptive and hair/eye terms) and a <code>text/color/color_name</code> leaf, so <code>hair_color</code> / <code>eye_color</code> columns resolve to a color type instead of leaking to <code>geographic</code> (the color words “brown”, “auburn”, “orange” are also US place names). The leaf joins the verifier’s always-on set.</li>
