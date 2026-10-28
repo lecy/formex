@@ -44,7 +44,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9000" id="formex-0009000">formex 0.0.0.9000<a class="anchor" aria-label="anchor" href="#formex-0009000"></a></h2>
-<ul><li>
+<ul><li><p><strong>Date output styles + style detection.</strong> The transform registry gains a vocabulary of calendar written styles (<code>mdy_slash</code>, <code>dmy_slash</code>, <code>ymd_dash</code>, <code>ymd_compact</code>, <code>mon_mdy</code>, <code>mon_dmy</code>, …), each readable and writable, so a date column stabilizes to any requested style and styles inter-convert (US → EU). And <code>guess_data_type()$route$format_style</code> now reports the column’s <strong>actual</strong> detected style (order + separator read from the values; ambiguous all-≤12 dates default to <code>mdy_slash</code>) instead of the generic <code>calendar</code>.</p></li>
+<li>
 <p>Fixes from the political-org 527 registry (Form 8871):</p>
 <ul><li>
 <strong>Email no longer loses to <code>organization</code>/<code>domain</code>.</strong> The <code>contact/email</code> leaf joins the verifier’s always-on set, so an email column resolves to <code>text/contact/email</code> (the router was too sparse to shortlist it, and <code>is_email</code> never competed on content — <code>is_url</code> does not match an <code>@</code> string).</li>
