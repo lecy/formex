@@ -131,6 +131,45 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   if (length(w) == 1L) w else NA_integer_
 }
 
+## Sniff the WRITTEN style of a resolved calendar column from its values, so the
+## route reports the actual style (mdy_slash, ymd_dash, mon_mdy, ...) rather than
+## the generic "calendar". Order is read from which component exceeds 12 (the
+## day); a day <=12 everywhere is ambiguous and defaults to mdy (US). Returns a
+## style from the date vocabulary, or NA when indeterminate.
+#' @keywords internal
+#' @noRd
+.fx_date_style <- function(u) {
+  u <- u[!is.na(u) & nzchar(trimws(u))]
+  if (!length(u)) return(NA_character_)
+  u <- utils::head(u, 50L)
+  if (mean(grepl("[A-Za-z]{3}", u)) >= 0.5) {                 # month-name forms
+    if (mean(grepl("^[A-Za-z]{3,9}\\.?\\s+[0-9]", u)) >= 0.5) return("mon_mdy")
+    if (mean(grepl("^[0-9]{1,2}\\s+[A-Za-z]{3,9}", u))  >= 0.5) return("mon_dmy")
+    return(NA_character_)
+  }
+  sep <- if (mean(grepl("/", u)) >= 0.5) "/"
+         else if (mean(grepl("-", u)) >= 0.5) "-"
+         else if (mean(grepl("^[0-9]{8}$", trimws(u))) >= 0.5) ""
+         else return(NA_character_)
+  parts <- lapply(strsplit(gsub("[^0-9]", " ", u), "\\s+"), function(p) p[nzchar(p)])
+  parts <- parts[lengths(parts) == 3L]
+  if (!length(parts)) return(NA_character_)
+  ypos <- vapply(parts, function(p){ w <- which(nchar(p) == 4L); if (length(w)) w[1] else NA_integer_ }, integer(1))
+  yp <- suppressWarnings(as.integer(names(sort(table(ypos), decreasing = TRUE))[1]))
+  if (is.na(yp)) return(NA_character_)
+  num <- function(k) suppressWarnings(as.integer(vapply(parts, function(p) p[k], "")))
+  if (yp == 1L)
+    return(if (sep == "-") "ymd_dash" else if (sep == "/") "ymd_slash"
+           else if (sep == "") "ymd_compact" else NA_character_)
+  if (yp == 3L) {
+    p1 <- num(1); p2 <- num(2)
+    order <- if (any(p1 > 12, na.rm = TRUE) && !any(p2 > 12, na.rm = TRUE)) "dmy" else "mdy"
+    return(if (sep == "/") paste0(order, "_slash") else if (sep == "-") paste0(order, "_dash")
+           else NA_character_)
+  }
+  NA_character_
+}
+
 #' @keywords internal
 #' @noRd
 .fx_route_verify <- function(u, ont = fx_ontology(), router_k = 8,
@@ -223,11 +262,18 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
     }
     r  <- vr[w, ]
     dd <- r$unit_type
+    ## multi-style detection: for a calendar leaf, report the column's ACTUAL
+    ## written style (mdy_slash, ymd_dash, ...) instead of the generic label.
+    fs <- r$format_style
+    if (identical(r$semantic_type, "calendar")) {
+      ds <- .fx_date_style(u)
+      if (!is.na(ds)) fs <- ds
+    }
     out <- list(
       data_type = r$data_type, semantic_family = r$semantic_family,
       semantic_type = r$semantic_type, semantic_type_id = r$semantic_type_id,
       variant_id = r$variant_id, format_label = r$format_label,
-      format_style = r$format_style,
+      format_style = fs,
       match_kind = r$match_kind, depth = 4L, confidence = r$confirm,
       dd_unit = if (!is.na(dd) && nzchar(trimws(dd))) dd else NA_character_,
       router_method = router_method,

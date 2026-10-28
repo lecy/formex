@@ -1,5 +1,13 @@
 # formex 0.0.0.9000
 
+* **Date output styles + style detection.** The transform registry gains a
+  vocabulary of calendar written styles (`mdy_slash`, `dmy_slash`, `ymd_dash`,
+  `ymd_compact`, `mon_mdy`, `mon_dmy`, …), each readable and writable, so a date
+  column stabilizes to any requested style and styles inter-convert (US → EU).
+  And `guess_data_type()$route$format_style` now reports the column's **actual**
+  detected style (order + separator read from the values; ambiguous all-≤12
+  dates default to `mdy_slash`) instead of the generic `calendar`.
+
 * Fixes from the political-org 527 registry (Form 8871):
   - **Email no longer loses to `organization`/`domain`.** The `contact/email`
     leaf joins the verifier's always-on set, so an email column resolves to
