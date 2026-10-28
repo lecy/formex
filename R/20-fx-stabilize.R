@@ -268,7 +268,7 @@ fx_stabilize <- function(x, semantic_type, format_label = NULL,
 
   rendered <- stable; reachable <- NA
   if (!is.null(target_format) && nzchar(target_format)){
-    unit <- if (!is.null(r$unit_type) && !is.na(r$unit_type) && nzchar(trimws(r$unit_type))) r$unit_type else NA_character_
+    unit <- .fx_clean_unit(if (is.null(r$unit_type)) NA_character_ else r$unit_type)
     plan <- fx_plan_transform(fx_format(semantic_type, NA_character_, unit),
                               fx_format(semantic_type, target_format, unit))
     reachable <- isTRUE(plan$transformable)

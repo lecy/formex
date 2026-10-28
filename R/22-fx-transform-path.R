@@ -58,6 +58,14 @@ print.fx_format <- function(x, ...) {
 ## This connects the planner to the real type system (the read/parse direction);
 ## write_ renderers and convert_ edges are still hand-authored in the seed below
 ## and grown per style/unit.
+## A usable unit NODE is a single resolved token (USD, C, F, fiscal); a "menu"
+## of candidate units ("unit-specific (kg;;m;;C;;L)", "geographic level") is
+## metadata, not a node, so it collapses to NA -- otherwise it pollutes the key
+## and a plain measurement could never be addressed as c|measurement|NA.
+.fx_clean_unit <- function(u) {
+  if (is.na(u) || !nzchar(trimws(u)) || grepl(";;| ", u)) NA_character_ else trimws(u)
+}
+
 .fx_ontology_transforms <- function(ont = fx_ontology()) {
   edges <- list()
   for (i in seq_len(nrow(ont))) {
@@ -65,13 +73,21 @@ print.fx_format <- function(x, ...) {
     if (is.na(style) || !nzchar(style)) next
     local({
       sem  <- ont$semantic_type[i]
-      un   <- ont$unit_type[i]
-      un   <- if (!is.na(un) && nzchar(trimws(un))) un else NA_character_
+      un   <- .fx_clean_unit(ont$unit_type[i])
       trr  <- ont$raw_to_stable_transform[i]
       edges[[length(edges) + 1L]] <<- .fx_edge(
         paste0("read_", style), "read",
         .fx_wnode(sem, style), .fx_cnode(sem, un),
         function(x) fx_transform(as.character(x), trr))
+      ## number types: the canonical IS the number, so it renders to a plain
+      ## "numeric" form by identity. This gives measurements etc. a write edge,
+      ## so stabilizing to numeric is reachable rather than "no path".
+      if (identical(ont$data_type[i], "number"))
+        edges[[length(edges) + 1L]] <<- .fx_edge(
+          "write_numeric", "write",
+          .fx_cnode(sem, un), .fx_wnode(sem, "numeric"),
+          function(x){ v <- suppressWarnings(as.numeric(gsub("[^0-9.eE+-]", "", as.character(x))))
+                       ifelse(is.na(v), NA_character_, as.character(v)) })
     })
   }
   edges
