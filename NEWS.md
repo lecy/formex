@@ -24,9 +24,9 @@
   - `fx_benchmark_summary()` reports per-level accuracy, a weighted headline, a
     hit / graceful-truncation / wrong-branch (misroute) mix, by-`data_type`
     accuracy, and runtime stats; `fx_benchmark_confusion()` shows the **shape of
-    errors** (where a gold type lands when wrong); `fx_coverage_gaps()` surfaces
-    thinly-covered or low-accuracy variants; `fx_benchmark_compare()` diffs two
-    runs so a change's effect is visible.
+    errors** (where a gold type lands when wrong); `fx_coverage_gaps()` is a
+    **difficulty-aware** gap finder (see below); `fx_benchmark_compare()` diffs
+    two runs so a change's effect is visible.
   - `fx_stress_grid()` + `fx_perturb()` run a controlled experimental grid:
     each column is perturbed along graded dimensions -- class-preserving
     **spelling** corruption, vector **length** (resample to 50/100/300),
@@ -36,6 +36,20 @@
     `fx_stress_summary()` / `fx_contamination_curve()` show the accuracy-decay
     curves and the contamination breaking point. Reuses the AutoType mutators
     (`R/00-autotype-functions.R`).
+
+* **Difficulty-aware `fx_coverage_gaps()`.** The gap finder no longer uses a
+  single flat accuracy gate (which conflated intrinsic difficulty, thin support,
+  and a real detector bug). It now judges each gold variant on up to four
+  signals -- a per-`match_kind` target (header-gated `shape`/`none` types are
+  excluded from value accuracy, not scored 0), the Wilson upper bound on the
+  accuracy estimate (so thin support is not flagged on noise), the learned
+  router's accuracy relative to a signature baseline (optional `baseline=`), and
+  the accuracy drop under stress (optional `stress=`) -- and emits an action
+  `bucket` (`needs-cases` / `needs-detector-work` / `excluded` / `ok`) in place
+  of the old `flag`, so every flagged variant names its own remedy. With
+  `include_absent = TRUE` (the default) it also surfaces **live ontology variants
+  that never appear in the corpus** as `support == 0` `needs-cases` rows -- the
+  coverage blind spots the per-case signals cannot see.
 
 * **Date output styles + style detection.** The transform registry gains a
   vocabulary of calendar written styles (`mdy_slash`, `dmy_slash`, `ymd_dash`,

@@ -57,9 +57,66 @@ test_that("summary, confusion and coverage-gap reports have the right shape", {
   expect_true(all(c("hit", "graceful", "misroute") %in% names(cm$outcome)))
 
   gaps <- fx_coverage_gaps(res)
-  expect_true(all(c("gold_variant_id", "support", "acc_type", "flag") %in%
-                  names(gaps)))
-  expect_true(all(gaps$flag %in% c("ok", "low-support", "low-accuracy")))
+  expect_true(all(c("gold_variant_id", "support", "acc_type", "match_kind",
+                    "target", "wilson_upper", "bucket") %in% names(gaps)))
+  expect_true(all(gaps$bucket %in%
+                  c("needs-detector-work", "needs-cases", "excluded", "ok")))
+})
+
+test_that("fx_coverage_gaps is difficulty-aware: buckets, baseline, stress", {
+  d   <- fx_benchmark_data("mini")
+  res <- fx_benchmark(d)
+
+  # a thin-support variant lands in needs-cases regardless of its accuracy
+  g <- fx_coverage_gaps(res, min_support = 1000L)  # force everything thin
+  expect_true(all(g$bucket == "needs-cases"))
+
+  # header-gated match_kinds (shape/none) are excluded from the accuracy test,
+  # never flagged "needs-detector-work" on value accuracy alone (present variants
+  # only -- absent-variant surfacing is covered by its own test below)
+  g2 <- fx_coverage_gaps(res, min_support = 1L, include_absent = FALSE)
+  hg <- g2[!is.na(g2$match_kind) & g2$match_kind %in% c("shape", "none"), ]
+  if (nrow(hg)) {
+    expect_true(all(is.na(hg$target)))
+    expect_true(all(hg$bucket %in% c("excluded", "ok")))
+  }
+
+  # a baseline that matches res exactly yields zero baseline_delta -> no
+  # baseline-driven detector-work flag
+  gb <- fx_coverage_gaps(res, baseline = res, min_support = 1L)
+  expect_true(all(gb$baseline_delta[!is.na(gb$baseline_delta)] == 0))
+
+  # supplying no baseline/stress leaves those columns present but NA
+  expect_true(all(is.na(g2$baseline_delta)))
+  expect_true(all(is.na(g2$stress_drop)))
+})
+
+test_that("fx_coverage_gaps surfaces live variants absent from the corpus", {
+  d   <- fx_benchmark_data("mini")
+  res <- fx_benchmark(d)
+  ont <- fx_ontology()
+
+  live <- if ("version_deprecated" %in% names(ont))
+    !nzchar(ont$version_deprecated) else rep(TRUE, nrow(ont))
+  live_ids <- unique(ont$variant_id[live])
+  absent_ids <- setdiff(live_ids, unique(res$gold_variant_id))
+  skip_if(length(absent_ids) == 0, "no live variant is absent from the mini set")
+
+  g_with <- fx_coverage_gaps(res, include_absent = TRUE)
+  g_wo   <- fx_coverage_gaps(res, include_absent = FALSE)
+
+  # the toggle adds exactly the absent live variants, all as support-0 needs-cases
+  expect_identical(names(g_with), names(g_wo))
+  expect_equal(nrow(g_with) - nrow(g_wo), length(absent_ids))
+  absent_rows <- g_with[g_with$support == 0L, ]
+  expect_setequal(absent_rows$gold_variant_id, absent_ids)
+  expect_true(all(absent_rows$bucket == "needs-cases"))
+  expect_true(all(is.na(absent_rows$acc_type)))
+  expect_false(any(duplicated(g_with$gold_variant_id)))
+
+  # a NULL ontology degrades gracefully: no absent rows, no error
+  g_null <- fx_coverage_gaps(res, ontology = NULL)
+  expect_false(any(g_null$support == 0L))
 })
 
 test_that("comparing a run against itself yields zero deltas", {

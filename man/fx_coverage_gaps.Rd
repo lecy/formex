@@ -2,27 +2,92 @@
 % Please edit documentation in R/04-benchmark.R
 \name{fx_coverage_gaps}
 \alias{fx_coverage_gaps}
-\title{Coverage gaps: types the benchmark types poorly or barely covers}
+\title{Coverage gaps: difficulty-aware flagging of underperforming detectors}
 \usage{
-fx_coverage_gaps(res, min_support = 3L, max_accuracy = 0.5)
+fx_coverage_gaps(
+  res,
+  baseline = NULL,
+  stress = NULL,
+  min_support = 5L,
+  target = .FX_COVERAGE_TARGETS,
+  baseline_margin = 0,
+  stress_drop_max = 0.25,
+  conf = 0.95,
+  ontology = fx_ontology(),
+  include_absent = TRUE
+)
 }
 \arguments{
-\item{res}{Output of \code{\link[=fx_benchmark]{fx_benchmark()}}.}
+\item{res}{Output of \code{\link[=fx_benchmark]{fx_benchmark()}} (the learned run).}
 
-\item{min_support}{Flag variants with fewer than this many cases.}
+\item{baseline}{Optional output of \code{\link[=fx_benchmark]{fx_benchmark()}} run with
+\code{router = "signature"}, for the baseline-relative signal. \code{NULL} skips it.}
 
-\item{max_accuracy}{Flag variants whose type accuracy is at or below this.}
+\item{stress}{Optional output of \code{\link[=fx_stress_grid]{fx_stress_grid()}}, for the stress-delta
+signal. \code{NULL} skips it.}
+
+\item{min_support}{Variants with fewer than this many cases are \code{"needs-cases"}.}
+
+\item{target}{A value-accuracy target: either a single number applied to every
+variant, or a vector named by \code{match_kind} (default \code{.FX_COVERAGE_TARGETS}:
+genome/lexicon/mask+lexicon 0.95, mask 0.85, shape/none \code{NA} = excluded).}
+
+\item{baseline_margin}{Flag \code{"needs-detector-work"} when \code{baseline_delta} is
+below \code{-baseline_margin} (default \code{0}, i.e. any underperformance).}
+
+\item{stress_drop_max}{Flag \code{"needs-detector-work"} when \code{stress_drop} is at or
+above this (default \code{0.25}).}
+
+\item{conf}{Confidence level for the Wilson interval.}
+
+\item{ontology}{Ontology table providing the \code{variant_id} -> \code{match_kind}
+map (default \code{\link[=fx_ontology]{fx_ontology()}}).}
+
+\item{include_absent}{If \code{TRUE} (the default), also emit a \code{"needs-cases"} row
+with \code{support = 0} for every \strong{live} ontology variant that never appears in
+\code{res} --- the corpus blind spots the per-case signals cannot see, since they
+only rank variants that were actually banked. Requires an \code{ontology}.}
 }
 \value{
-A data frame per gold variant: \code{support}, \code{acc_type}, \code{acc_headline},
-the dominant wrong prediction (\code{top_wrong}), and \code{flag}
-(\code{"low-support"} / \code{"low-accuracy"} / \code{"ok"}), ordered worst first.
+A data frame per gold variant: \code{match_kind}, \code{support}, \code{acc_type},
+\code{acc_headline}, \code{target}, \code{wilson_upper}, \code{baseline_acc}, \code{baseline_delta},
+\code{stress_drop}, the dominant wrong prediction (\code{top_wrong}), and \code{bucket}
+(\code{"needs-detector-work"} / \code{"needs-cases"} / \code{"excluded"} / \code{"ok"}), ordered
+worst first. With \code{include_absent}, variants absent from the corpus appear as
+\code{support == 0} rows in the \code{"needs-cases"} bucket.
 }
 \description{
 The machine-readable companion to the coverage notes in
-\code{DEVELOPMENT-STATUS.md}: the variants with the lowest type accuracy or the
-thinnest support, so attention goes where it moves the needle.
+\code{DEVELOPMENT-STATUS.md} (§6.5). Rather than a single flat accuracy gate --
+which conflates intrinsic difficulty, thin support, and a genuine detector
+bug -- each gold variant is judged on up to four signals and sorted into one
+of two \strong{action buckets}, so every flag names its own remedy:
+}
+\details{
+\enumerate{
+\item \strong{Per-\code{match_kind} target.} Achievable precision depends on mechanism:
+\code{genome} / \code{lexicon} / \code{mask+lexicon} types can reach ~0.95, \code{mask} is
+looser, and header-gated \code{shape} / \code{none} types are \strong{excluded} from value
+accuracy entirely (never scored 0). The target is set by \code{match_kind}
+(joined from \code{ontology}); override via \code{target}.
+\item \strong{Baseline-relative.} With \code{baseline} (a \code{fx_benchmark(router = "signature")} run), \code{baseline_delta} is learned minus signature accuracy. A
+type hard for \emph{everyone} is difficulty, not a bug; a type where the learned
+router loses to the model-free floor is a real regression.
+\item \strong{Stress-delta.} With \code{stress} (a \code{\link[=fx_stress_grid]{fx_stress_grid()}} grid), \code{stress_drop}
+is the clean type-accuracy minus the mean over applicable perturbed rows.
+Brittleness to a space or stray case is a detector bug regardless of
+absolute accuracy.
+\item \strong{Support-aware confidence.} A Wilson interval on the accuracy estimate;
+the accuracy test fires only when its \strong{upper bound} is below target, so
+thin-support types are not flagged on noise.
+}
+
+Buckets: \code{"needs-cases"} (thin support -> bank/generate data), and
+\code{"needs-detector-work"} (adequate support but accuracy upper-bounded below
+target, or losing to the signature baseline, or stress-brittle -> fix the
+predicate/recipe). Header-gated types with adequate support are \code{"excluded"};
+everything else is \code{"ok"}.
 }
 \seealso{
-\code{\link[=fx_benchmark]{fx_benchmark()}}, \code{\link[=fx_benchmark_confusion]{fx_benchmark_confusion()}}
+\code{\link[=fx_benchmark]{fx_benchmark()}}, \code{\link[=fx_stress_grid]{fx_stress_grid()}}, \code{\link[=fx_benchmark_confusion]{fx_benchmark_confusion()}}
 }

@@ -375,11 +375,11 @@ surfaced at train time rather than discovered by inspection.
 
 ### 6.5 Flagging underperforming detectors (difficulty-aware)
 
-`fx_coverage_gaps()` exists but uses a **flat** gate (`max_accuracy = 0.5`,
-`min_support = 3`). The objection is correct: a universal threshold conflates
-three different things — intrinsic difficulty, thin/noisy support, and a genuine
-detector bug. The plan replaces the flat gate with four signals and **two action
-buckets**, so each flag points at a fix:
+**Shipped.** `fx_coverage_gaps()` formerly used a **flat** gate
+(`max_accuracy = 0.5`, `min_support = 3`). The objection was correct: a universal
+threshold conflates three different things — intrinsic difficulty, thin/noisy
+support, and a genuine detector bug. The flat gate is replaced with four signals
+and **two action buckets**, so each flag points at a fix:
 
 1. **Per-`match_kind` target, not a single number.** Achievable precision is a
    function of mechanism: `genome`/`lexicon`/`mask+lexicon` types can reach
@@ -398,13 +398,23 @@ buckets**, so each flag points at a fix:
    only flag "low-accuracy" when the interval's **upper bound** is below target,
    so thin-support types are not flagged on noise.
 
-**Two buckets, two fixes:** `needs-cases` (thin support, or a dropped `rx_*`
-feature, or absent from the corpus → bank/generate data, §6.2(2)) vs
-`needs-detector-work` (adequate support but low baseline-relative accuracy or
-stress-brittle → fix the predicate/recipe). `fx_coverage_gaps()` grows a
-`target` (default by `match_kind`), a `baseline` run argument, and a
-`stress_drop` column, and emits these two labels instead of the single `"ok" /
-"low-accuracy" / "low-support"` flag.
+**Two buckets, two fixes:** `needs-cases` (thin support, **or absent from the
+corpus** → bank/generate data, §6.2(2)) vs `needs-detector-work` (adequate
+support but accuracy upper-bounded below target, losing to the signature
+baseline, or stress-brittle → fix the predicate/recipe); header-gated
+`shape`/`none` types with adequate support are `excluded`, the rest `ok`.
+`fx_coverage_gaps()` gained a `target` argument (default by `match_kind` via
+`.FX_COVERAGE_TARGETS`), optional `baseline=` and `stress=` run arguments,
+`wilson_upper` / `baseline_delta` / `stress_drop` columns, and emits a `bucket`
+label in place of the old `"ok" / "low-accuracy" / "low-support"` flag. With
+`include_absent = TRUE` (the default) it also walks the full ontology and emits a
+`support == 0` `needs-cases` row for every **live** variant that never appears in
+the corpus — the blind spots the per-case signals cannot see.
+
+*Not yet wired:* tying the dropped-`rx_*` feature set into `needs-cases`. That
+set is enumerated at retrain time (§6.4), not persisted as a loadable object, so
+there is no programmatic handle for `fx_coverage_gaps()` to read yet; wiring it
+in waits on the retrain script banking the dropped-`rx_*` names as an artifact.
 
 ### 6.6 Router refresh: cadence & triggers
 
