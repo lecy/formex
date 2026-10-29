@@ -8,6 +8,15 @@
 \description{
 A vocabulary and detection engine for the data types found in research datasets. Provides a library of column detectors (identifiers, geographies, temporal formats, currencies, codes, hashes, and more), a dispatchable data-type registry, the formex format-expression syntax, and the type/class/subclass ontology that names them. 'guess_data_type()' is the single entry point that other packages build on.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://lecy.github.io/formex/}
+  \item \url{https://github.com/lecy/formex}
+  \item Report bugs at \url{https://github.com/lecy/formex/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Jesse Lecy \email{jlecy@urban.org}
 

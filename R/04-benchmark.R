@@ -229,6 +229,31 @@ fx_benchmark <- function(data = fx_benchmark_data(), router = "auto",
 #' @noRd
 .fx_acc <- function(x) { x <- x[!is.na(x)]; if (length(x)) mean(x) else NA_real_ }
 
+## Wilson score interval for the proportion of TRUE in a logical vector (NA
+## dropped). Support-aware: the width shrinks with n, so a thin-support estimate
+## carries a wide interval and is not mistaken for a confident low score. Returns
+## c(lower, upper, p); all NA when nothing is scored.
+#' @keywords internal
+#' @noRd
+.fx_wilson <- function(x, conf = 0.95) {
+  x <- x[!is.na(x)]; n <- length(x)
+  if (!n) return(c(lower = NA_real_, upper = NA_real_, p = NA_real_))
+  p <- mean(x); z <- stats::qnorm(1 - (1 - conf) / 2)
+  d  <- 1 + z^2 / n
+  c2 <- p + z^2 / (2 * n)
+  hw <- z * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))
+  c(lower = (c2 - hw) / d, upper = (c2 + hw) / d, p = p)
+}
+
+## Default value-accuracy target by match_kind (DEVELOPMENT-STATUS.md §6.5(1)).
+## Achievable precision is a function of mechanism: genome / lexicon /
+## mask+lexicon types can reach ~0.95; `mask` alone is looser; `shape` / `none`
+## types are header-gated and are EXCLUDED from value accuracy (NA), not scored 0.
+#' @keywords internal
+#' @noRd
+.FX_COVERAGE_TARGETS <- c(genome = 0.95, lexicon = 0.95, `mask+lexicon` = 0.95,
+                          mask = 0.85, shape = NA_real_, none = NA_real_)
+
 #' Summarize a benchmark run
 #'
 #' @param res Output of [fx_benchmark()].
@@ -322,36 +347,166 @@ fx_benchmark_confusion <- function(res, level = c("data_type", "semantic_family"
   list(matrix = cm, wrong_shape = wrong_shape, outcome = outcome)
 }
 
-#' Coverage gaps: types the benchmark types poorly or barely covers
+## per-variant stress drop: a type's clean type-accuracy minus its mean accuracy
+## over the applicable perturbed rows of a stress grid. Positive = brittle to
+## whitespace / case / contamination. NA when the variant is absent from the grid.
+#' @keywords internal
+#' @noRd
+.fx_stress_drop <- function(stress) {
+  if (is.null(stress) || !nrow(stress)) return(NULL)
+  g <- stress[stress$applicable, , drop = FALSE]
+  clean <- tapply(g$type_correct[g$dimension == "(clean)"],
+                  g$gold_variant_id[g$dimension == "(clean)"], .fx_acc)
+  pert  <- tapply(g$type_correct[g$dimension != "(clean)"],
+                  g$gold_variant_id[g$dimension != "(clean)"], .fx_acc)
+  vids <- union(names(clean), names(pert))
+  stats::setNames(unname(clean[vids]) - unname(pert[vids]), vids)
+}
+
+#' Coverage gaps: difficulty-aware flagging of underperforming detectors
 #'
 #' The machine-readable companion to the coverage notes in
-#' `DEVELOPMENT-STATUS.md`: the variants with the lowest type accuracy or the
-#' thinnest support, so attention goes where it moves the needle.
+#' `DEVELOPMENT-STATUS.md` (§6.5). Rather than a single flat accuracy gate --
+#' which conflates intrinsic difficulty, thin support, and a genuine detector
+#' bug -- each gold variant is judged on up to four signals and sorted into one
+#' of two **action buckets**, so every flag names its own remedy:
 #'
-#' @param res Output of [fx_benchmark()].
-#' @param min_support Flag variants with fewer than this many cases.
-#' @param max_accuracy Flag variants whose type accuracy is at or below this.
-#' @return A data frame per gold variant: `support`, `acc_type`, `acc_headline`,
-#'   the dominant wrong prediction (`top_wrong`), and `flag`
-#'   (`"low-support"` / `"low-accuracy"` / `"ok"`), ordered worst first.
-#' @seealso [fx_benchmark()], [fx_benchmark_confusion()]
+#' 1. **Per-`match_kind` target.** Achievable precision depends on mechanism:
+#'    `genome` / `lexicon` / `mask+lexicon` types can reach ~0.95, `mask` is
+#'    looser, and header-gated `shape` / `none` types are **excluded** from value
+#'    accuracy entirely (never scored 0). The target is set by `match_kind`
+#'    (joined from `ontology`); override via `target`.
+#' 2. **Baseline-relative.** With `baseline` (a `fx_benchmark(router =
+#'    "signature")` run), `baseline_delta` is learned minus signature accuracy. A
+#'    type hard for *everyone* is difficulty, not a bug; a type where the learned
+#'    router loses to the model-free floor is a real regression.
+#' 3. **Stress-delta.** With `stress` (a [fx_stress_grid()] grid), `stress_drop`
+#'    is the clean type-accuracy minus the mean over applicable perturbed rows.
+#'    Brittleness to a space or stray case is a detector bug regardless of
+#'    absolute accuracy.
+#' 4. **Support-aware confidence.** A Wilson interval on the accuracy estimate;
+#'    the accuracy test fires only when its **upper bound** is below target, so
+#'    thin-support types are not flagged on noise.
+#'
+#' Buckets: `"needs-cases"` (thin support -> bank/generate data), and
+#' `"needs-detector-work"` (adequate support but accuracy upper-bounded below
+#' target, or losing to the signature baseline, or stress-brittle -> fix the
+#' predicate/recipe). Header-gated types with adequate support are `"excluded"`;
+#' everything else is `"ok"`.
+#'
+#' @param res Output of [fx_benchmark()] (the learned run).
+#' @param baseline Optional output of [fx_benchmark()] run with
+#'   `router = "signature"`, for the baseline-relative signal. `NULL` skips it.
+#' @param stress Optional output of [fx_stress_grid()], for the stress-delta
+#'   signal. `NULL` skips it.
+#' @param min_support Variants with fewer than this many cases are `"needs-cases"`.
+#' @param target A value-accuracy target: either a single number applied to every
+#'   variant, or a vector named by `match_kind` (default `.FX_COVERAGE_TARGETS`:
+#'   genome/lexicon/mask+lexicon 0.95, mask 0.85, shape/none `NA` = excluded).
+#' @param baseline_margin Flag `"needs-detector-work"` when `baseline_delta` is
+#'   below `-baseline_margin` (default `0`, i.e. any underperformance).
+#' @param stress_drop_max Flag `"needs-detector-work"` when `stress_drop` is at or
+#'   above this (default `0.25`).
+#' @param conf Confidence level for the Wilson interval.
+#' @param ontology Ontology table providing the `variant_id` -> `match_kind`
+#'   map (default [fx_ontology()]).
+#' @param include_absent If `TRUE` (the default), also emit a `"needs-cases"` row
+#'   with `support = 0` for every **live** ontology variant that never appears in
+#'   `res` --- the corpus blind spots the per-case signals cannot see, since they
+#'   only rank variants that were actually banked. Requires an `ontology`.
+#' @return A data frame per gold variant: `match_kind`, `support`, `acc_type`,
+#'   `acc_headline`, `target`, `wilson_upper`, `baseline_acc`, `baseline_delta`,
+#'   `stress_drop`, the dominant wrong prediction (`top_wrong`), and `bucket`
+#'   (`"needs-detector-work"` / `"needs-cases"` / `"excluded"` / `"ok"`), ordered
+#'   worst first. With `include_absent`, variants absent from the corpus appear as
+#'   `support == 0` rows in the `"needs-cases"` bucket.
+#' @seealso [fx_benchmark()], [fx_stress_grid()], [fx_benchmark_confusion()]
 #' @export
-fx_coverage_gaps <- function(res, min_support = 3L, max_accuracy = 0.5) {
-  do.call(rbind, lapply(split(res, res$gold_variant_id), function(d) {
-    acc <- .fx_acc(d$type_correct)
+fx_coverage_gaps <- function(res, baseline = NULL, stress = NULL,
+                             min_support = 5L, target = .FX_COVERAGE_TARGETS,
+                             baseline_margin = 0.0, stress_drop_max = 0.25,
+                             conf = 0.95, ontology = fx_ontology(),
+                             include_absent = TRUE) {
+  ## variant_id -> match_kind (variants absent from the ontology, or with no
+  ## match_kind column, are treated as header-gated: excluded from the acc test)
+  mk <- if (!is.null(ontology) && all(c("variant_id", "match_kind") %in% names(ontology)))
+    stats::setNames(ontology$match_kind, ontology$variant_id) else character(0)
+  target_of <- function(match_kind) {
+    if (is.null(names(target))) return(as.numeric(target)[1])
+    if (is.na(match_kind) || !match_kind %in% names(target)) return(NA_real_)
+    unname(target[match_kind])
+  }
+
+  base_acc  <- if (!is.null(baseline))
+    tapply(baseline$type_correct, baseline$gold_variant_id, .fx_acc) else NULL
+  drop_of   <- .fx_stress_drop(stress)
+
+  g <- do.call(rbind, lapply(split(res, res$gold_variant_id), function(d) {
+    vid <- d$gold_variant_id[1]
+    match_kind <- if (length(mk)) unname(mk[vid]) else NA_character_
+    if (is.null(match_kind)) match_kind <- NA_character_
+    acc  <- .fx_acc(d$type_correct)
+    tgt  <- target_of(match_kind)
+    wu   <- unname(.fx_wilson(d$type_correct, conf)[["upper"]])
+    bacc <- if (!is.null(base_acc) && vid %in% names(base_acc)) unname(base_acc[vid]) else NA_real_
+    bdel <- if (!is.na(bacc) && !is.na(acc)) acc - bacc else NA_real_
+    sdr  <- if (!is.null(drop_of) && vid %in% names(drop_of)) unname(drop_of[vid]) else NA_real_
+
     wrong <- d$pred_semantic_type[!is.na(d$type_correct) & !d$type_correct]
     wrong <- wrong[!is.na(wrong)]          # all-NA wrongs (truncated) -> no top
     top <- if (length(wrong)) names(sort(table(wrong), decreasing = TRUE))[1] else NA_character_
-    flag <- if (nrow(d) < min_support) "low-support"
-            else if (!is.na(acc) && acc <= max_accuracy) "low-accuracy" else "ok"
-    data.frame(gold_variant_id = d$gold_variant_id[1],
+
+    ## the three detector-work triggers (each inert when its signal is absent)
+    acc_fail    <- !is.na(tgt) && !is.na(wu)  && wu  <  tgt
+    base_fail   <-                !is.na(bdel) && bdel <  -baseline_margin
+    stress_fail <-                !is.na(sdr)  && sdr  >= stress_drop_max
+
+    bucket <- if (nrow(d) < min_support) "needs-cases"
+              else if (acc_fail || base_fail || stress_fail) "needs-detector-work"
+              else if (is.na(tgt)) "excluded"
+              else "ok"
+
+    data.frame(gold_variant_id = vid,
                gold_data_type = d$gold_data_type[1],
                gold_semantic_type = d$gold_semantic_type[1],
+               match_kind = match_kind,
                support = nrow(d), acc_type = acc,
                acc_headline = mean(d$headline, na.rm = TRUE),
-               top_wrong = top, flag = flag, stringsAsFactors = FALSE)
-  })) -> g
-  g <- g[order(g$flag == "ok", g$acc_type, g$support), , drop = FALSE]
+               target = tgt, wilson_upper = wu,
+               baseline_acc = bacc, baseline_delta = bdel,
+               stress_drop = sdr, top_wrong = top, bucket = bucket,
+               stringsAsFactors = FALSE)
+  }))
+
+  ## live ontology variants that never appear in the corpus: a blind spot the
+  ## per-case signals cannot see (they only rank what was banked). Surface each
+  ## as a support-0 "needs-cases" row (DEVELOPMENT-STATUS.md §6.5 / §6.2(2)).
+  if (isTRUE(include_absent) &&
+      !is.null(ontology) && all(c("variant_id", "match_kind") %in% names(ontology))) {
+    live <- if ("version_deprecated" %in% names(ontology))
+      !nzchar(ontology$version_deprecated) else rep(TRUE, nrow(ontology))
+    seen <- unique(res$gold_variant_id)
+    absent <- ontology[live & !(ontology$variant_id %in% seen), , drop = FALSE]
+    absent <- absent[!duplicated(absent$variant_id), , drop = FALSE]
+    if (nrow(absent)) {
+      ga <- data.frame(
+        gold_variant_id    = absent$variant_id,
+        gold_data_type     = absent$data_type,
+        gold_semantic_type = absent$semantic_type,
+        match_kind         = absent$match_kind,
+        support = 0L, acc_type = NA_real_, acc_headline = NA_real_,
+        target = unname(vapply(absent$match_kind, target_of, numeric(1))),
+        wilson_upper = NA_real_, baseline_acc = NA_real_,
+        baseline_delta = NA_real_, stress_drop = NA_real_,
+        top_wrong = NA_character_, bucket = "needs-cases",
+        stringsAsFactors = FALSE, row.names = NULL)
+      g <- if (is.null(g)) ga else rbind(g, ga)
+    }
+  }
+
+  ## worst first: needs-detector-work, needs-cases, excluded, ok; then by acc, support
+  rank <- c(`needs-detector-work` = 1L, `needs-cases` = 2L, excluded = 3L, ok = 4L)
+  g <- g[order(rank[g$bucket], g$acc_type, g$support), , drop = FALSE]
   rownames(g) <- NULL
   g
 }

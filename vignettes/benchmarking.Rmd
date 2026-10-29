@@ -153,12 +153,29 @@ off.
 
 ## Coverage gaps
 
-`fx_coverage_gaps()` is the machine-readable companion to the coverage notes --
-the variants with the thinnest support or the lowest type accuracy, flagged
-worst-first, with the dominant wrong prediction for each.
+`fx_coverage_gaps()` is the machine-readable companion to the coverage notes. It
+is **difficulty-aware**: instead of a single flat accuracy gate it judges each
+gold variant on up to four signals -- a per-`match_kind` target (header-gated
+`shape`/`none` types are excluded from value accuracy, not scored 0), the
+accuracy estimate's Wilson upper bound, how the learned router compares to the
+signature baseline, and how far accuracy drops under stress -- and sorts every
+variant into an action `bucket`: `needs-cases` (thin support -> bank data) or
+`needs-detector-work` (adequate support but a real accuracy / baseline / stress
+problem -> fix the detector), with `excluded` and `ok` for the rest.
 
 ```{r gaps}
 head(fx_coverage_gaps(res), 10)
+```
+
+Supply the two optional signals to sharpen the verdict -- a signature-router
+baseline flags where the learned router loses to the model-free floor, and a
+stress grid flags detectors that are brittle to whitespace, case, or
+contamination:
+
+```{r gaps-signals, eval = FALSE}
+base <- fx_benchmark(fx_benchmark_data(), router = "signature")
+st   <- fx_stress_grid(fx_benchmark_data())
+fx_coverage_gaps(res, baseline = base, stress = st)
 ```
 
 ## Tracking change over time
