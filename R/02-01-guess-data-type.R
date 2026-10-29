@@ -363,9 +363,16 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
 #'   legacy `guess`; below it, `guess` is `NA` (unknown).
 #' @param floor Minimum pass rate for a type to appear in `candidates`.
 #' @param detectors A named list of detector functions; defaults to the registry.
+#'   Unused when `legacy = FALSE`.
 #' @param seed Optional integer seed for reproducible sampling.
 #' @param route If `TRUE` (default), also compute the v6 router->verifier
 #'   `route` record. Set `FALSE` to skip it (pure legacy behavior).
+#' @param legacy If `TRUE` (default), compute the legacy flat-detector
+#'   `guess` / `ontology` / `candidates` fields. Set `FALSE` to skip that scan
+#'   and return only the `route` record; the legacy fields are still present but
+#'   empty (`guess = NA`, `candidates = NULL`). A speedup for callers that read
+#'   only `$route`, since it avoids scoring every registered detector. Setting
+#'   both `route` and `legacy` to `FALSE` returns an empty record.
 #' @param ontology The v6 ontology used by the router/verifier; defaults to
 #'   [fx_ontology()].
 #' @param router_k Router shortlist size (candidates handed to the verifier).
@@ -386,7 +393,8 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
 #'     \item{ontology}{Named vector `c(data_type, data_subtype, data_class,
 #'       data_format)` for the guess (all `NA` if none).}
 #'     \item{confidence}{The guess's pass rate.}
-#'     \item{candidates}{Ranked data frame of types clearing `floor`.}
+#'     \item{candidates}{Ranked data frame of types clearing `floor` (`NULL`
+#'       when `legacy = FALSE`).}
 #'     \item{n}{Number of unique values scored.}
 #'   }
 #'   and, when `route = TRUE`, a `route` sub-list anchored to the v6 ontology:
@@ -405,7 +413,8 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
 #' @export
 guess_data_type <- function(x, name = NULL, n_sample = 100, threshold = 0.8,
                             floor = 0.5, detectors = data_type_detectors(),
-                            seed = NULL, route = TRUE, ontology = NULL,
+                            seed = NULL, route = TRUE, legacy = TRUE,
+                            ontology = NULL,
                             router_k = 8, confirm_thr = 0.80, sig_floor = 0.55,
                             router = c("auto", "learned", "signature")) {
   router <- match.arg(router)
@@ -418,35 +427,53 @@ guess_data_type <- function(x, name = NULL, n_sample = 100, threshold = 0.8,
     u <- sample(u, n_sample)
   }
 
-  ## --- fast tier, then fall through to slow only if nothing is confident ----
-  is_slow <- names(detectors) %in% .slow_detectors
-  scores <- score_data_type(u, detectors[!is_slow])
-  if ((nrow(scores) == 0 || max(scores$pass_rate, na.rm = TRUE) < threshold) &&
-      any(is_slow)) {
-    scores <- rbind(scores, score_data_type(u, detectors[is_slow]))
-    scores <- scores[order(-scores$pass_rate), , drop = FALSE]
+  ## --- legacy flat-detector scoring (the $guess / $ontology / $candidates
+  ## contract). Skippable: `legacy = FALSE` runs only the router -> verifier
+  ## $route record and avoids scoring EVERY registered detector over the column
+  ## (score_data_type() is an O(all detectors) scan, the cost the router exists
+  ## to avoid). `detectors` is a lazy default, so a `legacy = FALSE` call never
+  ## even builds the detector list. -------------------------------------------
+  if (isTRUE(legacy)) {
+    ## fast tier, then fall through to slow only if nothing is confident
+    is_slow <- names(detectors) %in% .slow_detectors
+    scores <- score_data_type(u, detectors[!is_slow])
+    if ((nrow(scores) == 0 || max(scores$pass_rate, na.rm = TRUE) < threshold) &&
+        any(is_slow)) {
+      scores <- rbind(scores, score_data_type(u, detectors[is_slow]))
+      scores <- scores[order(-scores$pass_rate), , drop = FALSE]
+    }
+
+    ## annotate with tie-breakers, filter to candidates, rank
+    scores$name_match <- vapply(scores$data_type, .name_hits, logical(1),
+                                varname = name)
+    scores$specific   <- !(scores$data_type %in% .loose_detectors)
+    cand <- scores[!is.na(scores$pass_rate) & scores$pass_rate >= floor, ,
+                   drop = FALSE]
+    cand <- cand[order(-round(cand$pass_rate, 3), -cand$name_match,
+                       -cand$specific), , drop = FALSE]
+    rownames(cand) <- NULL
+
+    top <- if (nrow(cand)) cand[1, ] else NULL
+    guess <- if (!is.null(top) && top$pass_rate >= threshold) top$data_type else NA_character_
+
+    out <- list(
+      guess = guess,
+      ontology = if (is.na(guess)) data_type_ontology(NA) else data_type_ontology(guess),
+      confidence = if (is.null(top)) NA_real_ else top$pass_rate,
+      candidates = cand,
+      n = length(u)
+    )
+  } else {
+    ## router-only: keep the legacy fields present but unpopulated, so the
+    ## record shape stays stable for consumers that still read $guess / $n.
+    out <- list(
+      guess = NA_character_,
+      ontology = data_type_ontology(NA),
+      confidence = NA_real_,
+      candidates = NULL,
+      n = length(u)
+    )
   }
-
-  ## --- annotate with tie-breakers, filter to candidates, rank ---------------
-  scores$name_match <- vapply(scores$data_type, .name_hits, logical(1),
-                              varname = name)
-  scores$specific   <- !(scores$data_type %in% .loose_detectors)
-  cand <- scores[!is.na(scores$pass_rate) & scores$pass_rate >= floor, ,
-                 drop = FALSE]
-  cand <- cand[order(-round(cand$pass_rate, 3), -cand$name_match,
-                     -cand$specific), , drop = FALSE]
-  rownames(cand) <- NULL
-
-  top <- if (nrow(cand)) cand[1, ] else NULL
-  guess <- if (!is.null(top) && top$pass_rate >= threshold) top$data_type else NA_character_
-
-  out <- list(
-    guess = guess,
-    ontology = if (is.na(guess)) data_type_ontology(NA) else data_type_ontology(guess),
-    confidence = if (is.null(top)) NA_real_ else top$pass_rate,
-    candidates = cand,
-    n = length(u)
-  )
 
   ## --- v6 router -> verifier record (the shippable two-stage flow) ----------
   if (isTRUE(route)) {

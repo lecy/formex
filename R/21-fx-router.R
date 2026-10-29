@@ -45,6 +45,27 @@
       }, error = function(e) NULL)
     }
   }
+
+  ## PARITY GUARD. The artifact bakes in the feature names, column order, and
+  ## median imputations of ONE fx_extract_features version. If the installed
+  ## extractor has since moved, the 1-row inference matrix would silently
+  ## diverge from the training matrix (train/serve skew -- the bug that first
+  ## scored the model at chance). Refuse a mismatched model and let
+  ## .fx_shortlist() fall back to the signature router. The warning fires once
+  ## per session: the result (NULL) is cached, so later calls return early.
+  if (!is.null(art)) {
+    ev <- art$extractor_version
+    if (is.null(ev) ||
+        !identical(as.character(ev), as.character(FEATURE_EXTRACTOR_VERSION))) {
+      warning(sprintf(paste0(
+        "formex: the learned router was trained on feature extractor %s but ",
+        "the installed extractor is %s; falling back to the signature router. ",
+        "Retrain with data-raw/train_router.R."),
+        if (is.null(ev)) "<unstamped>" else ev, FEATURE_EXTRACTOR_VERSION),
+        call. = FALSE)
+      art <- NULL
+    }
+  }
   assign("art", art, envir = .fx_router_cache)
   art
 }

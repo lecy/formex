@@ -13,6 +13,7 @@ guess_data_type(
   detectors = data_type_detectors(),
   seed = NULL,
   route = TRUE,
+  legacy = TRUE,
   ontology = NULL,
   router_k = 8,
   confirm_thr = 0.8,
@@ -33,12 +34,20 @@ legacy \code{guess}; below it, \code{guess} is \code{NA} (unknown).}
 
 \item{floor}{Minimum pass rate for a type to appear in \code{candidates}.}
 
-\item{detectors}{A named list of detector functions; defaults to the registry.}
+\item{detectors}{A named list of detector functions; defaults to the registry.
+Unused when \code{legacy = FALSE}.}
 
 \item{seed}{Optional integer seed for reproducible sampling.}
 
 \item{route}{If \code{TRUE} (default), also compute the v6 router->verifier
 \code{route} record. Set \code{FALSE} to skip it (pure legacy behavior).}
+
+\item{legacy}{If \code{TRUE} (default), compute the legacy flat-detector
+\code{guess} / \code{ontology} / \code{candidates} fields. Set \code{FALSE} to skip that scan
+and return only the \code{route} record; the legacy fields are still present but
+empty (\code{guess = NA}, \code{candidates = NULL}). A speedup for callers that read
+only \verb{$route}, since it avoids scoring every registered detector. Setting
+both \code{route} and \code{legacy} to \code{FALSE} returns an empty record.}
 
 \item{ontology}{The v6 ontology used by the router/verifier; defaults to
 \code{\link[=fx_ontology]{fx_ontology()}}.}
@@ -64,7 +73,8 @@ A list with the legacy fields:
 \item{guess}{Best-matching detector type name, or \code{NA}.}
 \item{ontology}{Named vector \code{c(data_type, data_subtype, data_class, data_format)} for the guess (all \code{NA} if none).}
 \item{confidence}{The guess's pass rate.}
-\item{candidates}{Ranked data frame of types clearing \code{floor}.}
+\item{candidates}{Ranked data frame of types clearing \code{floor} (\code{NULL}
+when \code{legacy = FALSE}).}
 \item{n}{Number of unique values scored.}
 }
 and, when \code{route = TRUE}, a \code{route} sub-list anchored to the v6 ontology:
