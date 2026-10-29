@@ -222,3 +222,92 @@ testing gap:
   columns), not GitTables, and counts `none` / open-set types as not-stabilized.
 - Sherlock labels come from headers, so a slice of the "truth" is itself noisy;
   this is intentional (hard negatives) but caps the achievable top-1.
+
+## 6. Benchmark-driven detector priorities (2026-10-29)
+
+> The benchmark is **still in development** — not yet frozen for published
+> reference. The frozen set now covers **all 97 ontology variants** (was 51):
+> `data-raw/scaffold_gap_cases.R` banks one format-faithful case per
+> previously-uncovered variant into `dev/bank_v2` (values from the
+> `data-raw/datatypes/*.R` detector fixtures, or a seeded generator where no
+> fixture exists), and `build_benchmark.R` now bundles the full set in
+> `inst/extdata/benchmark_full.rds`. These scaffolds are
+> `method = "scaffold_synthetic"`, `confidence = "low"` — regression anchors
+> and a gap probe, **not** gold-vetted corpus columns; confirm/relabel before
+> any published accuracy claim.
+
+Running `fx_benchmark()` over the newly-covered variants splits cleanly into
+two very different kinds of failure. **The split, not the headline number, is
+the finding** — it says whether the work is router tuning or new detector code.
+
+### 6.1 P0 — router recall: 11 *implemented* detectors are dark
+
+These variants are `implemented = "yes"` with a selective recipe, yet the
+router never routes to them (prediction is `<none>` or a wrong neighbour). No
+new detector code is needed — the fix is in the shortlist/router. This is the
+single highest-ROI item and confirms the §2 note that *a selective recipe is
+necessary but not sufficient to route; the learned router never shortlists very
+rare `mask` leaves.*
+
+| variant | path | predicted instead |
+|---|---|---|
+| `n0040-f01` | text/color/**hex** | `<none>` |
+| `n0041-f01` | text/color/**rgb** | measurement |
+| `n0042-f01` | text/color/**hsl** | measurement |
+| `n0043-f01` | text/color/**cmyk** | `<none>` |
+| `n0036-f01` | text/web/**ip** | `<none>` |
+| `n0037-f01` | text/web/**mac** | `<none>` |
+| `n0039-f01` | text/contact/**phone** | `<none>` |
+| `n0032-f01` | text/postal/**po_box** | unordered |
+| `n0064-f01` | temporal/period/**month** | calendar |
+| `n0022-f01` | text/text/**literal** | `<none>` |
+| `n0073-f05` | identifier/id/**administrative (issn)** | **date_range** |
+
+**Action.** Add confirmable `mask` leaves to the verifier's always-on set (as
+the `geometry` family already is) or seed the learned router with these cases so
+it shortlists them. `issn → date_range` is a genuine confusability bug
+(`NNNN-NNNN` collides with a date range) — give it a `hard_negative` /
+`disambiguator` entry.
+
+### 6.2 P0 — the boolean data type is 0%
+
+`presence` / `status` / `response` / `mixed` all misroute (to `unordered` or
+`<none>`); `acc_data_type` for `boolean` is **0.00** on the benchmark. `is_boolean()`
+exists but no `binary` variant is wired, so an entire data type is invisible.
+Wire the boolean verifier into the always-on set and reconcile the ontology
+`implemented` flags.
+
+### 6.3 P1 — number masks (real detector + verb work)
+
+`implemented = "no"`, `mask`-detectable from values, so each needs a detector
+and a stabilize verb: `balance`, `euro` (currency), `min_max`,
+`confidence_interval` (range), `lat`, `lat_lon`, `lon_lat` (coordinate). They
+misroute to `measurement` / `min_max` / `rank`. Highest value in the `number`
+block because the surface form *is* typable (unlike the `shape` subtypes below).
+
+### 6.4 P2 — shape numerics and codebook-gated types (fail safe or need header)
+
+- `number/shape`: `probability`, `odds`, `percentile` land **graceful** (correct
+  `data_type`, no committed subtype) — they fail safely and are low urgency;
+  `rate` misroutes to `measurement`. None are subtype-typable from values alone.
+- `categorical/none`: `likert`, `missingness_reason` and `text/text/serialized`
+  need a codebook/header; low yield from values.
+- `temporal/phase`: `hour_of_day`, `week_of_year` are bare small integers,
+  genuinely ambiguous with `number` without a header.
+- `structured` non-geometry: `array`, `object`, `key_value` route to
+  `<none>` / `tags`; `is_json` / `is_wkb` exist but are not wired for these.
+  (`point` / `polygon` already **hit** — now regression-covered.)
+
+### 6.5 Already correct (now regression-anchored)
+
+Nine previously-untested variants **hit** on the first benchmark and now have a
+guard: `geographic` (×3), `administrative` isbn/doi/orcid (×3), `point`,
+`polygon`, `color_name`.
+
+**Housekeeping.** The ontology `implemented` flag is stale for `person`
+(`n0027-f02/f03` are marked `no` but the benchmark hits them) — reconcile with
+§2's boolean note in the same pass.
+
+**Reproduce:** `Rscript data-raw/scaffold_gap_cases.R && Rscript
+data-raw/build_benchmark.R`, then `fx_benchmark(fx_benchmark_data("full"))` and
+`fx_coverage_gaps()`.

@@ -1,11 +1,20 @@
-# build_benchmark.R -- assemble the frozen evaluation benchmark from the local
+# build_benchmark.R -- assemble the evaluation benchmark from the local
 # dev/bank* test library. Neither dev/ nor data-raw/ ships (both .Rbuildignore'd),
-# so this is a reproducible build step, not a package artifact. It emits:
+# so this is a reproducible build step. It emits:
 #
-#   dev/benchmark_full.rds           the full set (host this remotely; see
-#                                    fx_benchmark_data(which = "full"))
-#   inst/extdata/benchmark_mini.rds  a small (<1 MB) stratified subset shipped in
-#                                    the package for tests/CI and offline use
+#   inst/extdata/benchmark_full.rds  the full set, BUNDLED with the package so
+#                                    fx_benchmark_data(which = "full") is always
+#                                    the most up-to-date set offline. Re-run this
+#                                    script after ANY change to the bank or the
+#                                    ontology to refresh the bundled copy.
+#   inst/extdata/benchmark_mini.rds  a small (<1 MB) stratified subset for tests/CI.
+#   dev/benchmark_full.rds           an identical copy of the full set, kept so it
+#                                    can be uploaded as the optional remote
+#                                    "refresh" release asset (fx_benchmark_data(
+#                                    refresh = TRUE)); not required for the bundle.
+#
+# NOTE: the benchmark is still in development -- not yet frozen for published
+# reference. Keep editing the framework here; the bundled copy tracks the bank.
 #
 # One row per banked column: the (capped) unique values + counts, the gold label
 # at every ontology level, and gold_style / gold_unit joined from fx_ontology().
@@ -150,11 +159,17 @@ attr(mini, "built_on")          <- as.character(Sys.Date())
 full <- mark_utf8(full); mini <- mark_utf8(mini)
 
 dir.create("inst/extdata", showWarnings = FALSE, recursive = TRUE)
-saveRDS(full, "dev/benchmark_full.rds", version = 2, compress = "xz")
+## Bundle BOTH sets with the package so fx_benchmark_data() is current offline;
+## keep an identical dev/ copy of the full set for the optional remote-refresh
+## release asset. The bundled inst/extdata copy is the source of truth.
+saveRDS(full, "inst/extdata/benchmark_full.rds", version = 2, compress = "xz")
 saveRDS(mini, "inst/extdata/benchmark_mini.rds", version = 2, compress = "xz")
+if (dir.exists("dev"))
+  saveRDS(full, "dev/benchmark_full.rds", version = 2, compress = "xz")
 
-message(sprintf("full: %d cases (%d clean / %d sherlock), %d data types",
+message(sprintf("full: %d cases (%d clean / %d sherlock), %d data types, %d variants -> inst/extdata/benchmark_full.rds (%.0f KB)",
                 nrow(full), sum(full$tier == "clean"), sum(full$tier == "sherlock"),
-                length(unique(full$data_type))))
+                length(unique(full$data_type)), length(unique(full$variant_id)),
+                file.size("inst/extdata/benchmark_full.rds") / 1024))
 message(sprintf("mini: %d cases -> inst/extdata/benchmark_mini.rds (%.0f KB)",
                 nrow(mini), file.size("inst/extdata/benchmark_mini.rds") / 1024))
