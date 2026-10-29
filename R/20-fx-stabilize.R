@@ -110,7 +110,20 @@
   A("as_range",     function(x,a){ s<-trimws(x)
     s<-sub("^[[(][[:space:]]*", "", s); s<-sub("[[:space:]]*[])]$", "", s)
     ok<-grepl("^[-+]?[0-9]+([.][0-9]+)?[[:space:]]*(,|to|-)[[:space:]]*[-+]?[0-9]+([.][0-9]+)?$", s)
-    ifelse(ok, trimws(x), NA) })
+    ## Two shape collisions that a bare NNNN-NNNN range form must yield on:
+    ##  * a YYYY-MM (year + 01..12) is a calendar MONTH, not a range (an
+    ##    abbreviated span like 1994-96 has a >12 second field, so it is a range);
+    ##  * a checksum-VALID ISSN is an issn, not a coincidental numeric range (a
+    ##    genuine year range such as 2000-2005 fails the ISSN checksum, so it
+    ##    still reads as a range). The checksum IS the discriminator here --
+    ##    cardinality is not, since an ISSN column may repeat.
+    ym<-grepl("^(19|20)[0-9]{2}-(0[1-9]|1[0-2])$", s)
+    ## an ISSN-shaped value that is ALSO a plausible year-year span (19xx/20xx on
+    ## both sides) stays a range -- a real year range like 2000-2005 can pass the
+    ## ISSN checksum by coincidence, and must not be yielded to the issn leaf.
+    yr<-grepl("^(19|20)[0-9]{2}-(19|20)[0-9]{2}$", s)
+    issnlike<-(suppressWarnings(is_issn(s)) %in% TRUE) & !yr
+    ifelse(ok & !ym & !issnlike, trimws(x), NA) })
   ## genome / temporal
   A("as_mmddyyyy",  function(x,a) .fx_parse_iso_date(x))
   A("as_datetime",  function(x,a) .fx_parse_iso_date(x, with_time = TRUE))
@@ -122,8 +135,54 @@
   A("as_email",     function(x,a){ e<-tolower(trimws(x)); ifelse(is_email(e), e, NA) })
   A("as_url",       function(x,a) ifelse(is_url(x) | is_url(paste0("http://",x)), trimws(x), NA))
   A("as_ein",       function(x,a){ d<-gsub("\\D","",x); p<-stringr::str_pad(d,9,"left","0"); ifelse(nchar(d)%in%c(8L,9L), paste0(substr(p,1,2),"-",substr(p,3,9)), NA) })
-  A("as_phone",     function(x,a){ d<-gsub("\\D","",x); ifelse(nchar(d)%in%c(10,11), d, NA) })
-  A("as_hex",       function(x,a) ifelse(is_hex_color(x), toupper(trimws(x)), NA))
+  ## as_phone is SELECTIVE on phone SHAPE, not just digit count: a NANP number
+  ## (optional +1, area/prefix/line in 3-3-4 with a separator) or an E.164-style
+  ## international number. Requiring the grouping stops it from swallowing any
+  ## 10/11-digit token -- notably a dashed ISBN-10 ("1-84807-135-3") whose digits
+  ## also total ten but whose 1-5-3-1 grouping is not a phone.
+  A("as_phone",     function(x,a){ s<-trimws(x); d<-gsub("\\D","",s)
+    nanp<-grepl("^(\\+?1[-. ]?)?\\(?[2-9][0-9]{2}\\)?[-. ][0-9]{3}[-. ][0-9]{4}$", s)
+    e164<-grepl("^\\+[0-9]{1,3}([ -][0-9]{2,4}){2,4}$", s)
+    ifelse((nanp | e164) & nchar(d) %in% 10:15, d, NA) })
+  ## as_hex accepts the two selective written forms the detector names (#RGB /
+  ## #RRGGBB) plus a 0x-prefixed hex; a BARE 6-hex (a1b2c3) is deliberately NOT
+  ## accepted -- it collides with short hashes/ids (the foil carries "a1b2c3"),
+  ## so admitting it would leak. The # and 0x forms are foil-clean.
+  A("as_hex",       function(x,a){ s<-trimws(x)
+    ok<-grepl("^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$", s) | grepl("^0x[0-9A-Fa-f]{6}$", s)
+    ifelse(ok, toupper(s), NA) })
+  ## ip / mac / rgb / hsl / cmyk: SELECTIVE recipes that reuse the existing
+  ## family detectors (is_ipv4/is_ipv6, is_mac, is_rgb_color, ...). These leaves
+  ## shipped with a {{ none }} identity recipe, so the verifier could never
+  ## confirm them (identity leaks on the foil) and the router never shortlisted
+  ## them -- the sec 6.1 "dark detector" gap. Wiring the detector in as the recipe
+  ## makes the leaf confirmable AND foil-selective.
+  A("as_ip",        function(x,a){ s<-trimws(x); ifelse(is_ipv4(s) | is_ipv6(s), s, NA) })
+  A("as_mac",       function(x,a){ s<-trimws(x)
+    cisco<-grepl("^([0-9A-Fa-f]{4}\\.){2}[0-9A-Fa-f]{4}$", s)   # Cisco 0123.4567.89ab
+    ifelse(is_mac(s) | cisco, toupper(s), NA) })
+  ## strip an optional rgb()/hsl()/cmyk() functional wrapper, then validate the
+  ## comma-separated channels through the detector's range check.
+  A("as_rgb",       function(x,a){ s<-sub("^rgb\\s*\\(\\s*","",trimws(x),ignore.case=TRUE); s<-sub("\\s*\\)\\s*$","",s)
+    ifelse(is_rgb_color(s), s, NA) })
+  A("as_hsl",       function(x,a){ s<-sub("^hsl\\s*\\(\\s*","",trimws(x),ignore.case=TRUE); s<-sub("\\s*\\)\\s*$","",s)
+    ifelse(is_hsl_color(s), s, NA) })
+  A("as_cmyk",      function(x,a){ s<-sub("^cmyk\\s*\\(\\s*","",trimws(x),ignore.case=TRUE); s<-sub("\\s*\\)\\s*$","",s)
+    ifelse(is_cmyk_color(s), s, NA) })
+  ## PO box: the is_po_box detector covers PO BOX / P.O. Box / POB / post office
+  ## box; the scaffold also carries a bare "Box 123", so admit that form too.
+  A("as_po_box",    function(x,a){ s<-trimws(x)
+    ifelse(is_po_box(s) | grepl("^box\\s*#?\\s*\\d+$", s, ignore.case=TRUE), s, NA) })
+  ## period/month: the written month forms (YYYYMM, YYYY-MM, "Mon YYYY"). A BARE
+  ## month name (April) is left to month_of_year (as_moy), so the two period/phase
+  ## leaves stay distinct.
+  A("as_month",     function(x,a){ s<-trimws(x)
+    mon<-"(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*"
+    ok<-grepl("^(19|20)\\d{2}(0[1-9]|1[0-2])$", s) |
+        grepl("^(19|20)\\d{2}-(0[1-9]|1[0-2])$", s) |
+        grepl(paste0("^",mon,"[ ,.-]+(19|20)\\d{2}$"), s, ignore.case=TRUE) |
+        grepl(paste0("^(19|20)\\d{2}[ ,.-]+",mon,"$"), s, ignore.case=TRUE)
+    ifelse(ok, s, NA) })
   A("as_color_name",function(x,a) ifelse(is_color_name(x), tolower(trimws(x)), NA))
   A("as_tags",      function(x,a) ifelse(is_tags(x),
     vapply(x, function(v){ p <- trimws(strsplit(v, "[;|]")[[1]]); paste(p[nzchar(p)], collapse = ";") }, ""),
@@ -135,7 +194,8 @@
     s<-gsub("[- ]","",s); ifelse(nzchar(s) & suppressWarnings(is_isbn(s)), s, NA) })
   A("as_doi",       function(x,a){ s<-sub("^doi[: ]*","",tolower(trimws(x))); ifelse(suppressWarnings(is_doi(s)), s, NA) })
   A("as_orcid",     function(x,a){ s<-trimws(x); ifelse(suppressWarnings(is_orcid(s)), s, NA) })
-  A("as_issn",      function(x,a){ s<-trimws(x); ifelse(suppressWarnings(is_issn(s)), s, NA) })
+  A("as_issn",      function(x,a){ s<-sub("^issn[: ]*","",trimws(x),ignore.case=TRUE); s<-toupper(trimws(s))
+    ifelse(suppressWarnings(is_issn(s)), s, NA) })
   ## pipeline operators
   A("strip",        function(x,a){ for(ch in strsplit(a %||% "","")[[1]]) x<-gsub(ch,"",x,fixed=TRUE); x })
   A("dec",          function(x,a){ n<-as.integer(gsub("[^0-9]","",a %||% "2")); v<-.fx_num(x); ifelse(is.na(v),NA,formatC(round(v,n),format="f",digits=n)) })
@@ -165,8 +225,19 @@
          september=9,october=10,november=11,december=12,
          jan=1,feb=2,mar=3,apr=4,jun=6,jul=7,aug=8,sep=9,sept=9,oct=10,nov=11,dec=12)
     as.character(unname(m[mo])) })
+  ## as_boolean maps a two-state vocabulary to TRUE/FALSE and NAs anything else,
+  ## so it CONFIRMS a genuinely binary column (every value in the vocabulary) and
+  ## REJECTS the foil and multi-state categoricals (a third value NAs out and
+  ## drops confirm below threshold). The vocabulary spans the binary subtypes the
+  ## benchmark carries -- response (yes/no), status (active/inactive, on/off,
+  ## open/closed, enabled/disabled), presence (present/absent, "x") -- so the
+  ## data_type resolves as boolean regardless of which subtype a column is
+  ## (sec 6.2; the specific subtype is header-dependent and stays coarse).
   A("as_boolean",   function(x,a){ b<-tolower(trimws(x))
-    map<-c(yes="TRUE",no="FALSE",y="TRUE",n="FALSE","true"="TRUE","false"="FALSE",t="TRUE",f="FALSE","1"="TRUE","0"="FALSE","on"="TRUE","off"="FALSE")
+    map<-c(yes="TRUE",no="FALSE",y="TRUE",n="FALSE","true"="TRUE","false"="FALSE",
+           t="TRUE",f="FALSE","1"="TRUE","0"="FALSE","on"="TRUE","off"="FALSE",
+           active="TRUE",inactive="FALSE",enabled="TRUE",disabled="FALSE",
+           open="TRUE",closed="FALSE",present="TRUE",absent="FALSE",x="TRUE")
     unname(map[b]) })
   ## person full name
   A("as_full_name", function(x,a){ m<-.fx_maps(); vapply(x, function(s){
