@@ -1,5 +1,15 @@
 # formex 0.0.0.9000
 
+* **Bug fix: over-long values no longer crash the date machinery.** Base R's
+  `strptime()` aborts with `input string is too long` on values over 1000
+  bytes, so a single long free-text cell (e.g. a narrative field) made
+  `is_date()`, `guess_data_type()` and `fx_stabilize()` error out rather than
+  classify the column. Values of 1000 bytes or more are now screened out as
+  non-dates before `strptime()` is called -- no real date is anywhere near that
+  length -- in both the detector (`is_date()`) and the stabilizer's ISO date
+  parser. Reported by datagoodr (B2, `degenerate-columns-and-preflight.md`),
+  which can now drop its `.cap_bytes()` workaround.
+
 * **Benchmark + stress-test harness.** A new evaluation layer measures how well
   `guess_data_type()` types columns, over time and under messy data:
   - A frozen benchmark built from the internal test library

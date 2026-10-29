@@ -70,7 +70,7 @@
 ## ---- verb library ---------------------------------------------------------
 .fx_num <- function(x) suppressWarnings(as.numeric(gsub("[^0-9.eE+-]", "", gsub(",", "", x))))
 .fx_parse_iso_date <- function(x, with_time = FALSE){
-  x0 <- .date_norm_input(x); out <- rep(NA_character_, length(x)); live <- !is.na(x0) & nzchar(x0)
+  x0 <- .date_norm_input(x); out <- rep(NA_character_, length(x)); live <- .date_live(x0)
   for (f in .date_formats_for(x0[live])){ todo <- which(live & is.na(out)); if (!length(todo)) break
     p <- suppressWarnings(strptime(x0[todo], f, tz = "UTC")); ok <- which(!is.na(p$year)); if (!length(ok)) next
     keep <- .date_norm_cmp(format(p[ok], f)) == .date_norm_cmp(x0[todo][ok])

@@ -84,6 +84,17 @@
                                any(grepl("[A-Za-z]", x0)))]]
 }
 
+## Base R's strptime() aborts with "input string is too long" on values over
+## 1000 bytes. No real date is anywhere near that long, so a value this long is
+## never a date: screen it out before it reaches strptime(). Shared by every
+## detector/verb that loops strptime() over raw cell values.
+.FX_STRPTIME_MAX_BYTES <- 1000L
+#' @keywords internal
+#' @noRd
+.date_live <- function(x0){
+  !is.na(x0) & nzchar(x0) & nchar(x0, type = "bytes") < .FX_STRPTIME_MAX_BYTES
+}
+
 ## fold weekday prefix, ordinal day, fractional seconds, ISO T, Zulu Z, numeric
 ## offset and named tz to a canonical space-joined shape
 #' @keywords internal
@@ -128,7 +139,7 @@
 is_date <- function(x, min_year = 1900, max_year = 2100){
   x0 <- .date_norm_input(x)
   parsed <- rep(FALSE, length(x))
-  live <- !is.na(x0) & nzchar(x0)
+  live <- .date_live(x0)
   for(f in .date_formats_for(x0[live])){
     todo <- which(live & !parsed); if(!length(todo)) break
     p <- suppressWarnings(strptime(x0[todo], f, tz = "UTC"))
