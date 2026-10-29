@@ -29,7 +29,11 @@ test_that("fx_benchmark returns a scored, timed row per case", {
 
 test_that("synthetic temporal cases route correctly (regression floor)", {
   d   <- fx_benchmark_data("mini")
-  tmp <- d[d$data_type == "temporal", ]
+  # scope to the exact-ground-truth generator only. The "scaffold" corpus
+  # (deliberately-hard gap-fill cases, e.g. bare hour_of_day / week_of_year
+  # integers) and the header-labelled "sherlock" temporal rows are NOT exact
+  # ground truth and carry no 100% contract.
+  tmp <- d[d$data_type == "temporal" & d$corpus == "synthetic_temporal", ]
   skip_if(nrow(tmp) == 0)
   res <- fx_benchmark(tmp)
   # the synthetic temporal bank is exact ground truth -> data_type must be perfect
