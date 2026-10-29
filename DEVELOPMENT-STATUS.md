@@ -311,3 +311,54 @@ guard: `geographic` (×3), `administrative` isbn/doi/orcid (×3), `point`,
 **Reproduce:** `Rscript data-raw/scaffold_gap_cases.R && Rscript
 data-raw/build_benchmark.R`, then `fx_benchmark(fx_benchmark_data("full"))` and
 `fx_coverage_gaps()`.
+
+### 6.6 Format-sliced depth for the P0 types (2026-10-29)
+
+The gap scaffold gave each P0 variant exactly **one** canonical case (n=1,
+synthetic, `confidence=low`) — enough to measure *coverage* but not *format
+drift*, the real failure surface. `data-raw/scaffold_format_slices.R` now banks
+**several cases per P0 variant, one per distinct surface shape** (positive,
+single-shape columns of ~34 rows; values sliced from the `data-raw/datatypes/*.R`
+fixtures by regex, or seeded-generated where the fixtures lack a shape). This
+adds **50 cases** across the 15 P0 variants (full set 867 → **917**; every P0
+variant now carries 3–6 cases), labelled `method="scaffold_format_slice"`,
+`corpus="scaffold_fmt"`, `confidence="low"`, with the exact shape recorded in
+`label.format_label` / `original_label` / `notes`. Shapes added:
+
+- **hex** `#RRGGBB`, `#RGB`, bare `RRGGBB`, `0xRRGGBB`
+- **rgb** `r,g,b`, spaced `r, g, b`, functional `rgb(r,g,b)`
+- **hsl** `h, s%, l%`, functional `hsl(…)`; **cmyk** fractional `c,m,y,k`, functional `cmyk(…)`
+- **ip** IPv4 dotted, IPv6 full, IPv6 compressed (`::`)
+- **mac** colon, hyphen, Cisco-dotted; **phone** NANP dashed / parens / dotted, E.164 `+1-…`, international `+CC …`
+- **po_box** `PO BOX n` / `P.O. Box n` / `POB n` / `Box n`
+- **month** `yyyymm` / `Mon YYYY` / `YYYY-MM` / full name
+- **literal** 3 deliberately heterogeneous mixed-content columns
+- **issn** `NNNN-NNNN` / check-digit `NNNN-NNNX` / `ISSN `-prefixed
+- **boolean** presence (x·blank / 1·blank / present·absent), status (active·inactive / enabled·disabled / on·off / open·closed), response (yes·no / Y·N / true·false / T·F / 1·0), mixed (2 multi-encoding columns)
+
+**Per-format finding: the P0 failures are systemic, not shape-specific.** The
+router misroutes on **every** shape of nearly every P0 variant — it never
+reaches these leaves at all, so format drift is not yet the differentiator (it
+will become one once §6.1/§6.2 land the routing). Two exceptions are the
+actionable signal:
+
+- **hex** `#RRGGBB` lands **graceful** (recognized as `text`, subtype dropped),
+  while its drift variants (`#RGB`, bare `RRGGBB`, `0xRRGGBB`) all **misroute** —
+  the canonical hash-6 form is the only shape the pipeline half-recognizes.
+- **issn** **hits** only when the literal `ISSN ` prefix is present; bare
+  `NNNN-NNNN` **misroutes** (the `date_range` collision from §6.1) and the
+  check-digit `NNNN-NNNX` form lands **graceful**. The prefix token *is* the
+  disambiguator — direct evidence for the §6.1 `hard_negative`/`disambiguator`
+  action.
+- **boolean** is **0%** across all 20 cases (every shape, every subtype),
+  re-confirming §6.2.
+
+These cases are regression anchors for the P0 work: when a routing fix lands,
+the per-format `hit/graceful/misroute` split (group `fx_benchmark()` output by
+`format_label`) shows *which* shapes it recovered, not just a single number.
+This is recommendation #1 of the benchmark review (format depth); the
+hard-negative/confusability bank is a separate follow-up.
+
+**Reproduce:** `Rscript data-raw/scaffold_format_slices.R && Rscript
+data-raw/build_benchmark.R`, then `fx_benchmark(fx_benchmark_data("full"))` and
+join `format_label` back by `case_id` for the per-shape split.
