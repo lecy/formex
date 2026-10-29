@@ -1,5 +1,32 @@
 # formex 0.0.0.9000
 
+* **Benchmark + stress-test harness.** A new evaluation layer measures how well
+  `guess_data_type()` types columns, over time and under messy data:
+  - A frozen benchmark built from the internal test library
+    (`data-raw/build_benchmark.R`): one row per banked column with the capped
+    values and the gold label at every ontology level. A small stratified set
+    ships in the package (`inst/extdata/benchmark_mini.rds`, ~100 cases);
+    `fx_benchmark_data()` loads it, or fetches + caches a larger `"full"` set
+    from a remote host (`getOption("formex.benchmark_url")` / a GitHub release).
+  - `fx_benchmark()` scores each column at `data_type -> semantic_family ->
+    semantic_type -> format_style`/`unit` under **hierarchical partial credit**
+    (a level counts only if its ancestors match) and records per-case runtime.
+  - `fx_benchmark_summary()` reports per-level accuracy, a weighted headline, a
+    hit / graceful-truncation / wrong-branch (misroute) mix, by-`data_type`
+    accuracy, and runtime stats; `fx_benchmark_confusion()` shows the **shape of
+    errors** (where a gold type lands when wrong); `fx_coverage_gaps()` surfaces
+    thinly-covered or low-accuracy variants; `fx_benchmark_compare()` diffs two
+    runs so a change's effect is visible.
+  - `fx_stress_grid()` + `fx_perturb()` run a controlled experimental grid:
+    each column is perturbed along graded dimensions -- class-preserving
+    **spelling** corruption, vector **length** (resample to 50/100/300),
+    type-**contamination** (mix a foil type at 10% / 25%, with an optional 0->50%
+    sweep), **whitespace**, **case**, **missingness**, **static** punctuation, and
+    **position scramble** (punctuation and alphanumeric) -- and re-scored, so
+    `fx_stress_summary()` / `fx_contamination_curve()` show the accuracy-decay
+    curves and the contamination breaking point. Reuses the AutoType mutators
+    (`R/00-autotype-functions.R`).
+
 * **Date output styles + style detection.** The transform registry gains a
   vocabulary of calendar written styles (`mdy_slash`, `dmy_slash`, `ymd_dash`,
   `ymd_compact`, `mon_mdy`, `mon_dmy`, …), each readable and writable, so a date
