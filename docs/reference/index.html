@@ -25,6 +25,7 @@
     <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
     <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -882,6 +883,77 @@
         </dt>
         <dd>Round-trip audit an ontology file</dd>
       </dl></div><div class="section level2">
+      <h2 id="benchmark-stress-test-harness">Benchmark &amp; stress-test harness<a class="anchor" aria-label="anchor" href="#benchmark-stress-test-harness"></a></h2>
+
+      <div class="section-desc"><p>Score guess_data_type() over the frozen test library at every ontology level, track accuracy and runtime over time, and stress-test robustness with a controlled grid of perturbations.</p></div>
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="fx_benchmark_data.html">fx_benchmark_data()</a></code>
+
+        </dt>
+        <dd>Locate and load the frozen benchmark dataset</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_benchmark.html">fx_benchmark()</a></code>
+
+        </dt>
+        <dd>Benchmark guess_data_type() over the frozen test library</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_benchmark_compare.html">fx_benchmark_compare()</a></code>
+
+        </dt>
+        <dd>Compare two benchmark runs (track progress over time)</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_benchmark_confusion.html">fx_benchmark_confusion()</a></code>
+
+        </dt>
+        <dd>Confusion structure: what shape does "wrong" take?</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_benchmark_summary.html">fx_benchmark_summary()</a></code>
+
+        </dt>
+        <dd>Summarize a benchmark run</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_coverage_gaps.html">fx_coverage_gaps()</a></code>
+
+        </dt>
+        <dd>Coverage gaps: types the benchmark types poorly or barely covers</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_perturb.html">fx_perturb()</a></code>
+
+        </dt>
+        <dd>Perturb a column along one stress dimension</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_stress_grid.html">fx_stress_grid()</a></code>
+
+        </dt>
+        <dd>Run the stress-test grid over the benchmark</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_stress_summary.html">fx_stress_summary()</a></code>
+
+        </dt>
+        <dd>Summarize the stress grid: accuracy decay per dimension and level</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_contamination_curve.html">fx_contamination_curve()</a></code>
+
+        </dt>
+        <dd>Contamination breaking-point curve</dd>
+      </dl></div><div class="section level2">
       <h2 id="evaluation-autotype-reporting">Evaluation &amp; AutoType reporting<a class="anchor" aria-label="anchor" href="#evaluation-autotype-reporting"></a></h2>
 
 
@@ -1061,6 +1133,36 @@
         <dd>Coverage of a test-case bank by type and difficulty</dd>
       </dl><dl><dt>
 
+          <code><a href="fx_benchmark.html">fx_benchmark()</a></code>
+
+        </dt>
+        <dd>Benchmark guess_data_type() over the frozen test library</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_benchmark_compare.html">fx_benchmark_compare()</a></code>
+
+        </dt>
+        <dd>Compare two benchmark runs (track progress over time)</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_benchmark_confusion.html">fx_benchmark_confusion()</a></code>
+
+        </dt>
+        <dd>Confusion structure: what shape does "wrong" take?</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_benchmark_data.html">fx_benchmark_data()</a></code>
+
+        </dt>
+        <dd>Locate and load the frozen benchmark dataset</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_benchmark_summary.html">fx_benchmark_summary()</a></code>
+
+        </dt>
+        <dd>Summarize a benchmark run</dd>
+      </dl><dl><dt>
+
           <code><a href="fx_blocks_for_features.html">fx_blocks_for_features()</a></code>
 
         </dt>
@@ -1077,6 +1179,18 @@
 
         </dt>
         <dd>Classify every column of a data frame under deployment rules</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_contamination_curve.html">fx_contamination_curve()</a></code>
+
+        </dt>
+        <dd>Contamination breaking-point curve</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_coverage_gaps.html">fx_coverage_gaps()</a></code>
+
+        </dt>
+        <dd>Coverage gaps: types the benchmark types poorly or barely covers</dd>
       </dl><dl><dt>
 
           <code><a href="fx_dgf_fields.html">fx_dgf_fields()</a></code>
@@ -1157,6 +1271,12 @@
         <dd>Taxonomic distance between two ontology paths</dd>
       </dl><dl><dt>
 
+          <code><a href="fx_perturb.html">fx_perturb()</a></code>
+
+        </dt>
+        <dd>Perturb a column along one stress dimension</dd>
+      </dl><dl><dt>
+
           <code><a href="fx_plan_transform.html">fx_plan_transform()</a></code>
 
         </dt>
@@ -1191,6 +1311,18 @@
 
         </dt>
         <dd>Stabilize a column via its ontology recipe</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_stress_grid.html">fx_stress_grid()</a></code>
+
+        </dt>
+        <dd>Run the stress-test grid over the benchmark</dd>
+      </dl><dl><dt>
+
+          <code><a href="fx_stress_summary.html">fx_stress_summary()</a></code>
+
+        </dt>
+        <dd>Summarize the stress grid: accuracy decay per dimension and level</dd>
       </dl><dl><dt>
 
           <code><a href="fx_transform.html">fx_transform()</a></code>

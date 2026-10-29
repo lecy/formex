@@ -1,0 +1,258 @@
+---
+title: "Benchmarking and the Stress-Test Design Grid"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Benchmarking and the Stress-Test Design Grid}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+# Chunks are not evaluated at build time: a full benchmark runs guess_data_type()
+# over hundreds of columns, which is too slow for R CMD check. The numbers shown
+# are from an actual run on the shipped full set and are reproducible with the
+# code as written.
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, collapse = TRUE, comment = "#>")
+library(formex)
+```
+
+## Why a benchmark
+
+`guess_data_type()` is a router-plus-verifier that resolves a column to a point
+in the formex ontology (`data_type -> semantic_family -> semantic_type ->
+format_style` / `unit`). As detectors, the ontology, and the router change, two
+questions need a repeatable, quantitative answer:
+
+1. **How accurate is it**, level by level, and where does it get things wrong?
+2. **How robust is it** when the data is messy -- corrupted spellings, mixed-in
+   values from another type, odd lengths, missing values, stray punctuation?
+
+This vignette covers the two layers that answer them: a frozen **benchmark** and
+a controlled **stress-test grid** built on top of it.
+
+## The frozen benchmark
+
+The benchmark is one row per column, drawn from the internal banked test library
+and crosswalked to the ontology, carrying the (capped) values and the gold label
+at every level. Two sets ship with the package, so everything here works offline:
+
+- **mini** (~100 cases) -- fast, for examples and CI regression guards;
+- **full** (~800 cases) -- the clean banks (curated + synthetic, exact ground
+  truth) plus a vetted, diversity-sampled Sherlock slice, tagged by `tier` so you
+  can report clean-only and full numbers separately.
+
+```{r data}
+d <- fx_benchmark_data("full")          # or "mini"; tier = "clean" / "sherlock"
+str(d[1, c("case_id", "tier", "data_type", "semantic_type",
+           "variant_id", "gold_style", "gold_unit", "values")])
+```
+
+`fx_benchmark_data(refresh = TRUE)` instead pulls a (possibly larger / newer)
+full set from a remote host and caches it under `tools::R_user_dir()`; the URL is
+`getOption("formex.benchmark_url")` or `FORMEX_BENCHMARK_URL`, defaulting to the
+package's GitHub release asset.
+
+## Scoring: hierarchical partial credit
+
+A prediction is scored at each ontology level, but a level counts **only if all
+of its ancestors are also correct** -- the ontology is a path, so claiming the
+right `semantic_type` under the wrong `data_type` earns nothing. The per-level
+results combine into a weighted headline in `[0, 1]`:
+
+| level | default weight |
+|---|---|
+| data_type | 0.40 |
+| semantic_family | 0.20 |
+| semantic_type | 0.20 |
+| format_style | 0.10 |
+| unit | 0.10 |
+
+`gold_style` / `gold_unit` are scored only where the ontology pins a determinate
+value (menus and placeholders, and data-dependent date styles, are left `NA` and
+excluded from that case's denominator). Pass your own `weights` to re-emphasise.
+
+```{r run}
+res <- fx_benchmark(d)                   # one timed, scored row per case
+s   <- fx_benchmark_summary(res)
+s$overall
+s$by_tier
+s$runtime
+```
+
+### Results snapshot (shipped full set)
+
+Overall, `router = "auto"` over 821 cases:
+
+| metric | value |
+|---|---|
+| data_type accuracy | 0.85 |
+| semantic_family accuracy | 0.80 |
+| semantic_type accuracy | 0.76 |
+| weighted headline | 0.80 |
+| prediction coverage | 0.97 |
+| hit / graceful / misroute | 0.76 / 0.04 / 0.20 |
+| per-case runtime (median / p95) | 0.08s / 0.14s |
+
+By tier (clean ground truth vs. the noisier, header-labelled Sherlock slice):
+
+| tier | data_type | semantic_type | headline |
+|---|---|---|---|
+| clean | 0.86 | 0.78 | 0.83 |
+| sherlock | 0.82 | 0.69 | 0.74 |
+
+By `data_type` (the full set is temporal-heavy, so the overall numbers lean on
+temporal's strength -- the balanced `"mini"` set gives a flatter view):
+
+| data_type | support | type accuracy |
+|---|---|---|
+| temporal | 478 | 0.93 |
+| text | 99 | 0.67 |
+| categorical | 94 | 0.60 |
+| number | 89 | 0.38 |
+| identifier | 40 | 0.40 |
+| unknown | 15 | 0.27 |
+| structured | 4 | 0.00 |
+| boolean | 2 | 0.00 |
+
+The zero rows are the coverage gaps: `structured` and `boolean` have working
+detectors but are not yet wired into the router's always-on set (see
+`DEVELOPMENT-STATUS.md`), so they rarely route. `number` resolves its
+`data_type` well (0.82) but its subtype poorly (0.38) -- most quantity subtypes
+are not value-distinguishable without a header.
+
+## The shape of "wrong"
+
+Accuracy alone does not say *how* detection fails. `fx_benchmark_confusion()`
+gives the gold x predicted matrix, a **wrong-shape** table (for each gold type,
+the distribution of the *wrong* predictions), and -- using the route `depth` --
+splits a correct-prefix **graceful truncation** (stopped short, e.g. resolved
+`number` but not the subtype) from a committed **misroute** (wrong branch).
+
+```{r confusion}
+cm <- fx_benchmark_confusion(res, level = "data_type")
+cm$matrix
+cm$wrong_shape      # where does a gold type land when it is wrong?
+cm$outcome          # per data_type: hit / graceful / misroute
+```
+
+On the full set, the dominant failure modes (share of each gold type's *wrong*
+predictions) are:
+
+| gold data_type | lands as | share |
+|---|---|---|
+| boolean | number | 1.00 |
+| text | categorical | 0.86 |
+| categorical | number / text | 0.48 / 0.41 |
+| number | temporal / text | 0.38 / 0.38 |
+| identifier | categorical / number | 0.35 / 0.24 |
+
+So, concretely: a wrong `categorical` column most often looks like a `number`;
+`text` that misroutes becomes `categorical`; `boolean` collapses to `number`.
+That tells you which detectors are competing and where a disambiguator would pay
+off.
+
+## Coverage gaps
+
+`fx_coverage_gaps()` is the machine-readable companion to the coverage notes --
+the variants with the thinnest support or the lowest type accuracy, flagged
+worst-first, with the dominant wrong prediction for each.
+
+```{r gaps}
+head(fx_coverage_gaps(res), 10)
+```
+
+## Tracking change over time
+
+Run the benchmark before and after a change and diff them. Regressions sort to
+the top.
+
+```{r compare}
+before <- fx_benchmark(fx_benchmark_data("full"))
+# ... make a change, reinstall / reload ...
+after  <- fx_benchmark(fx_benchmark_data("full"))
+fx_benchmark_compare(before, after)$overall
+fx_benchmark_compare(before, after)$by_data_type   # per-type deltas
+```
+
+## The stress-test design grid
+
+The grid is an experimental design on top of the benchmark: each column is
+perturbed along one **dimension** at a graded **level** (`clean` / `low` /
+`medium`, with `medium` calibrated to stress -- not obliterate -- the signal),
+re-scored, and compared to its own clean baseline. The dimensions:
+
+| dimension | what it does | levels |
+|---|---|---|
+| `spelling` | class-preserving character substitution (digit->digit, letter->letter) | 1 char / ~30% of chars |
+| `length` | resample the column to a fixed size (subset: needs enough signal) | 50 / 100 / 300 |
+| `contamination` | mix in values from a different `data_type` | 10% / 25% (+ optional 0->50% sweep) |
+| `whitespace` | stray leading / trailing / interior padding | ~10% / ~25% |
+| `case` | random upper/lower folding (stresses the state / colour / country lexicons) | ~10% / all chars |
+| `missingness` | inject sentinels (`""`, `"NA"`, `"N/A"`, `"-"`, `"null"`) | ~5% / ~15% |
+| `static` | inject stray punctuation mid-value | ~5% / ~15% |
+| `scramble_punct` | permute punctuation positions | ~34% / ~67% |
+| `scramble_alnum` | permute alphanumeric positions | ~34% / ~67% |
+
+The levels are deliberately kept below the destructive extreme. Contamination
+caps at 25% in the default grid because, with a single foil type folded in,
+accuracy must collapse once the foil is the majority (>50%); the optional sweep
+to 50% locates that empirical breaking point. Position scrambles are *expected*
+to break ordered formats such as dates -- the bank's per-case mutation contract
+(`order_is_signal`) records which cases that applies to, so a break there is read
+as correct behaviour rather than a regression.
+
+```{r perturb}
+# a single perturbation, for intuition
+fx_perturb(c("2019-03-15", "2020-12-31"), "spelling", "medium", seed = 1)
+# class-preserving: digits are replaced only by digits, letters only by letters
+
+fx_perturb(rep("California", 20), "contamination", "medium",
+           foil = as.character(1:9), seed = 1)   # ~25% replaced with a foil type
+```
+
+```{r grid}
+g <- fx_stress_grid(fx_benchmark_data("full", "clean"),
+                    contamination_sweep = TRUE, seed = 1)
+fx_stress_summary(g)$by_level     # accuracy + delta from clean, per dimension/level
+fx_stress_summary(g)$by_type      # per data_type x dimension x level
+fx_contamination_curve(g)         # accuracy vs. mixing fraction
+```
+
+### Decay snapshot
+
+Type-accuracy change from the clean baseline at the `medium` level (negative =
+worse), on a 120-column sample of the clean tier:
+
+| dimension | delta_type |
+|---|---|
+| contamination (25%) | -0.23 |
+| scramble_alnum | -0.18 |
+| spelling | -0.10 |
+| static | -0.08 |
+| case | -0.03 |
+| missingness | -0.02 |
+
+And the contamination breaking-point curve:
+
+| mixing fraction | type accuracy |
+|---|---|
+| 0.00 | 0.83 |
+| 0.10 | 0.74 |
+| 0.25 | 0.59 |
+| 0.40 | 0.46 |
+| 0.50 | 0.29 |
+
+Reading these: the detectors are most sensitive to **contamination** and
+**alphanumeric position scrambling**, then **spelling** corruption, and are
+comparatively resilient to **case** folding and light **missingness**.
+Contamination degrades smoothly and crosses 0.5 accuracy between a 25% and 40%
+mix -- the empirical breaking point, well above the default `medium` level. This
+is where to aim robustness work next, and a baseline to re-measure after each
+change.
+
+## Rebuilding the benchmark
+
+The frozen sets are produced by `data-raw/build_benchmark.R` from the local
+banked test library (`dev/bank*`, not shipped). Re-run it when the library or the
+ontology changes; it re-stamps `benchmark_version` and rewrites both the packaged
+sets and the remote artifact.

@@ -126,17 +126,19 @@
 #' Locate and load the frozen benchmark dataset
 #'
 #' Returns the frozen evaluation set used by [fx_benchmark()] and
-#' [fx_stress_grid()]. The small `"mini"` set ships with the package; the
-#' `"full"` set is downloaded once from a remote host and cached under
-#' [tools::R_user_dir()]. The remote URL comes from
+#' [fx_stress_grid()]. Both the small `"mini"` set and the full set ship with the
+#' package, so this works offline with no setup. `refresh = TRUE` instead
+#' downloads a (possibly newer / larger) full set from a remote host and caches
+#' it under [tools::R_user_dir()]; the URL comes from
 #' `getOption("formex.benchmark_url")` or the `FORMEX_BENCHMARK_URL` environment
-#' variable; when neither is set or the download fails, `fx_benchmark_data()`
-#' falls back to the mini set with a message.
+#' variable (default: the package's GitHub release asset). If a requested remote
+#' fetch fails, it falls back to the packaged copy with a message.
 #'
-#' @param which `"mini"` (packaged) or `"full"` (remote + cached).
+#' @param which `"mini"` (fast, for tests / examples) or `"full"`.
 #' @param tier Keep all rows (`"all"`), only the clean banks (`"clean"`), or only
 #'   the vetted Sherlock slice (`"sherlock"`).
-#' @param refresh If `TRUE`, re-download the full set even if cached.
+#' @param refresh If `TRUE`, (re-)download the full set from the remote host and
+#'   cache it, instead of using the packaged copy.
 #' @return A data frame, one row per banked column (see the file header for the
 #'   schema), with `benchmark_version` and `built_on` attributes.
 #' @seealso [fx_benchmark()], [fx_stress_grid()]
@@ -145,29 +147,30 @@ fx_benchmark_data <- function(which = c("mini", "full"),
                               tier = c("all", "clean", "sherlock"),
                               refresh = FALSE) {
   which <- match.arg(which); tier <- match.arg(tier)
-  load_mini <- function() {
-    p <- system.file("extdata", "benchmark_mini.rds", package = "formex")
-    if (!nzchar(p)) stop("packaged benchmark_mini.rds not found")
+  load_pkg <- function(name) {
+    p <- system.file("extdata", name, package = "formex")
+    if (!nzchar(p)) stop("packaged ", name, " not found", call. = FALSE)
     readRDS(p)
   }
-  df <- if (which == "mini") load_mini() else {
+  fetch_full <- function() {
     url <- getOption("formex.benchmark_url", Sys.getenv("FORMEX_BENCHMARK_URL",
-      "https://github.com/lecy/formex/releases/latest/download/benchmark_full.rds"))
+      "https://github.com/lecy/formex/releases/download/benchmark-1.0.0/benchmark_full.rds"))
     cache <- tools::R_user_dir("formex", "cache")
     dir.create(cache, showWarnings = FALSE, recursive = TRUE)
     dest <- file.path(cache, "benchmark_full.rds")
-    if (refresh || !file.exists(dest)) {
-      ok <- tryCatch({
-        utils::download.file(url, dest, mode = "wb", quiet = TRUE); TRUE
-      }, error = function(e) FALSE)
-      if (!ok) {
-        message("fx_benchmark_data(): could not fetch the full set from ", url,
-                " -- falling back to the packaged mini set.")
-        return(fx_benchmark_data("mini", tier = tier))
-      }
+    ok <- tryCatch({
+      utils::download.file(url, dest, mode = "wb", quiet = TRUE); TRUE
+    }, error = function(e) FALSE)
+    if (!ok) {
+      message("fx_benchmark_data(): could not fetch the full set from ", url,
+              " -- using the packaged copy instead.")
+      return(load_pkg("benchmark_full.rds"))
     }
     readRDS(dest)
   }
+  df <- if (which == "mini") load_pkg("benchmark_mini.rds")
+        else if (refresh)    fetch_full()
+        else                 load_pkg("benchmark_full.rds")
   if (tier != "all") df <- df[df$tier == tier, , drop = FALSE]
   rownames(df) <- NULL
   df

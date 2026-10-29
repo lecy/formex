@@ -25,6 +25,7 @@
     <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
     <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -44,7 +45,17 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9000" id="formex-0009000">formex 0.0.0.9000<a class="anchor" aria-label="anchor" href="#formex-0009000"></a></h2>
-<ul><li><p><strong>Date output styles + style detection.</strong> The transform registry gains a vocabulary of calendar written styles (<code>mdy_slash</code>, <code>dmy_slash</code>, <code>ymd_dash</code>, <code>ymd_compact</code>, <code>mon_mdy</code>, <code>mon_dmy</code>, …), each readable and writable, so a date column stabilizes to any requested style and styles inter-convert (US → EU). And <code>guess_data_type()$route$format_style</code> now reports the column’s <strong>actual</strong> detected style (order + separator read from the values; ambiguous all-≤12 dates default to <code>mdy_slash</code>) instead of the generic <code>calendar</code>.</p></li>
+<ul><li>
+<p><strong>Benchmark + stress-test harness.</strong> A new evaluation layer measures how well <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> types columns, over time and under messy data:</p>
+<ul><li>A frozen benchmark built from the internal test library (<code>data-raw/build_benchmark.R</code>): one row per banked column with the capped values and the gold label at every ontology level. A small stratified set ships in the package (<code>inst/extdata/benchmark_mini.rds</code>, ~100 cases); <code><a href="../reference/fx_benchmark_data.html">fx_benchmark_data()</a></code> loads it, or fetches + caches a larger <code>"full"</code> set from a remote host (<code>getOption("formex.benchmark_url")</code> / a GitHub release).</li>
+<li>
+<code><a href="../reference/fx_benchmark.html">fx_benchmark()</a></code> scores each column at <code>data_type -&gt; semantic_family -&gt;   semantic_type -&gt; format_style</code>/<code>unit</code> under <strong>hierarchical partial credit</strong> (a level counts only if its ancestors match) and records per-case runtime.</li>
+<li>
+<code><a href="../reference/fx_benchmark_summary.html">fx_benchmark_summary()</a></code> reports per-level accuracy, a weighted headline, a hit / graceful-truncation / wrong-branch (misroute) mix, by-<code>data_type</code> accuracy, and runtime stats; <code><a href="../reference/fx_benchmark_confusion.html">fx_benchmark_confusion()</a></code> shows the <strong>shape of errors</strong> (where a gold type lands when wrong); <code><a href="../reference/fx_coverage_gaps.html">fx_coverage_gaps()</a></code> surfaces thinly-covered or low-accuracy variants; <code><a href="../reference/fx_benchmark_compare.html">fx_benchmark_compare()</a></code> diffs two runs so a change’s effect is visible.</li>
+<li>
+<code><a href="../reference/fx_stress_grid.html">fx_stress_grid()</a></code> + <code><a href="../reference/fx_perturb.html">fx_perturb()</a></code> run a controlled experimental grid: each column is perturbed along graded dimensions – class-preserving <strong>spelling</strong> corruption, vector <strong>length</strong> (resample to 50/100/300), type-<strong>contamination</strong> (mix a foil type at 10% / 25%, with an optional 0-&gt;50% sweep), <strong>whitespace</strong>, <strong>case</strong>, <strong>missingness</strong>, <strong>static</strong> punctuation, and <strong>position scramble</strong> (punctuation and alphanumeric) – and re-scored, so <code><a href="../reference/fx_stress_summary.html">fx_stress_summary()</a></code> / <code><a href="../reference/fx_contamination_curve.html">fx_contamination_curve()</a></code> show the accuracy-decay curves and the contamination breaking point. Reuses the AutoType mutators (<code>R/00-autotype-functions.R</code>).</li>
+</ul></li>
+<li><p><strong>Date output styles + style detection.</strong> The transform registry gains a vocabulary of calendar written styles (<code>mdy_slash</code>, <code>dmy_slash</code>, <code>ymd_dash</code>, <code>ymd_compact</code>, <code>mon_mdy</code>, <code>mon_dmy</code>, …), each readable and writable, so a date column stabilizes to any requested style and styles inter-convert (US → EU). And <code>guess_data_type()$route$format_style</code> now reports the column’s <strong>actual</strong> detected style (order + separator read from the values; ambiguous all-≤12 dates default to <code>mdy_slash</code>) instead of the generic <code>calendar</code>.</p></li>
 <li>
 <p>Fixes from the political-org 527 registry (Form 8871):</p>
 <ul><li>

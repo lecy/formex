@@ -31,6 +31,7 @@ and regression testing."></head><body>
     <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
     <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -109,9 +110,38 @@ and regression testing.</p>
 <dd><p>Integer index used to mint the case id.</p></dd>
 
 
-<dt id="arg-data-type-semantic-family-semantic-type-">data_type, semantic_family, semantic_type, ...<a class="anchor" aria-label="anchor" href="#arg-data-type-semantic-family-semantic-type-"></a></dt>
-<dd><p>Label fields and options
-(a later labelling pass may overwrite them).</p></dd>
+<dt id="arg-data-type-semantic-family-semantic-type-semantic-type-id-variant-id-depth-labeled">data_type, semantic_family, semantic_type, semantic_type_id, variant_id, depth_labeled<a class="anchor" aria-label="anchor" href="#arg-data-type-semantic-family-semantic-type-semantic-type-id-variant-id-depth-labeled"></a></dt>
+<dd><p>Ontology label fields (a later labelling pass may overwrite them).</p></dd>
+
+
+<dt id="arg-label-confidence-label-method-reviewer-relabeled-relabel-reason-label-notes">label_confidence, label_method, reviewer, relabeled, relabel_reason, label_notes<a class="anchor" aria-label="anchor" href="#arg-label-confidence-label-method-reviewer-relabeled-relabel-reason-label-notes"></a></dt>
+<dd><p>Labelling provenance for the case's ground truth.</p></dd>
+
+
+<dt id="arg-difficulty-difficulty-rationale-noise-markers">difficulty, difficulty_rationale, noise_markers<a class="anchor" aria-label="anchor" href="#arg-difficulty-difficulty-rationale-noise-markers"></a></dt>
+<dd><p>Difficulty annotation
+(<code>difficulty</code> is one of <code>"easy"</code>, <code>"medium"</code>, <code>"hard"</code>, or <code>NA</code>).</p></dd>
+
+
+<dt id="arg-corpus-corpus-version-original-header-original-label-table-id-parent-case-id">corpus, corpus_version, original_header, original_label, table_id, parent_case_id<a class="anchor" aria-label="anchor" href="#arg-corpus-corpus-version-original-header-original-label-table-id-parent-case-id"></a></dt>
+<dd><p>Source-corpus provenance recorded with the case.</p></dd>
+
+
+<dt id="arg-ontology-ontology-version-ontology-status-proposed-parent-detector-exists-hard-negative-for">ontology, ontology_version, ontology_status, proposed_parent, detector_exists, hard_negative_for<a class="anchor" aria-label="anchor" href="#arg-ontology-ontology-version-ontology-status-proposed-parent-detector-exists-hard-negative-for"></a></dt>
+<dd><p>Ontology binding: the ontology to validate the label against, its version
+and status, and whether a detector exists for the labelled type.</p></dd>
+
+
+<dt id="arg-order-is-signal-mutations-allowed-mutations-forbidden-mutation-target">order_is_signal, mutations_allowed, mutations_forbidden, mutation_target<a class="anchor" aria-label="anchor" href="#arg-order-is-signal-mutations-allowed-mutations-forbidden-mutation-target"></a></dt>
+<dd><p>Mutation contract governing how the case may be perturbed for training.</p></dd>
+
+
+<dt id="arg-outdir">outdir<a class="anchor" aria-label="anchor" href="#arg-outdir"></a></dt>
+<dd><p>Directory the JSON case is written to.</p></dd>
+
+
+<dt id="arg-n-candidates">n_candidates<a class="anchor" aria-label="anchor" href="#arg-n-candidates"></a></dt>
+<dd><p>Number of signature-distance candidates to store.</p></dd>
 
 </dl></div>
     <div class="section level2">

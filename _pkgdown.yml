@@ -69,6 +69,19 @@ reference:
   - fx_roundtrip_check
   - fx_audit_ontology
 
+- title: Benchmark & stress-test harness
+  desc: >
+    Score guess_data_type() over the frozen test library at every ontology level,
+    track accuracy and runtime over time, and stress-test robustness with a
+    controlled grid of perturbations.
+  contents:
+  - fx_benchmark_data
+  - starts_with("fx_benchmark")
+  - fx_coverage_gaps
+  - fx_perturb
+  - starts_with("fx_stress")
+  - fx_contamination_curve
+
 - title: Evaluation & AutoType reporting
   contents:
   - evaluate_columns
@@ -94,4 +107,5 @@ articles:
   - data-type-ontology
   - feature-engineering
   - testing-libraries
+  - benchmarking
   - formex-type-atlas

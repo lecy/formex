@@ -11,12 +11,13 @@ fx_benchmark_data(
 )
 }
 \arguments{
-\item{which}{\code{"mini"} (packaged) or \code{"full"} (remote + cached).}
+\item{which}{\code{"mini"} (fast, for tests / examples) or \code{"full"}.}
 
 \item{tier}{Keep all rows (\code{"all"}), only the clean banks (\code{"clean"}), or only
 the vetted Sherlock slice (\code{"sherlock"}).}
 
-\item{refresh}{If \code{TRUE}, re-download the full set even if cached.}
+\item{refresh}{If \code{TRUE}, (re-)download the full set from the remote host and
+cache it, instead of using the packaged copy.}
 }
 \value{
 A data frame, one row per banked column (see the file header for the
@@ -24,12 +25,13 @@ schema), with \code{benchmark_version} and \code{built_on} attributes.
 }
 \description{
 Returns the frozen evaluation set used by \code{\link[=fx_benchmark]{fx_benchmark()}} and
-\code{\link[=fx_stress_grid]{fx_stress_grid()}}. The small \code{"mini"} set ships with the package; the
-\code{"full"} set is downloaded once from a remote host and cached under
-\code{\link[tools:userdir]{tools::R_user_dir()}}. The remote URL comes from
+\code{\link[=fx_stress_grid]{fx_stress_grid()}}. Both the small \code{"mini"} set and the full set ship with the
+package, so this works offline with no setup. \code{refresh = TRUE} instead
+downloads a (possibly newer / larger) full set from a remote host and caches
+it under \code{\link[tools:userdir]{tools::R_user_dir()}}; the URL comes from
 \code{getOption("formex.benchmark_url")} or the \code{FORMEX_BENCHMARK_URL} environment
-variable; when neither is set or the download fails, \code{fx_benchmark_data()}
-falls back to the mini set with a message.
+variable (default: the package's GitHub release asset). If a requested remote
+fetch fails, it falls back to the packaged copy with a message.
 }
 \seealso{
 \code{\link[=fx_benchmark]{fx_benchmark()}}, \code{\link[=fx_stress_grid]{fx_stress_grid()}}
