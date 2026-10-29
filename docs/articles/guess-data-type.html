@@ -6,9 +6,12 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Guessing a Column's Type • formex</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Zilla_Slab-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Guessing a Column's Type">
 </head>
@@ -16,7 +19,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">formex</a>
 
@@ -30,7 +33,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
@@ -44,12 +46,21 @@
     <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -72,18 +83,27 @@
 
     
     
-<p>When you open a messy data file, two questions come up before you can do anything useful with a column:</p>
+<p>When you open a messy data file, two questions come up before you can
+do anything useful with a column:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>What is this?</strong> Are these dates, dollar amounts, county codes, people’s names?</li>
+<strong>What is this?</strong> Are these dates, dollar amounts,
+county codes, people’s names?</li>
 <li>
-<strong>How do I store it without breaking it?</strong> If you save <code>06037</code> to a CSV and reopen it in Excel, it becomes <code>6037</code> — the leading zero is gone and the county code is ruined.</li>
+<strong>How do I store it without breaking it?</strong> If you save
+<code>06037</code> to a CSV and reopen it in Excel, it becomes
+<code>6037</code> — the leading zero is gone and the county code is
+ruined.</li>
 </ol>
-<p><code>formex</code> answers both. <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> tells you <em>what a column is</em>, and <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> puts it in a form that is <em>safe to store and reopen</em>. This guide walks through both for a first-time user.</p>
+<p><code>formex</code> answers both. <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code>
+tells you <em>what a column is</em>, and <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code>
+puts it in a form that is <em>safe to store and reopen</em>. This guide
+walks through both for a first-time user.</p>
 <div class="section level2">
 <h2 id="guessing-what-a-column-is">Guessing what a column is<a class="anchor" aria-label="anchor" href="#guessing-what-a-column-is"></a>
 </h2>
-<p>Point <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> at a column of values and it returns a <code>$route</code> — its best read of what the column is:</p>
+<p>Point <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> at a column of values and it
+returns a <code>$route</code> — its best read of what the column is:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span>, <span class="st">"01/01/2021"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">[</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"data_type"</span>, <span class="st">"semantic_family"</span>, <span class="st">"semantic_type"</span>, <span class="st">"format_style"</span>,</span>
@@ -108,15 +128,26 @@
 <p>The answer is a <strong>path</strong>, from coarse to fine:</p>
 <pre><code>data_type  ›  semantic_family  ›  semantic_type  ›  format_style
  temporal        date              calendar          mdy_slash</code></pre>
-<p>Read it left to right: these values are <em>temporal</em>, specifically a <em>date</em>, a <em>calendar</em> date, written in month/day/year with slashes.</p>
+<p>Read it left to right: these values are <em>temporal</em>,
+specifically a <em>date</em>, a <em>calendar</em> date, written in
+month/day/year with slashes.</p>
 <div class="section level3">
 <h3 id="it-only-answers-as-far-as-its-sure">It only answers as far as it’s sure<a class="anchor" aria-label="anchor" href="#it-only-answers-as-far-as-its-sure"></a>
 </h3>
-<p>The most important thing to understand is that <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> <strong>stops at the deepest level it can defend</strong> and does not force a guess. The <code>depth</code> field says how far it got:</p>
+<p>The most important thing to understand is that
+<code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> <strong>stops at the deepest level it can
+defend</strong> and does not force a guess. The <code>depth</code> field
+says how far it got:</p>
 <pre><code>0  I don't know          3  the specific type (e.g. calendar)
 1  the broad data_type   4  the exact written format (a leaf)
 2  the family</code></pre>
-<p>A column of clean dates resolves all the way to a leaf (<code>depth</code> 4). A column of bare five-digit numbers might only reach <code>number</code> (<code>depth</code> 1), because <code>12345</code> could be a count, a ZIP, or an ID — the values alone cannot say. That is the right answer, not a failure: a confident-sounding wrong guess is worse than an honest “this far and no further.”</p>
+<p>A column of clean dates resolves all the way to a leaf
+(<code>depth</code> 4). A column of bare five-digit numbers might only
+reach <code>number</code> (<code>depth</code> 1), because
+<code>12345</code> could be a count, a ZIP, or an ID — the values alone
+cannot say. That is the right answer, not a failure: a
+confident-sounding wrong guess is worse than an honest “this far and no
+further.”</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># nothing matches -&gt; depth 0, confidence low</span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"apple"</span>, <span class="st">"banana"</span>, <span class="st">"cherry"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">$</span><span class="va">depth</span></span>
@@ -125,18 +156,27 @@
 <div class="section level3">
 <h3 id="how-the-guess-is-made-in-two-steps">How the guess is made, in two steps<a class="anchor" aria-label="anchor" href="#how-the-guess-is-made-in-two-steps"></a>
 </h3>
-<p>You do not need to operate these, but it helps to know what is happening:</p>
+<p>You do not need to operate these, but it helps to know what is
+happening:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Sample.</strong> On a big column it looks at the distinct non-missing values (up to 100), not every row — so it stays fast.</li>
+<strong>Sample.</strong> On a big column it looks at the distinct
+non-missing values (up to 100), not every row — so it stays fast.</li>
 <li>
-<strong>Router → verifier.</strong> A <em>router</em> proposes a short list of likely types. A <em>verifier</em> then actually tries each candidate’s recipe on your values and keeps only the ones that genuinely fit — and that also <em>reject</em> junk. A type that would accept anything (like “is a number”) cannot win a specific leaf; it truncates instead. This is why the answer is trustworthy rather than merely plausible.</li>
+<strong>Router → verifier.</strong> A <em>router</em> proposes a
+short list of likely types. A <em>verifier</em> then actually tries each
+candidate’s recipe on your values and keeps only the ones that genuinely
+fit — and that also <em>reject</em> junk. A type that would accept
+anything (like “is a number”) cannot win a specific leaf; it truncates
+instead. This is why the answer is trustworthy rather than merely
+plausible.</li>
 </ol>
 </div>
 <div class="section level3">
 <h3 id="when-the-values-are-ambiguous-the-column-name-can-help">When the values are ambiguous, the column name can help<a class="anchor" aria-label="anchor" href="#when-the-values-are-ambiguous-the-column-name-can-help"></a>
 </h3>
-<p>Some values fit more than one type. If you also pass the column’s name, it is used as a tie-breaker:</p>
+<p>Some values fit more than one type. If you also pass the column’s
+name, it is used as a tie-breaker:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"06037"</span>, <span class="st">"36061"</span>, <span class="st">"48201"</span>, <span class="st">"17031"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="va">vals</span>, name <span class="op">=</span> <span class="st">"county_fips"</span><span class="op">)</span><span class="op">$</span><span class="va">guess</span></span>
@@ -148,8 +188,14 @@
 <div class="section level2">
 <h2 id="stabilizers-making-a-column-safe-to-store">Stabilizers: making a column safe to store<a class="anchor" aria-label="anchor" href="#stabilizers-making-a-column-safe-to-store"></a>
 </h2>
-<p>A <strong>stabilizer</strong> is the second half of formex. It takes the raw values and rewrites them into a <em>stable</em> form — one that survives being written to a CSV and reopened in R, Excel, or anything else <strong>without losing information and without being silently re-typed into the wrong thing.</strong> Think of it as putting the column into a <em>protected</em> state.</p>
-<p>Here is the problem a stabilizer solves. Save these raw values and reopen them, and three things can go wrong:</p>
+<p>A <strong>stabilizer</strong> is the second half of formex. It takes
+the raw values and rewrites them into a <em>stable</em> form — one that
+survives being written to a CSV and reopened in R, Excel, or anything
+else <strong>without losing information and without being silently
+re-typed into the wrong thing.</strong> Think of it as putting the
+column into a <em>protected</em> state.</p>
+<p>Here is the problem a stabilizer solves. Save these raw values and
+reopen them, and three things can go wrong:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -182,7 +228,9 @@
 </tr>
 </tbody>
 </table>
-<p><code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> fixes each by (1) normalizing the value and (2) attaching an <strong>import rule</strong> that tells a reader how to bring it back as the correct type:</p>
+<p><code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> fixes each by (1) normalizing the value
+and (2) attaching an <strong>import rule</strong> that tells a reader
+how to bring it back as the correct type:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span><span class="op">)</span>, <span class="st">"calendar"</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stable"</span>, <span class="st">"import_rule"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $stable</span></span>
@@ -197,10 +245,15 @@
 <span><span class="co">#&gt; $import_rule</span></span>
 <span><span class="co">#&gt; [1] "{{ default:numeric }}"</span></span></code></pre></div>
 <ul>
-<li>The date is normalized to unambiguous <strong>ISO</strong> <code>2019-03-15</code>, which every tool reads the same way.</li>
-<li>The dollar amounts become plain numbers you can compute on; the fact that they are USD rides along as metadata, not buried in the text.</li>
+<li>The date is normalized to unambiguous <strong>ISO</strong>
+<code>2019-03-15</code>, which every tool reads the same way.</li>
+<li>The dollar amounts become plain numbers you can compute on; the fact
+that they are USD rides along as metadata, not buried in the text.</li>
 </ul>
-<p>For an identifier like a county FIPS, the stable value keeps its leading zero <em>and</em> carries the rule that re-imports it as text, so <code>06037</code> stays <code>06037</code> instead of collapsing to a number:</p>
+<p>For an identifier like a county FIPS, the stable value keeps its
+leading zero <em>and</em> carries the rule that re-imports it as text,
+so <code>06037</code> stays <code>06037</code> instead of collapsing to
+a number:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"6037"</span>, <span class="st">"06037"</span><span class="op">)</span>, <span class="st">"geographic"</span>, <span class="st">"county_fips"</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stable"</span>, <span class="st">"import_rule"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $stable</span></span>
@@ -208,7 +261,11 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $import_rule</span></span>
 <span><span class="co">#&gt; [1] "{{ as_factor }}"</span></span></code></pre></div>
-<p>That <code>import_rule</code> is the key idea: a stabilized file is <strong>self-describing</strong>. Written alongside the data, it lets the next reader load each column back as the correct type automatically — dates as dates, codes as text, amounts as numbers — with no manual fix-ups and no silent corruption.</p>
+<p>That <code>import_rule</code> is the key idea: a stabilized file is
+<strong>self-describing</strong>. Written alongside the data, it lets
+the next reader load each column back as the correct type automatically
+— dates as dates, codes as text, amounts as numbers — with no manual
+fix-ups and no silent corruption.</p>
 </div>
 <div class="section level2">
 <h2 id="the-whole-loop">The whole loop<a class="anchor" aria-label="anchor" href="#the-whole-loop"></a>
@@ -218,8 +275,20 @@
 <span><span class="va">route</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">$</span><span class="va">route</span>          <span class="co"># 1. what is it?</span></span>
 <span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">route</span><span class="op">$</span><span class="va">semantic_type</span>, <span class="va">route</span><span class="op">$</span><span class="va">format_label</span><span class="op">)</span><span class="op">$</span><span class="va">stable</span>  <span class="co"># 2. make it safe</span></span>
 <span><span class="co">#&gt; [1] "2019-03-15" "2020-12-31" "2021-01-01"</span></span></code></pre></div>
-<p><code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> says <em>what a column is</em>; <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> puts it in a standard, protected form. A workflow package such as <code>datagoodr</code> builds on these two calls to profile a whole data frame, let a human confirm each column, and write out a cleaned, self-describing file. The shared vocabulary both calls speak is the subject of the <em>Data-Type Ontology</em> vignette; the detectors that do the recognizing are catalogued in the <em>Data-Type Detector Guide</em>.</p>
-<p><small>For backward compatibility <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> also returns the older flat fields (<code>$guess</code>, <code>$ontology</code>, <code>$confidence</code>, <code>$candidates</code>) and <code><a href="../reference/score_data_type.html">score_data_type()</a></code> still exposes the raw per-detector pass rates; new code should use <code>$route</code>.</small></p>
+<p><code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> says <em>what a column is</em>;
+<code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> puts it in a standard, protected form. A
+workflow package such as <code>datagoodr</code> builds on these two
+calls to profile a whole data frame, let a human confirm each column,
+and write out a cleaned, self-describing file. The shared vocabulary
+both calls speak is the subject of the <em>Data-Type Ontology</em>
+vignette; the detectors that do the recognizing are catalogued in the
+<em>Data-Type Detector Guide</em>.</p>
+<p><small>For backward compatibility <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> also
+returns the older flat fields (<code>$guess</code>,
+<code>$ontology</code>, <code>$confidence</code>,
+<code>$candidates</code>) and <code><a href="../reference/score_data_type.html">score_data_type()</a></code> still
+exposes the raw per-detector pass rates; new code should use
+<code>$route</code>.</small></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

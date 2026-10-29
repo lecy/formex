@@ -6,9 +6,12 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Feature Engineering for Type Guessing • formex</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Zilla_Slab-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Feature Engineering for Type Guessing">
 </head>
@@ -16,7 +19,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">formex</a>
 
@@ -30,7 +33,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
@@ -44,12 +46,21 @@
     <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -72,12 +83,25 @@
 
     
     
-<p>When <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> looks at a column, part of the work is done by detectors (see <em>How Detectors Recognize a Type</em>). But the first stage — the <strong>router</strong> that proposes which types are even worth checking — is a trained model, and a model cannot read raw strings. It needs numbers. So before anything is guessed, the column is turned into a fixed list of numbers that <em>summarize</em> it: its <strong>feature profile</strong>. Building that profile is called <strong>feature engineering</strong>, and this guide explains what goes into it and what it can and cannot capture.</p>
+<p>When <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> looks at a column, part of the
+work is done by detectors (see <em>How Detectors Recognize a Type</em>).
+But the first stage — the <strong>router</strong> that proposes which
+types are even worth checking — is a trained model, and a model cannot
+read raw strings. It needs numbers. So before anything is guessed, the
+column is turned into a fixed list of numbers that <em>summarize</em>
+it: its <strong>feature profile</strong>. Building that profile is
+called <strong>feature engineering</strong>, and this guide explains
+what goes into it and what it can and cannot capture.</p>
 <div class="section level2">
 <h2 id="the-idea-describe-a-column-with-numbers">The idea: describe a column with numbers<a class="anchor" aria-label="anchor" href="#the-idea-describe-a-column-with-numbers"></a>
 </h2>
-<p>Think about how <em>you</em> tell an ID column from a name column at a glance. You don’t read every value — you notice things: the ID values are all the same length, all digits, every one different; the names are words, start with a capital, repeat, and many are ones you recognize. Feature engineering writes down those impressions as numbers.</p>
-<p><code><a href="../reference/fx_extract_features.html">fx_extract_features()</a></code> does this. Give it a column and it returns one row of summary numbers:</p>
+<p>Think about how <em>you</em> tell an ID column from a name column at
+a glance. You don’t read every value — you notice things: the ID values
+are all the same length, all digits, every one different; the names are
+words, start with a capital, repeat, and many are ones you recognize.
+Feature engineering writes down those impressions as numbers.</p>
+<p><code><a href="../reference/fx_extract_features.html">fx_extract_features()</a></code> does this. Give it a column and it
+returns one row of summary numbers:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">f</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_extract_features.html">fx_extract_features</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"James"</span>, <span class="st">"Mary"</span>, <span class="st">"Robert"</span>, <span class="st">"Linda"</span>, <span class="st">"James"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span>       <span class="co"># one row of features for the whole column</span></span>
@@ -85,13 +109,20 @@
 <span><span class="va">f</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"n"</span>, <span class="st">"n_unique"</span>, <span class="st">"unique_ratio"</span>, <span class="st">"len_mean"</span>, <span class="st">"pct_chr_alpha"</span>, <span class="st">"lex_first_name_token"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   n n_unique unique_ratio len_mean pct_chr_alpha lex_first_name_token</span></span>
 <span><span class="co">#&gt; 1 5        4          0.8        5             1                    1</span></span></code></pre></div>
-<p>Read that row as the model would: five values, four distinct, all letters, and — the giveaway — every one is a known first name (<code>lex_first_name_token</code> is <code>1</code>). That last number alone almost settles it.</p>
-<p>Every column, whatever its contents, is reduced to the <strong>same</strong> fixed set of numbers, so the router can compare any column against the patterns it learned during training.</p>
+<p>Read that row as the model would: five values, four distinct, all
+letters, and — the giveaway — every one is a known first name
+(<code>lex_first_name_token</code> is <code>1</code>). That last number
+alone almost settles it.</p>
+<p>Every column, whatever its contents, is reduced to the
+<strong>same</strong> fixed set of numbers, so the router can compare
+any column against the patterns it learned during training.</p>
 </div>
 <div class="section level2">
 <h2 id="what-goes-into-the-profile">What goes into the profile<a class="anchor" aria-label="anchor" href="#what-goes-into-the-profile"></a>
 </h2>
-<p>The numbers are organized into <strong>blocks</strong>, each capturing a different kind of signal. Here is the live inventory from the installed package:</p>
+<p>The numbers are organized into <strong>blocks</strong>, each
+capturing a different kind of signal. Here is the live inventory from
+the installed package:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">man</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_feature_manifest.html">fx_feature_manifest</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span>block <span class="op">=</span> <span class="va">man</span><span class="op">$</span><span class="va">block</span><span class="op">)</span>, responseName <span class="op">=</span> <span class="st">"n_features"</span><span class="op">)</span></span>
@@ -108,81 +139,158 @@
 <span><span class="co">#&gt; 10     regex         43</span></span>
 <span><span class="co">#&gt; 11  sequence         11</span></span>
 <span><span class="co">#&gt; 12     token         23</span></span></code></pre></div>
-<p>That is 477 numbers in all. What each block is looking at, in plain terms:</p>
+<p>That is 477 numbers in all. What each block is looking at, in plain
+terms:</p>
 <ul>
 <li>
-<strong>core</strong> — the column’s shape as a whole: how many values, how many are missing, how many are <em>distinct</em>, whether every value is unique (a strong hint for an ID), whether one value dominates. This is the “is it a key? a constant? a handful of repeated categories?” signal.</li>
+<strong>core</strong> — the column’s shape as a whole: how many
+values, how many are missing, how many are <em>distinct</em>, whether
+every value is unique (a strong hint for an ID), whether one value
+dominates. This is the “is it a key? a constant? a handful of repeated
+categories?” signal.</li>
 <li>
-<strong>length</strong> — how long the values are, and how much the length <em>varies</em>. IDs and codes are often all one length; names and addresses vary a lot.</li>
+<strong>length</strong> — how long the values are, and how much the
+length <em>varies</em>. IDs and codes are often all one length; names
+and addresses vary a lot.</li>
 <li>
-<strong>charclass</strong> — the mix of character kinds: what share are letters, digits, punctuation, whitespace, uppercase.</li>
+<strong>charclass</strong> — the mix of character kinds: what share
+are letters, digits, punctuation, whitespace, uppercase.</li>
 <li>
-<strong>charfreq</strong> — the frequencies of individual letters and digits, including the <strong>first</strong> and <strong>last</strong> character distributions. This is surprisingly powerful: the last letter of a word carries morphology (names ending in <em>-a</em>, <em>-n</em>), and leading characters separate, say, <code>B0</code>-prefixed product codes from ordinary text.</li>
+<strong>charfreq</strong> — the frequencies of individual letters
+and digits, including the <strong>first</strong> and
+<strong>last</strong> character distributions. This is surprisingly
+powerful: the last letter of a word carries morphology (names ending in
+<em>-a</em>, <em>-n</em>), and leading characters separate, say,
+<code>B0</code>-prefixed product codes from ordinary text.</li>
 <li>
-<strong>punct</strong> — where and how often punctuation appears (and how regularly). A phone number, a date, and an IP address each have a signature arrangement of separators.</li>
+<strong>punct</strong> — where and how often punctuation appears
+(and how regularly). A phone number, a date, and an IP address each have
+a signature arrangement of separators.</li>
 <li>
-<strong>token</strong> — structure when values are split into words/pieces: how many tokens, and whether the first and last token are stable across the column (the word-level version of fixed punctuation).</li>
+<strong>token</strong> — structure when values are split into
+words/pieces: how many tokens, and whether the first and last token are
+stable across the column (the word-level version of fixed
+punctuation).</li>
 <li>
-<strong>mask</strong> — how well the values fit fixed positional shapes (the digit/letter templates the <code>mask</code> detectors use).</li>
+<strong>mask</strong> — how well the values fit fixed positional
+shapes (the digit/letter templates the <code>mask</code> detectors
+use).</li>
 <li>
-<strong>regex</strong> — hit rates against a battery of pattern probes.</li>
+<strong>regex</strong> — hit rates against a battery of pattern
+probes.</li>
 <li>
-<strong>numeric</strong> — when values are numbers: their range, whether they are whole, signed, bounded 0–1, their spread and skew. This is the block the <code>shape</code> types lean on.</li>
+<strong>numeric</strong> — when values are numbers: their range,
+whether they are whole, signed, bounded 0–1, their spread and skew. This
+is the block the <code>shape</code> types lean on.</li>
 <li>
-<strong>sequence</strong> — run-length and ordering signals (e.g. values that look like a sequential counter).</li>
+<strong>sequence</strong> — run-length and ordering signals
+(e.g. values that look like a sequential counter).</li>
 <li>
-<strong>lexicon</strong> — the share of values that appear in built-in reference lists: common first names, surnames, US cities, countries, states. These membership rates are among the <strong>strongest</strong> signals the router has for telling the easily-confused people/place columns apart.</li>
+<strong>lexicon</strong> — the share of values that appear in
+built-in reference lists: common first names, surnames, US cities,
+countries, states. These membership rates are among the
+<strong>strongest</strong> signals the router has for telling the
+easily-confused people/place columns apart.</li>
 <li>
-<strong>header</strong> — features of the column’s <em>name</em>, when one is supplied, for the cases where the values are silent.</li>
+<strong>header</strong> — features of the column’s <em>name</em>,
+when one is supplied, for the cases where the values are silent.</li>
 </ul>
-<p>Blocks are computed independently, so the engine can skip ones a given model does not use. Missing or not-applicable numbers are recorded as <code>NA</code>, never as zero, so “no digits here” is never confused with “a digit value of zero.”</p>
+<p>Blocks are computed independently, so the engine can skip ones a
+given model does not use. Missing or not-applicable numbers are recorded
+as <code>NA</code>, never as zero, so “no digits here” is never confused
+with “a digit value of zero.”</p>
 </div>
 <div class="section level2">
 <h2 id="from-profile-to-shortlist">From profile to shortlist<a class="anchor" aria-label="anchor" href="#from-profile-to-shortlist"></a>
 </h2>
-<p>The feature profile feeds the <strong>router</strong>, which proposes a short list of likely types. Two routers ship:</p>
+<p>The feature profile feeds the <strong>router</strong>, which proposes
+a short list of likely types. Two routers ship:</p>
 <ul>
-<li>a <strong>learned</strong> model (gradient-boosted trees) trained on thousands of labeled columns’ profiles — the default when it is installed;</li>
-<li>a <strong>signature</strong> router that needs no model: it reduces the profile to a short numeric fingerprint and ranks ontology types by how close their known examples sit to the column.</li>
+<li>a <strong>learned</strong> model (gradient-boosted trees) trained on
+thousands of labeled columns’ profiles — the default when it is
+installed;</li>
+<li>a <strong>signature</strong> router that needs no model: it reduces
+the profile to a short numeric fingerprint and ranks ontology types by
+how close their known examples sit to the column.</li>
 </ul>
-<p>Either way the profile is the input. The verifier stage then confirms the shortlist’s candidates with their actual recipes (see <em>Guessing a Column’s Type</em>), so a feature-based shortlist never gets the final word by itself.</p>
+<p>Either way the profile is the input. The verifier stage then confirms
+the shortlist’s candidates with their actual recipes (see <em>Guessing a
+Column’s Type</em>), so a feature-based shortlist never gets the final
+word by itself.</p>
 </div>
 <div class="section level2">
 <h2 id="where-it-works-well-and-where-it-struggles">Where it works well — and where it struggles<a class="anchor" aria-label="anchor" href="#where-it-works-well-and-where-it-struggles"></a>
 </h2>
-<p>The honest summary: <strong>the model is only as good as the signal the values carry.</strong> Where a type leaves a fingerprint in how its values are written, feature-based guessing is excellent. Where two types look identical as values, no amount of feature engineering can separate them.</p>
+<p>The honest summary: <strong>the model is only as good as the signal
+the values carry.</strong> Where a type leaves a fingerprint in how its
+values are written, feature-based guessing is excellent. Where two types
+look identical as values, no amount of feature engineering can separate
+them.</p>
 <p><strong>Works well</strong> (the structure is in the values):</p>
 <ul>
 <li>
-<strong>Dates and times</strong> — the parse either succeeds or it doesn’t; recognition is near-perfect.</li>
+<strong>Dates and times</strong> — the parse either succeeds or it
+doesn’t; recognition is near-perfect.</li>
 <li>
-<strong>Names and geographies</strong> — the lexicon-membership features are decisive: a column of values that are mostly known first names is almost unmistakable.</li>
+<strong>Names and geographies</strong> — the lexicon-membership
+features are decisive: a column of values that are mostly known first
+names is almost unmistakable.</li>
 <li>
-<strong>Shaped identifiers</strong> — EINs, ISBNs, UUIDs, hashes: fixed length, fixed alphabet, often a checksum.</li>
+<strong>Shaped identifiers</strong> — EINs, ISBNs, UUIDs, hashes:
+fixed length, fixed alphabet, often a checksum.</li>
 </ul>
 <p><strong>Struggles</strong> (the signal is not in the values):</p>
 <ul>
 <li>
-<strong>Numeric subtypes.</strong> A <em>count</em>, a <em>score</em>, an <em>index</em>, and a <em>rate</em> are all just numbers. The <code>numeric</code> block can say “this is a bounded whole number,” but it cannot say <em>which</em> kind of quantity it is — that needs the column name or a codebook. The router sensibly keeps these columns shallow rather than guessing a leaf.</li>
+<strong>Numeric subtypes.</strong> A <em>count</em>, a
+<em>score</em>, an <em>index</em>, and a <em>rate</em> are all just
+numbers. The <code>numeric</code> block can say “this is a bounded whole
+number,” but it cannot say <em>which</em> kind of quantity it is — that
+needs the column name or a codebook. The router sensibly keeps these
+columns shallow rather than guessing a leaf.</li>
 <li>
-<strong>Surrogate / record keys.</strong> A membership ID is a column of unique integers, which looks like any other column of unique integers. The <code>core</code> block flags “this is probably a key,” but it cannot say <em>what entity</em> it keys.</li>
+<strong>Surrogate / record keys.</strong> A membership ID is a
+column of unique integers, which looks like any other column of unique
+integers. The <code>core</code> block flags “this is probably a key,”
+but it cannot say <em>what entity</em> it keys.</li>
 <li>
-<strong>Free text.</strong> Notes and descriptions have no recognizable form.</li>
+<strong>Free text.</strong> Notes and descriptions have no
+recognizable form.</li>
 <li>
-<strong>Unfamiliar data.</strong> On data unlike anything the model trained on, it is far better at the broad call (“this is a number / a date / a code”) than at the exact leaf. Measured on an outside corpus during development, the model’s confidence in the broad <code>data_type</code> held around <strong>0.70</strong> while its confidence in the exact leaf fell to about <strong>0.48</strong> — which is exactly why <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> reports a path <em>prefix</em> and stops early rather than forcing a precise but unreliable leaf.</li>
+<strong>Unfamiliar data.</strong> On data unlike anything the model
+trained on, it is far better at the broad call (“this is a number / a
+date / a code”) than at the exact leaf. Measured on an outside corpus
+during development, the model’s confidence in the broad
+<code>data_type</code> held around <strong>0.70</strong> while its
+confidence in the exact leaf fell to about <strong>0.48</strong> — which
+is exactly why <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> reports a path
+<em>prefix</em> and stops early rather than forcing a precise but
+unreliable leaf.</li>
 </ul>
-<p>As a development benchmark (3-fold out-of-fold on roughly 3,850 labeled columns, measured during model fitting and not recomputed here), the learned router placed the correct type in its top choice about <strong>77%</strong> of the time and in its top five about <strong>94%</strong> — with the easy families (dates, names) near-perfect and the value-undetectable ones (numeric subtypes, record keys) carrying the misses. The strongest single feature, by a wide margin, was the first-name lexicon-membership rate — a reminder that a good reference list often beats a clever statistic.</p>
+<p>As a development benchmark (3-fold out-of-fold on roughly 3,850
+labeled columns, measured during model fitting and not recomputed here),
+the learned router placed the correct type in its top choice about
+<strong>77%</strong> of the time and in its top five about
+<strong>94%</strong> — with the easy families (dates, names)
+near-perfect and the value-undetectable ones (numeric subtypes, record
+keys) carrying the misses. The strongest single feature, by a wide
+margin, was the first-name lexicon-membership rate — a reminder that a
+good reference list often beats a clever statistic.</p>
 </div>
 <div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <ul>
 <li>
-<strong>How Detectors Recognize a Type</strong> — the per-value recognizers the profile works alongside.</li>
+<strong>How Detectors Recognize a Type</strong> — the per-value
+recognizers the profile works alongside.</li>
 <li>
-<strong>Guessing a Column’s Type</strong> — the router → verifier flow the profile feeds.</li>
+<strong>Guessing a Column’s Type</strong> — the router → verifier
+flow the profile feeds.</li>
 <li>
-<code><a href="../reference/fx_extract_features.html">fx_extract_features()</a></code>, <code><a href="../reference/fx_feature_manifest.html">fx_feature_manifest()</a></code>, and <code><a href="../reference/fx_type_signature.html">fx_type_signature()</a></code> — the profile, its catalogue, and the model-free fingerprint.</li>
+<code><a href="../reference/fx_extract_features.html">fx_extract_features()</a></code>,
+<code><a href="../reference/fx_feature_manifest.html">fx_feature_manifest()</a></code>, and <code><a href="../reference/fx_type_signature.html">fx_type_signature()</a></code>
+— the profile, its catalogue, and the model-free fingerprint.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

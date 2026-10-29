@@ -10,6 +10,8 @@ Description: A vocabulary and detection engine for the data types found in
     the type/class/subclass ontology that names them. 'guess_data_type()' is
     the single entry point that other packages build on.
 License: GPL (>= 3)
+URL: https://lecy.github.io/formex/, https://github.com/lecy/formex
+BugReports: https://github.com/lecy/formex/issues
 Encoding: UTF-8
 LazyData: true
 Language: en-US
@@ -31,3 +33,4 @@ Suggests:
     xgboost
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/Needs/website: Nonprofit-Open-Data-Collective/pkgstyle

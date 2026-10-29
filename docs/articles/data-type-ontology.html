@@ -6,9 +6,12 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>The Data-Type Ontology • formex</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Zilla_Slab-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="The Data-Type Ontology">
 </head>
@@ -16,7 +19,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">formex</a>
 
@@ -30,7 +33,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
@@ -44,12 +46,21 @@
     <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -75,20 +86,37 @@
 <div class="section level2">
 <h2 id="why-its-a-number-is-not-enough">Why “it’s a number” is not enough<a class="anchor" aria-label="anchor" href="#why-its-a-number-is-not-enough"></a>
 </h2>
-<p>Suppose you load a survey file into R and one column looks like this:</p>
+<p>Suppose you load a survey file into R and one column looks like
+this:</p>
 <pre><code><span><span class="fl">47401</span></span>
 <span><span class="fl">06037</span></span>
 <span><span class="fl">90210</span></span></code></pre>
-<p>R will probably call this column <em>numeric</em>. But that label is not just unhelpful, it is dangerous:</p>
+<p>R will probably call this column <em>numeric</em>. But that label is
+not just unhelpful, it is dangerous:</p>
 <ul>
 <li>
-<code>06037</code> is a <strong>county code</strong> (Los Angeles County). Treated as a number, its leading zero disappears and it becomes <code>6037</code> — a different, wrong code.</li>
+<code>06037</code> is a <strong>county code</strong> (Los Angeles
+County). Treated as a number, its leading zero disappears and it becomes
+<code>6037</code> — a different, wrong code.</li>
 <li>
-<code>47401</code> is a <strong>ZIP code</strong>. You would never want its <em>average</em>.</li>
-<li>If you save the column and a colleague reopens it in Excel, the zeros vanish again and the codes are quietly corrupted.</li>
+<code>47401</code> is a <strong>ZIP code</strong>. You would never
+want its <em>average</em>.</li>
+<li>If you save the column and a colleague reopens it in Excel, the
+zeros vanish again and the codes are quietly corrupted.</li>
 </ul>
-<p>So “what type is this?” is really three questions at once: how should the value be <em>treated</em> (is it a quantity you can add up, or a label you must leave alone?), what does it <em>mean</em> (a ZIP? a county?), and how is it <em>written</em> (five digits with a leading zero that must survive)? A single type word cannot answer all three.</p>
-<p><code>formex</code> answers them by placing each column in a small, shared catalog of data types — the <strong>ontology</strong>. Think of “ontology” as nothing fancier than a labeled map of every kind of column research data contains, together with the instructions for handling each one. Two functions read this same map: <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> (which figures out where a column belongs) and <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> (which cleans the column up using the instructions stored there).</p>
+<p>So “what type is this?” is really three questions at once: how should
+the value be <em>treated</em> (is it a quantity you can add up, or a
+label you must leave alone?), what does it <em>mean</em> (a ZIP? a
+county?), and how is it <em>written</em> (five digits with a leading
+zero that must survive)? A single type word cannot answer all three.</p>
+<p><code>formex</code> answers them by placing each column in a small,
+shared catalog of data types — the <strong>ontology</strong>. Think of
+“ontology” as nothing fancier than a labeled map of every kind of column
+research data contains, together with the instructions for handling each
+one. Two functions read this same map: <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code>
+(which figures out where a column belongs) and
+<code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> (which cleans the column up using the
+instructions stored there).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">o</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_ontology.html">fx_ontology</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">o</span><span class="op">)</span>   <span class="co"># one row per written form of a type; columns described below</span></span>
@@ -97,61 +125,121 @@
 <div class="section level2">
 <h2 id="typing-is-walking-down-a-decision-tree">Typing is walking down a decision tree<a class="anchor" aria-label="anchor" href="#typing-is-walking-down-a-decision-tree"></a>
 </h2>
-<p>The map is organized as a <strong>decision tree</strong>. Typing a column means starting at the top and walking down, answering one narrowing question at a time. Each step down is more specific than the last:</p>
+<p>The map is organized as a <strong>decision tree</strong>. Typing a
+column means starting at the top and walking down, answering one
+narrowing question at a time. Each step down is more specific than the
+last:</p>
 <pre><code>LEVEL 1  data_type         how should it be treated?     number · text · temporal · ...
 LEVEL 2  semantic_family   what broad kind within that?  date · currency · geographic · ...
 LEVEL 3  semantic_type     what exactly does it mean?    calendar date · US dollars · ...
 LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?</code></pre>
-<p>Here is the walk for a column of dates like <code>03/15/2019</code>:</p>
+<p>Here is the walk for a column of dates like
+<code>03/15/2019</code>:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Level 1 — <code>data_type</code>.</strong> These are not words, counts, or categories; they are points in time. → <code>temporal</code>.</li>
+<strong>Level 1 — <code>data_type</code>.</strong> These are not
+words, counts, or categories; they are points in time. →
+<code>temporal</code>.</li>
 <li>
-<strong>Level 2 — <code>semantic_family</code>.</strong> Within time, is it a clock time, a span, a calendar date? → <code>date</code>.</li>
+<strong>Level 2 — <code>semantic_family</code>.</strong> Within
+time, is it a clock time, a span, a calendar date? →
+<code>date</code>.</li>
 <li>
-<strong>Level 3 — <code>semantic_type</code>.</strong> A plain calendar date (not a fiscal quarter, not a timestamp with a clock). → <code>calendar</code>.</li>
+<strong>Level 3 — <code>semantic_type</code>.</strong> A plain
+calendar date (not a fiscal quarter, not a timestamp with a clock). →
+<code>calendar</code>.</li>
 <li>
-<strong>Level 4 — <code>format_style</code>.</strong> <em>How</em> is the date written? Month first, with slashes. → <code>mdy_slash</code>.</li>
+<strong>Level 4 — <code>format_style</code>.</strong> <em>How</em>
+is the date written? Month first, with slashes. →
+<code>mdy_slash</code>.</li>
 </ol>
-<p>Getting to <strong>level 4 is the goal</strong>, and it is worth saying why.</p>
+<p>Getting to <strong>level 4 is the goal</strong>, and it is worth
+saying why.</p>
 </div>
 <div class="section level2">
 <h2 id="why-the-bottom-of-the-tree-matters">Why the bottom of the tree matters<a class="anchor" aria-label="anchor" href="#why-the-bottom-of-the-tree-matters"></a>
 </h2>
-<p>Only at level 4 does <code>formex</code> know enough to handle the column <em>safely</em>. “Safely” means three specific things, and all three need the exact written form:</p>
+<p>Only at level 4 does <code>formex</code> know enough to handle the
+column <em>safely</em>. “Safely” means three specific things, and all
+three need the exact written form:</p>
 <ul>
 <li>
-<strong>Read it in correctly.</strong> <code>03/15/2019</code> has to be parsed as March 15, not as some other order. You cannot know the order until you are at the leaf.</li>
+<strong>Read it in correctly.</strong> <code>03/15/2019</code> has
+to be parsed as March 15, not as some other order. You cannot know the
+order until you are at the leaf.</li>
 <li>
-<strong>Clean it up (stabilize it).</strong> Rewrite every value into one standard form — here, the unambiguous <code>2019-03-15</code> — so the column is consistent.</li>
+<strong>Clean it up (stabilize it).</strong> Rewrite every value
+into one standard form — here, the unambiguous <code>2019-03-15</code> —
+so the column is consistent.</li>
 <li>
-<strong>Write it back without future corruption.</strong> Store it so that when anyone reopens the file — in R, in Excel, years later — it loads back as the right thing, with no lost leading zeros, no numbers silently turned into dates, no dates silently turned into numbers.</li>
+<strong>Write it back without future corruption.</strong> Store it
+so that when anyone reopens the file — in R, in Excel, years later — it
+loads back as the right thing, with no lost leading zeros, no numbers
+silently turned into dates, no dates silently turned into numbers.</li>
 </ul>
-<p>That last point is the whole payoff. A column that has reached level 4 can be put into a <em>protected</em> form: a value plus a stored rule for re-reading it, so the file is self-describing and cannot be corrupted by a careless reopen. (The <em>Guessing a Column’s Type</em> vignette walks through this “stabilizing” step in detail.) A column stuck higher up the tree can still be stored, but only under a more cautious, general rule.</p>
+<p>That last point is the whole payoff. A column that has reached level
+4 can be put into a <em>protected</em> form: a value plus a stored rule
+for re-reading it, so the file is self-describing and cannot be
+corrupted by a careless reopen. (The <em>Guessing a Column’s Type</em>
+vignette walks through this “stabilizing” step in detail.) A column
+stuck higher up the tree can still be stored, but only under a more
+cautious, general rule.</p>
 <div class="section level3">
-<h3 id="level-4-is-really-two-questions-how-its-written-and-what-unit-its-in">Level 4 is really two questions: how it’s written, and what unit it’s in<a class="anchor" aria-label="anchor" href="#level-4-is-really-two-questions-how-its-written-and-what-unit-its-in"></a>
+<h3 id="level-4-is-really-two-questions-how-its-written-and-what-unit-its-in">Level 4 is really two questions: how it’s written, and what unit
+it’s in<a class="anchor" aria-label="anchor" href="#level-4-is-really-two-questions-how-its-written-and-what-unit-its-in"></a>
 </h3>
-<p>Older versions of <code>formex</code> had a single label at the bottom of the tree. Version 7 splits it into two, because they are genuinely different questions:</p>
+<p>Older versions of <code>formex</code> had a single label at the
+bottom of the tree. Version 7 splits it into two, because they are
+genuinely different questions:</p>
 <ul>
 <li>
-<strong><code>format_style</code> — how the value is <em>written</em>.</strong> The same date can appear as <code>03/15/2019</code>, <code>2019-03-15</code>, or <code>15 Mar 2019</code>. Same date, three writing styles. Style controls how you read the value in and how you write it back out.</li>
+<strong><code>format_style</code> — how the value is
+<em>written</em>.</strong> The same date can appear as
+<code>03/15/2019</code>, <code>2019-03-15</code>, or
+<code>15 Mar 2019</code>. Same date, three writing styles. Style
+controls how you read the value in and how you write it back out.</li>
 <li>
-<strong><code>unit_type</code> — what the value is <em>measured in</em>.</strong> <code>2300</code> could be dollars or euros; <code>20</code> could be Celsius or Fahrenheit; <code>2019</code> could be a calendar year or a <em>fiscal</em> year. The unit does not change how the value is written, but it changes what it means — and whether converting it (say, Celsius to Fahrenheit) is even possible.</li>
+<strong><code>unit_type</code> — what the value is <em>measured
+in</em>.</strong> <code>2300</code> could be dollars or euros;
+<code>20</code> could be Celsius or Fahrenheit; <code>2019</code> could
+be a calendar year or a <em>fiscal</em> year. The unit does not change
+how the value is written, but it changes what it means — and whether
+converting it (say, Celsius to Fahrenheit) is even possible.</li>
 </ul>
-<p>Sometimes you only need one. A plain calendar date has a writing style but no meaningful unit. A temperature reading has a unit (°C) that matters more than its writing. Reaching <em>either</em> one counts as getting to level 4, because either is enough to handle the column.</p>
+<p>Sometimes you only need one. A plain calendar date has a writing
+style but no meaningful unit. A temperature reading has a unit (°C) that
+matters more than its writing. Reaching <em>either</em> one counts as
+getting to level 4, because either is enough to handle the column.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="failure-is-meant-to-be-graceful">Failure is meant to be graceful<a class="anchor" aria-label="anchor" href="#failure-is-meant-to-be-graceful"></a>
 </h2>
-<p>Real data is messy, and often the values simply do not say enough to reach the bottom. A column of bare five-digit numbers could be ZIPs, counties, or counts — nothing in the values themselves decides. <code>formex</code> is <strong>designed to stop</strong> at the lowest level it can actually defend, rather than guess and risk corrupting the column.</p>
-<p>This is the key design principle: <strong>each level has a fallback.</strong> If <code>formex</code> cannot name the exact writing style, it still knows the family or the broad type, and can fall back to the safe, general rule for that level:</p>
+<p>Real data is messy, and often the values simply do not say enough to
+reach the bottom. A column of bare five-digit numbers could be ZIPs,
+counties, or counts — nothing in the values themselves decides.
+<code>formex</code> is <strong>designed to stop</strong> at the lowest
+level it can actually defend, rather than guess and risk corrupting the
+column.</p>
+<p>This is the key design principle: <strong>each level has a
+fallback.</strong> If <code>formex</code> cannot name the exact writing
+style, it still knows the family or the broad type, and can fall back to
+the safe, general rule for that level:</p>
 <ul>
-<li>Reached level 4? Use the exact recipe — the best, lossless handling.</li>
-<li>Only level 3 or 2? Apply the family’s general rule (e.g. “it’s a date of some kind — keep it as text but flag it for a human to confirm the format”).</li>
-<li>Reached only level 1, or nothing at all? Fall all the way back to the safest possible rule: <strong>treat the value as plain text and change nothing.</strong> The original value is preserved exactly.</li>
+<li>Reached level 4? Use the exact recipe — the best, lossless
+handling.</li>
+<li>Only level 3 or 2? Apply the family’s general rule (e.g. “it’s a
+date of some kind — keep it as text but flag it for a human to confirm
+the format”).</li>
+<li>Reached only level 1, or nothing at all? Fall all the way back to
+the safest possible rule: <strong>treat the value as plain text and
+change nothing.</strong> The original value is preserved exactly.</li>
 </ul>
-<p>So the worst case is never corruption — it is simply a column left untouched, marked “I’m not sure,” waiting for a person or a data dictionary to settle it. A confident wrong guess would be far more damaging than an honest “this far and no further,” so the tree always prefers to stop early.</p>
+<p>So the worst case is never corruption — it is simply a column left
+untouched, marked “I’m not sure,” waiting for a person or a data
+dictionary to settle it. A confident wrong guess would be far more
+damaging than an honest “this far and no further,” so the tree always
+prefers to stop early.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a clean date column reaches the leaf (depth 4)</span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">$</span><span class="va">depth</span></span>
@@ -159,16 +247,22 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <span><span class="co"># a column of bare numbers cannot be pinned down -&gt; it stops short</span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>, <span class="st">"5"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">$</span><span class="va">depth</span></span>
 <span><span class="co">#&gt; [1] 3</span></span></code></pre></div>
-<p>The <code>depth</code> number above is exactly how far down the tree the column got: <code>4</code> = all the way to the writing style, <code>3</code> = the specific meaning, <code>2</code> = the family, <code>1</code> = the broad type, <code>0</code> = unknown.</p>
+<p>The <code>depth</code> number above is exactly how far down the tree
+the column got: <code>4</code> = all the way to the writing style,
+<code>3</code> = the specific meaning, <code>2</code> = the family,
+<code>1</code> = the broad type, <code>0</code> = unknown.</p>
 </div>
 <div class="section level2">
 <h2 id="the-whole-tree">The whole tree<a class="anchor" aria-label="anchor" href="#the-whole-tree"></a>
 </h2>
-<p>Here is the actual map, built live from the installed ontology, read as <code>data_type</code> → <code>family</code> : the specific types inside it:</p>
+<p>Here is the actual map, built live from the installed ontology, read
+as <code>data_type</code> → <code>family</code> : the specific types
+inside it:</p>
 <p><strong><code>boolean</code></strong></p>
 <ul>
 <li>
-<code>binary</code> — <code>indicator</code>, <code>mixed</code>, <code>presence</code>, <code>response</code>, <code>status</code>
+<code>binary</code> — <code>indicator</code>, <code>mixed</code>,
+<code>presence</code>, <code>response</code>, <code>status</code>
 </li>
 </ul>
 <p><strong><code>categorical</code></strong></p>
@@ -177,34 +271,45 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <code>multiselect</code> — <code>tags</code>
 </li>
 <li>
-<code>mutually_exclusive</code> — <code>classification_code</code>, <code>geographic</code>, <code>missingness_reason</code>, <code>ordered</code>, <code>unordered</code>
+<code>mutually_exclusive</code> — <code>classification_code</code>,
+<code>geographic</code>, <code>missingness_reason</code>,
+<code>ordered</code>, <code>unordered</code>
 </li>
 <li>
-<code>scale</code> — <code>grade_level</code>, <code>likert</code>, <code>ranking</code>, <code>rating</code>
+<code>scale</code> — <code>grade_level</code>, <code>likert</code>,
+<code>ranking</code>, <code>rating</code>
 </li>
 </ul>
 <p><strong><code>identifier</code></strong></p>
 <ul>
 <li>
-<code>id</code> — <code>administrative</code>, <code>entity</code>, <code>geographic</code>, <code>hash</code>, <code>record</code>, <code>version</code>
+<code>id</code> — <code>administrative</code>, <code>entity</code>,
+<code>geographic</code>, <code>hash</code>, <code>record</code>,
+<code>version</code>
 </li>
 </ul>
 <p><strong><code>number</code></strong></p>
 <ul>
 <li>
-<code>coordinate</code> — <code>lat</code>, <code>lat_lon</code>, <code>lon</code>, <code>lon_lat</code>
+<code>coordinate</code> — <code>lat</code>, <code>lat_lon</code>,
+<code>lon</code>, <code>lon_lat</code>
 </li>
 <li>
-<code>currency</code> — <code>balance</code>, <code>euro</code>, <code>usd</code>
+<code>currency</code> — <code>balance</code>, <code>euro</code>,
+<code>usd</code>
 </li>
 <li>
-<code>portion</code> — <code>odds</code>, <code>percent</code>, <code>percentile</code>, <code>probability</code>
+<code>portion</code> — <code>odds</code>, <code>percent</code>,
+<code>percentile</code>, <code>probability</code>
 </li>
 <li>
-<code>quantity</code> — <code>count</code>, <code>duration</code>, <code>index</code>, <code>measurement</code>, <code>rank</code>, <code>rate</code>, <code>ratio</code>, <code>score</code>
+<code>quantity</code> — <code>count</code>, <code>duration</code>,
+<code>index</code>, <code>measurement</code>, <code>rank</code>,
+<code>rate</code>, <code>ratio</code>, <code>score</code>
 </li>
 <li>
-<code>range</code> — <code>confidence_interval</code>, <code>min_max</code>
+<code>range</code> — <code>confidence_interval</code>,
+<code>min_max</code>
 </li>
 </ul>
 <p><strong><code>structured</code></strong></p>
@@ -213,25 +318,31 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <code>collection</code> — <code>array</code>, <code>list</code>
 </li>
 <li>
-<code>geometry</code> — <code>point</code>, <code>polygon</code>
+<code>geometry</code> — <code>point</code>,
+<code>polygon</code>
 </li>
 <li>
-<code>record</code> — <code>key_value</code>, <code>object</code>
+<code>record</code> — <code>key_value</code>,
+<code>object</code>
 </li>
 </ul>
 <p><strong><code>temporal</code></strong></p>
 <ul>
 <li>
-<code>date</code> — <code>calendar</code>, <code>timestamp</code>
+<code>date</code> — <code>calendar</code>,
+<code>timestamp</code>
 </li>
 <li>
 <code>interval</code> — <code>date_range</code>
 </li>
 <li>
-<code>period</code> — <code>month</code>, <code>quarter</code>, <code>reporting_period</code>, <code>year</code>
+<code>period</code> — <code>month</code>, <code>quarter</code>,
+<code>reporting_period</code>, <code>year</code>
 </li>
 <li>
-<code>phase</code> — <code>day_of_week</code>, <code>hour_of_day</code>, <code>month_of_year</code>, <code>week_of_year</code>
+<code>phase</code> — <code>day_of_week</code>,
+<code>hour_of_day</code>, <code>month_of_year</code>,
+<code>week_of_year</code>
 </li>
 <li>
 <code>time</code> — <code>clock</code>
@@ -240,35 +351,43 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <p><strong><code>text</code></strong></p>
 <ul>
 <li>
-<code>color</code> — <code>cmyk</code>, <code>color_name</code>, <code>hex</code>, <code>hsl</code>, <code>rgb</code>
+<code>color</code> — <code>cmyk</code>, <code>color_name</code>,
+<code>hex</code>, <code>hsl</code>, <code>rgb</code>
 </li>
 <li>
 <code>contact</code> — <code>email</code>, <code>phone</code>
 </li>
 <li>
-<code>name</code> — <code>handle</code>, <code>organization</code>, <code>person</code>, <code>place</code>
+<code>name</code> — <code>handle</code>, <code>organization</code>,
+<code>person</code>, <code>place</code>
 </li>
 <li>
-<code>postal</code> — <code>full</code>, <code>po_box</code>, <code>street</code>
+<code>postal</code> — <code>full</code>, <code>po_box</code>,
+<code>street</code>
 </li>
 <li>
-<code>text</code> — <code>label</code>, <code>literal</code>, <code>long</code>, <code>serialized</code>, <code>title</code>
+<code>text</code> — <code>label</code>, <code>literal</code>,
+<code>long</code>, <code>serialized</code>, <code>title</code>
 </li>
 <li>
-<code>web</code> — <code>domain</code>, <code>ip</code>, <code>mac</code>, <code>url</code>
+<code>web</code> — <code>domain</code>, <code>ip</code>,
+<code>mac</code>, <code>url</code>
 </li>
 </ul>
 <p><strong><code>unknown</code></strong></p>
 <ul>
 <li>
-<code>unknown</code> — <code>heterogeneous</code>, <code>malformed</code>, <code>unclassified</code>
+<code>unknown</code> — <code>heterogeneous</code>,
+<code>malformed</code>, <code>unclassified</code>
 </li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="how-a-type-is-spotted-from-the-values">How a type is spotted from the values<a class="anchor" aria-label="anchor" href="#how-a-type-is-spotted-from-the-values"></a>
 </h2>
-<p>Not every type can be recognized just by looking at the values, and the ontology is honest about which can. Each type records <em>how</em> it is detected, in a column called <code>match_kind</code>:</p>
+<p>Not every type can be recognized just by looking at the values, and
+the ontology is honest about which can. Each type records <em>how</em>
+it is detected, in a column called <code>match_kind</code>:</p>
 <table class="table">
 <thead><tr class="header">
 <th align="left">match_kind</th>
@@ -317,34 +436,39 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <td><strong><code>genome</code></strong></td>
 <td>a flexible date/time reader that tries many formats</td>
 <td>
-<code>calendar</code>, <code>timestamp</code>, <code>clock</code>
+<code>calendar</code>, <code>timestamp</code>,
+<code>clock</code>
 </td>
 </tr>
 <tr class="even">
 <td><strong><code>mask</code></strong></td>
 <td>a fixed written shape, sometimes with a self-checking digit</td>
 <td>
-<code>ein</code>, <code>isbn</code>, <code>phone</code>, <code>usd</code>
+<code>ein</code>, <code>isbn</code>, <code>phone</code>,
+<code>usd</code>
 </td>
 </tr>
 <tr class="odd">
 <td><strong><code>lexicon</code></strong></td>
 <td>membership in a known list of allowed values</td>
 <td>
-<code>us_state</code>, <code>iso_country</code>, <code>first_name</code>
+<code>us_state</code>, <code>iso_country</code>,
+<code>first_name</code>
 </td>
 </tr>
 <tr class="even">
 <td><strong><code>mask+lexicon</code></strong></td>
 <td>the right shape <em>and</em> a match in a known list</td>
 <td>
-<code>person</code> (looks like a name <em>and</em> is a known name)</td>
+<code>person</code> (looks like a name <em>and</em> is a known
+name)</td>
 </tr>
 <tr class="odd">
 <td><strong><code>shape</code></strong></td>
 <td>the overall look of the numbers</td>
 <td>
-<code>count</code>, <code>ratio</code>, <code>probability</code>
+<code>count</code>, <code>ratio</code>,
+<code>probability</code>
 </td>
 </tr>
 <tr class="even">
@@ -355,12 +479,20 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 </tr>
 </tbody>
 </table>
-<p>The last row is important for honesty. A membership-number column is just integers; a notes column is just text. No amount of looking at the values will reveal what they are — that only comes from the column’s name or a data dictionary. The ontology marks these <code>none</code> so the engine knows not to pretend.</p>
+<p>The last row is important for honesty. A membership-number column is
+just integers; a notes column is just text. No amount of looking at the
+values will reveal what they are — that only comes from the column’s
+name or a data dictionary. The ontology marks these <code>none</code> so
+the engine knows not to pretend.</p>
 </div>
 <div class="section level2">
 <h2 id="the-handling-instructions-stored-at-each-leaf">The handling instructions stored at each leaf<a class="anchor" aria-label="anchor" href="#the-handling-instructions-stored-at-each-leaf"></a>
 </h2>
-<p>Once a column reaches a leaf, the ontology hands back the recipe for handling it safely — four short instructions written in <code>formex</code>’s little expression language (the <code>{{ ... }}</code> notation; the <em>Formex</em> vignette is the full guide):</p>
+<p>Once a column reaches a leaf, the ontology hands back the recipe for
+handling it safely — four short instructions written in
+<code>formex</code>’s little expression language (the
+<code>{{ ... }}</code> notation; the <em>Formex</em> vignette is the
+full guide):</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -456,19 +588,39 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 </tr>
 </tbody>
 </table>
-<p>The split between the last two instructions has a purpose. The rewrite step (<code>raw_to_stable_transform</code>) is <em>lossless</em> and helps everyone downstream, so <code>formex</code> pushes as much work there as it can. The re-reading step (<code>stable_import_rule</code>) is held back for the one thing a plain CSV reader gets wrong on its own: forcing a value to <em>stay</em> the right type — a ZIP that must stay a label, a county code that must keep its leading zero — so the file survives the next reopen.</p>
+<p>The split between the last two instructions has a purpose. The
+rewrite step (<code>raw_to_stable_transform</code>) is <em>lossless</em>
+and helps everyone downstream, so <code>formex</code> pushes as much
+work there as it can. The re-reading step
+(<code>stable_import_rule</code>) is held back for the one thing a plain
+CSV reader gets wrong on its own: forcing a value to <em>stay</em> the
+right type — a ZIP that must stay a label, a county code that must keep
+its leading zero — so the file survives the next reopen.</p>
 <p>A couple of extra fields round out a leaf:</p>
 <ul>
 <li>
-<strong><code>desired_default_format</code></strong> — the writing style to use when nobody states a preference (for a calendar date, ISO <code>yyyymmdd</code>).</li>
+<strong><code>desired_default_format</code></strong> — the writing
+style to use when nobody states a preference (for a calendar date, ISO
+<code>yyyymmdd</code>).</li>
 <li>
-<strong><code>validation</code></strong>, <strong><code>default_storage</code></strong>, <strong><code>short_desc</code></strong> — a plain-English description, the R storage class the cleaned value lands in, and the checks a value should pass.</li>
+<strong><code>validation</code></strong>,
+<strong><code>default_storage</code></strong>,
+<strong><code>short_desc</code></strong> — a plain-English description,
+the R storage class the cleaned value lands in, and the checks a value
+should pass.</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="when-two-branches-both-fit-the-tie-breaker">When two branches both fit: the tie-breaker<a class="anchor" aria-label="anchor" href="#when-two-branches-both-fit-the-tie-breaker"></a>
 </h2>
-<p>Occasionally a column fits two leaves equally well. A column of city names could reasonably be a <strong>place name</strong> (free text) <em>or</em> a <strong>geographic grouping</strong> (a category you’d analyze by). The values alone cannot decide. For these known overlaps the ontology stores a <strong>tie-breaker rule</strong> in a <code>disambiguator</code> column, and the engine applies it. The current rule is cardinality — whether the values repeat or are unique:</p>
+<p>Occasionally a column fits two leaves equally well. A column of city
+names could reasonably be a <strong>place name</strong> (free text)
+<em>or</em> a <strong>geographic grouping</strong> (a category you’d
+analyze by). The values alone cannot decide. For these known overlaps
+the ontology stores a <strong>tie-breaker rule</strong> in a
+<code>disambiguator</code> column, and the engine applies it. The
+current rule is cardinality — whether the values repeat or are
+unique:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># repeating city values read as a grouping; mostly-unique values read as names</span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chicago"</span>,<span class="st">"Boston"</span>,<span class="st">"Chicago"</span>,<span class="st">"Austin"</span>,<span class="st">"Boston"</span>,<span class="st">"Chicago"</span>,<span class="st">"Austin"</span>,<span class="st">"Boston"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">$</span><span class="va">data_type</span></span>
@@ -479,7 +631,9 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <div class="section level2">
 <h2 id="putting-it-together-in-r">Putting it together in R<a class="anchor" aria-label="anchor" href="#putting-it-together-in-r"></a>
 </h2>
-<p><code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> walks a column down the tree and reports where it landed, as a <code>$route</code> — only as far down as it is sure:</p>
+<p><code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> walks a column down the tree and
+reports where it landed, as a <code>$route</code> — only as far down as
+it is sure:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span>, <span class="st">"01/01/2021"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span></span>
 <span><span class="va">r</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"data_type"</span>, <span class="st">"semantic_family"</span>, <span class="st">"semantic_type"</span>, <span class="st">"format_style"</span>, <span class="st">"depth"</span><span class="op">)</span><span class="op">]</span></span>
@@ -497,7 +651,9 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $depth</span></span>
 <span><span class="co">#&gt; [1] 4</span></span></code></pre></div>
-<p><code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> then takes that landing spot and runs the stored recipe, returning the cleaned values and the rule for reloading them safely:</p>
+<p><code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> then takes that landing spot and runs the
+stored recipe, returning the cleaned values and the rule for reloading
+them safely:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"California"</span>, <span class="st">"TX"</span>, <span class="st">"Ohio"</span><span class="op">)</span>, <span class="st">"geographic"</span>, <span class="st">"us_state"</span><span class="op">)</span><span class="op">[</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stable"</span>, <span class="st">"stable_format"</span>, <span class="st">"import_rule"</span><span class="op">)</span><span class="op">]</span></span>
@@ -509,16 +665,29 @@ LEVEL 4  format_style      how is it written? / + unit_type: what unit is it in?
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $import_rule</span></span>
 <span><span class="co">#&gt; [1] "{{ as_factor }}"</span></span></code></pre></div>
-<p>Because both functions read the <em>same</em> ontology, whatever <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> decides can be handed straight to <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code>. Every type also keeps a stable id (<code>semantic_type_id</code> like <code>n0059</code>, and <code>variant_id</code> like <code>n0059-f01</code>) that is assigned once and never reused, and old types are retired rather than deleted — so a label you recorded today still means the same thing years from now.</p>
+<p>Because both functions read the <em>same</em> ontology, whatever
+<code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> decides can be handed straight to
+<code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code>. Every type also keeps a stable id
+(<code>semantic_type_id</code> like <code>n0059</code>, and
+<code>variant_id</code> like <code>n0059-f01</code>) that is assigned
+once and never reused, and old types are retired rather than deleted —
+so a label you recorded today still means the same thing years from
+now.</p>
 </div>
 <div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <ul>
-<li>The <strong>Guessing a Column’s Type</strong> vignette — how a column is walked down the tree, and what “stabilizing” a column into safe, protected form means.</li>
-<li>The <strong>Data-Type Detector Guide</strong> — the individual recognizers behind the <code>mask</code>, <code>lexicon</code>, and <code>genome</code> detection kinds.</li>
+<li>The <strong>Guessing a Column’s Type</strong> vignette — how a
+column is walked down the tree, and what “stabilizing” a column into
+safe, protected form means.</li>
+<li>The <strong>Data-Type Detector Guide</strong> — the individual
+recognizers behind the <code>mask</code>, <code>lexicon</code>, and
+<code>genome</code> detection kinds.</li>
 <li>
-<code><a href="../reference/fx_ontology.html">fx_ontology()</a></code> reads the whole map; <code><a href="../reference/fx_validate_ontology.html">fx_validate_ontology()</a></code> checks it is internally consistent.</li>
+<code><a href="../reference/fx_ontology.html">fx_ontology()</a></code> reads the whole map;
+<code><a href="../reference/fx_validate_ontology.html">fx_validate_ontology()</a></code> checks it is internally
+consistent.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

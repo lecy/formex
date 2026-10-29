@@ -6,9 +6,12 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>The Type Atlas • formex</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Zilla_Slab-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="The Type Atlas">
 </head>
@@ -16,7 +19,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">formex</a>
 
@@ -30,7 +33,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
@@ -44,12 +46,21 @@
     <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -72,8 +83,14 @@
 
     
     
-<p>This article is a field guide to the data types formex knows: for each one, a worked example, the signal its detector keys off, what it hands back to a consumer such as <code>datagoodr</code>, and an honest rating of how hard it is to detect, stabilize, and round-trip through a CSV. For implementation status and coverage gaps, see the companion <code>DEVELOPMENT-STATUS.md</code> note at the repository root.</p>
-<p>All counts below are computed live from the shipped ontology, so they track the package rather than this prose.</p>
+<p>This article is a field guide to the data types formex knows: for
+each one, a worked example, the signal its detector keys off, what it
+hands back to a consumer such as <code>datagoodr</code>, and an honest
+rating of how hard it is to detect, stabilize, and round-trip through a
+CSV. For implementation status and coverage gaps, see the companion
+<code>DEVELOPMENT-STATUS.md</code> note at the repository root.</p>
+<p>All counts below are computed live from the shipped ontology, so they
+track the package rather than this prose.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">o</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_ontology.html">fx_ontology</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>variants <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">o</span><span class="op">)</span>,</span>
@@ -84,7 +101,9 @@
 <div class="section level2">
 <h2 id="the-organizing-idea-six-detection-mechanisms">The organizing idea: six detection mechanisms<a class="anchor" aria-label="anchor" href="#the-organizing-idea-six-detection-mechanisms"></a>
 </h2>
-<p>Every variant carries a <code>match_kind</code> — <em>how</em> its detector decides. It is the single best predictor of accuracy and of whether stabilization is reliable.</p>
+<p>Every variant carries a <code>match_kind</code> — <em>how</em> its
+detector decides. It is the single best predictor of accuracy and of
+whether stabilization is reliable.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">o</span><span class="op">$</span><span class="va">match_kind</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -105,40 +124,58 @@
 <tr class="odd">
 <td><strong>genome</strong></td>
 <td>~0.97</td>
-<td>Full parse. Tries a library of date/time formats built from a format “genome”; a value matches only if some format parses it to a valid, in-range value <strong>and</strong> round-trips.</td>
+<td>Full parse. Tries a library of date/time formats built from a format
+“genome”; a value matches only if some format parses it to a valid,
+in-range value <strong>and</strong> round-trips.</td>
 </tr>
 <tr class="even">
 <td><strong>shape</strong></td>
 <td>~0.81</td>
-<td>Numeric value profile — range, sign, decimals. Recognizes “a number” but not <em>which</em> numeric subtype.</td>
+<td>Numeric value profile — range, sign, decimals. Recognizes “a number”
+but not <em>which</em> numeric subtype.</td>
 </tr>
 <tr class="odd">
 <td><strong>mask</strong></td>
 <td>~0.72</td>
-<td>Positional character-class / regex mask (<code>9(2)-9(7)</code>); some add a checksum (EIN, DEA) or a fixed length + alphabet (hashes).</td>
+<td>Positional character-class / regex mask (<code>9(2)-9(7)</code>);
+some add a checksum (EIN, DEA) or a fixed length + alphabet
+(hashes).</td>
 </tr>
 <tr class="even">
 <td><strong>lexicon</strong></td>
 <td>~0.64</td>
-<td>Membership in a curated reference list — given names, surnames, US cities, ISO-3166, USPS. Coverage-limited.</td>
+<td>Membership in a curated reference list — given names, surnames, US
+cities, ISO-3166, USPS. Coverage-limited.</td>
 </tr>
 <tr class="odd">
 <td><strong>mask+lexicon</strong></td>
 <td>~0.25</td>
-<td>Shape <em>and</em> a reference lookup — postal addresses, FIPS keys. The hardest combinations.</td>
+<td>Shape <em>and</em> a reference lookup — postal addresses, FIPS keys.
+The hardest combinations.</td>
 </tr>
 <tr class="even">
 <td><strong>none</strong></td>
 <td>n/a</td>
-<td>Not value-detectable by construction. The role lives in the header or codebook, not the values.</td>
+<td>Not value-detectable by construction. The role lives in the header
+or codebook, not the values.</td>
 </tr>
 </tbody>
 </table>
-<p>* “confirm” is the per-mechanism <em>recipe reliability given a correct label</em> — <code>confirm_if_true</code> from the <code>dev/stabilize_rate.R</code> harness: the share of correctly-labeled columns whose recipe normalizes and validates to a non-NA stable value. It is a column-level yield, not a detection-accuracy or a per-variant figure.</p>
+<p>* “confirm” is the per-mechanism <em>recipe reliability given a
+correct label</em> — <code>confirm_if_true</code> from the
+<code>dev/stabilize_rate.R</code> harness: the share of
+correctly-labeled columns whose recipe normalizes and validates to a
+non-NA stable value. It is a column-level yield, not a
+detection-accuracy or a per-variant figure.</p>
 <div class="section level3">
 <h3 id="failure-is-graceful-everywhere">Failure is graceful everywhere<a class="anchor" aria-label="anchor" href="#failure-is-graceful-everywhere"></a>
 </h3>
-<p>The verifier is <strong>foil-selective</strong>: each candidate recipe must confirm the column <em>and</em> reject a fixed junk foil. A permissive recipe (a numeric coerce, a free-text <code>as_factor</code>) that also accepts the foil cannot claim a leaf, so the column truncates to the deepest path it can defend (<code>depth</code> 0–4) with lower confidence instead of forcing a false guess.</p>
+<p>The verifier is <strong>foil-selective</strong>: each candidate
+recipe must confirm the column <em>and</em> reject a fixed junk foil. A
+permissive recipe (a numeric coerce, a free-text <code>as_factor</code>)
+that also accepts the foil cannot claim a leaf, so the column truncates
+to the deepest path it can defend (<code>depth</code> 0–4) with lower
+confidence instead of forcing a false guess.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a clean date resolves all the way to a leaf (depth 4)</span></span>
 <span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">$</span><span class="va">depth</span></span>
@@ -151,13 +188,18 @@
 <div class="section level2">
 <h2 id="what-crosses-the-wire-to-a-consumer">What crosses the wire to a consumer<a class="anchor" aria-label="anchor" href="#what-crosses-the-wire-to-a-consumer"></a>
 </h2>
-<p>formex is stateless and answers one column at a time; <code>datagoodr</code> orchestrates and holds the governance state. They meet only at the ontology’s stable keys, <code>semantic_type_id</code> and <code>variant_id</code>.</p>
+<p>formex is stateless and answers one column at a time;
+<code>datagoodr</code> orchestrates and holds the governance state. They
+meet only at the ontology’s stable keys, <code>semantic_type_id</code>
+and <code>variant_id</code>.</p>
 <pre><code> 1. PROFILE    fx_extract_features(col)                     [formex]
  2. CLASSIFY   guess_data_type(col, name)  router→verifier  [formex]
  3. GOVERN     append governance row; auto-accept or flag   [datagoodr]
  4. STABILIZE  fx_stabilize(col, type, label)               [formex]
  5. EMIT       cleaned dataset + import-rule sidecar         [datagoodr]</code></pre>
-<p><strong>Classification (2) is probabilistic; transformation (4) is a pure function of the confirmed recipe.</strong> A human override in step 3 changes which recipe step 4 runs, nothing else.</p>
+<p><strong>Classification (2) is probabilistic; transformation (4) is a
+pure function of the confirmed recipe.</strong> A human override in step
+3 changes which recipe step 4 runs, nothing else.</p>
 <div class="section level3">
 <h3 id="the-functions-a-consumer-calls">The functions a consumer calls<a class="anchor" aria-label="anchor" href="#the-functions-a-consumer-calls"></a>
 </h3>
@@ -175,14 +217,22 @@
 <tbody>
 <tr class="odd">
 <td><code>guess_data_type(x, name)</code></td>
-<td>column values <code>x</code>; optional header <code>name</code> (a tiebreak / for metadata-gated classes)</td>
-<td>legacy <code>$guess</code>/<code>$ontology</code>/<code>$confidence</code> <strong>plus</strong> a <code>$route</code> record. Values-first: a real value signature always wins over the name</td>
+<td>column values <code>x</code>; optional header <code>name</code> (a
+tiebreak / for metadata-gated classes)</td>
+<td>legacy
+<code>$guess</code>/<code>$ontology</code>/<code>$confidence</code>
+<strong>plus</strong> a <code>$route</code> record. Values-first: a real
+value signature always wins over the name</td>
 </tr>
 <tr class="even">
 <td><code>fx_stabilize(x, semantic_type, format_label)</code></td>
-<td>raw values and the confirmed <code>(semantic_type, format_label)</code> — i.e. the <code>variant_id</code> written into the governance file</td>
+<td>raw values and the confirmed
+<code>(semantic_type, format_label)</code> — i.e. the
+<code>variant_id</code> written into the governance file</td>
 <td>
-<code>variant_id</code>, <code>format_mask</code>, <code>stable</code> (normalized values), <code>stable_format</code>, <code>import_rule</code>
+<code>variant_id</code>, <code>format_mask</code>,
+<code>stable</code> (normalized values), <code>stable_format</code>,
+<code>import_rule</code>
 </td>
 </tr>
 <tr class="odd">
@@ -202,7 +252,10 @@
 <div class="section level3">
 <h3 id="the-export-record-route">The export record: <code>$route</code><a class="anchor" aria-label="anchor" href="#the-export-record-route"></a>
 </h3>
-<p>This is the object that lands in the governance file as the <code>guess_*</code> fields. A human then confirms or overrides <code>final_variant_id</code>, the only thing that steers <code>fx_stabilize</code>.</p>
+<p>This is the object that lands in the governance file as the
+<code>guess_*</code> fields. A human then confirms or overrides
+<code>final_variant_id</code>, the only thing that steers
+<code>fx_stabilize</code>.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span>, <span class="st">"01/01/2021"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">[</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"data_type"</span>, <span class="st">"semantic_family"</span>, <span class="st">"semantic_type"</span>, <span class="st">"format_label"</span>,</span>
@@ -217,13 +270,21 @@
 <span><span class="co">#&gt;  $ depth          : int 4</span></span>
 <span><span class="co">#&gt;  $ confidence     : num 1</span></span>
 <span><span class="co">#&gt;  $ dd_unit        : chr NA</span></span></code></pre></div>
-<p><code>depth</code> is <code>0</code> unknown · <code>1</code> data_type · <code>2</code> family · <code>3</code> semantic_type · <code>4</code> leaf. <code>dd_unit</code> is metadata the row declares (e.g. a currency), never a value prediction — units are not value-detectable in general (<code>100</code> could be lb or kg).</p>
+<p><code>depth</code> is <code>0</code> unknown · <code>1</code>
+data_type · <code>2</code> family · <code>3</code> semantic_type ·
+<code>4</code> leaf. <code>dd_unit</code> is metadata the row declares
+(e.g. a currency), never a value prediction — units are not
+value-detectable in general (<code>100</code> could be lb or kg).</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="every-family-rated">Every family, rated<a class="anchor" aria-label="anchor" href="#every-family-rated"></a>
 </h2>
-<p>Green is favorable, amber is caution, red is a known hard spot, grey is a neutral fact — nuance is not a defect. <strong>Desired form</strong> asks whether the final analysis-ready version is one predictable shape (uniform) or has several valid presentations, units, or encodings (nuanced).</p>
+<p>Green is favorable, amber is caution, red is a known hard spot, grey
+is a neutral fact — nuance is not a defect. <strong>Desired
+form</strong> asks whether the final analysis-ready version is one
+predictable shape (uniform) or has several valid presentations, units,
+or encodings (nuanced).</p>
 <table style="width:100%;" class="table">
 <colgroup>
 <col width="14%">
@@ -308,7 +369,8 @@
 <td>scheme-dependent (hash/UUID high, surrogate low)</td>
 <td>moderate</td>
 <td>
-<strong>needs rule</strong> (leading zeros · <code>as_id</code>)</td>
+<strong>needs rule</strong> (leading zeros ·
+<code>as_id</code>)</td>
 <td>uniform per scheme</td>
 </tr>
 <tr class="odd">
@@ -523,12 +585,19 @@
 </tr>
 </tbody>
 </table>
-<p>* “CSV round-trip without rules” — whether the stable value reads back correctly from a plain CSV with no import rule. The classic failure is an identifier: write <code>06037</code> and a spreadsheet reads it as the number <code>6037</code>. The <code>import_rule</code> the engine returns (<code>as_id</code>, <code>as_factor</code> with levels, …) is what makes the file self-describing.</p>
+<p>* “CSV round-trip without rules” — whether the stable value reads
+back correctly from a plain CSV with no import rule. The classic failure
+is an identifier: write <code>06037</code> and a spreadsheet reads it as
+the number <code>6037</code>. The <code>import_rule</code> the engine
+returns (<code>as_id</code>, <code>as_factor</code> with levels, …) is
+what makes the file self-describing.</p>
 </div>
 <div class="section level2">
 <h2 id="by-data-type">By data type<a class="anchor" aria-label="anchor" href="#by-data-type"></a>
 </h2>
-<p>For each type: a representative example, what the detector reads, what trips it up, and the stable value + import rule that go back to the consumer. The <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> output below is live.</p>
+<p>For each type: a representative example, what the detector reads,
+what trips it up, and the stable value + import rule that go back to the
+consumer. The <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> output below is live.</p>
 <div class="section level3">
 <h3 id="temporal-the-strong-corner-genome">Temporal — the strong corner (genome)<a class="anchor" aria-label="anchor" href="#temporal-the-strong-corner-genome"></a>
 </h3>
@@ -539,7 +608,13 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $import_rule</span></span>
 <span><span class="co">#&gt; [1] "{{ as_yyyymmdd }}"</span></span></code></pre></div>
-<p><strong>Keys off:</strong> not one regex per shape — a <em>library</em> of formats built from the date genome (component order × month form × delimiter). A value is a date only if some format parses it to a valid in-range date and the parse round-trips. <strong>Trips it up:</strong> ambiguous <code>mm/dd</code> vs <code>dd/mm</code>; two-digit years; a bare four-digit year is excluded on purpose (indistinguishable from a count or ID).</p>
+<p><strong>Keys off:</strong> not one regex per shape — a
+<em>library</em> of formats built from the date genome (component order
+× month form × delimiter). A value is a date only if some format parses
+it to a valid in-range date and the parse round-trips. <strong>Trips it
+up:</strong> ambiguous <code>mm/dd</code> vs <code>dd/mm</code>;
+two-digit years; a bare four-digit year is excluded on purpose
+(indistinguishable from a count or ID).</p>
 </div>
 <div class="section level3">
 <h3 id="identifier-strong-patterns-but-the-csv-hazard">Identifier — strong patterns, but the CSV hazard<a class="anchor" aria-label="anchor" href="#identifier-strong-patterns-but-the-csv-hazard"></a>
@@ -551,7 +626,12 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $import_rule</span></span>
 <span><span class="co">#&gt; [1] "{{ as_factor }}"</span></span></code></pre></div>
-<p><strong>Keys off:</strong> positional masks, sharpened where possible — EIN/DEA/Chinese-ID validate a check digit; hashes by fixed length + hex alphabet (MD5 32, SHA-1 40, SHA-256 64); FIPS by a lexicon anchored on a valid 2-digit state prefix. <strong>Trips it up:</strong> surrogate/record keys are value-undetectable (a bare integer key looks like a count — stays ~0% by design); leading-zero loss on import.</p>
+<p><strong>Keys off:</strong> positional masks, sharpened where possible
+— EIN/DEA/Chinese-ID validate a check digit; hashes by fixed length +
+hex alphabet (MD5 32, SHA-1 40, SHA-256 64); FIPS by a lexicon anchored
+on a valid 2-digit state prefix. <strong>Trips it up:</strong>
+surrogate/record keys are value-undetectable (a bare integer key looks
+like a count — stays ~0% by design); leading-zero loss on import.</p>
 </div>
 <div class="section level3">
 <h3 id="text-strong-on-contactweb-limited-on-names">Text — strong on contact/web, limited on names<a class="anchor" aria-label="anchor" href="#text-strong-on-contactweb-limited-on-names"></a>
@@ -563,7 +643,11 @@
 <span><span class="co">#&gt;       stable            </span></span>
 <span><span class="co">#&gt; email "jane@example.org"</span></span>
 <span><span class="co">#&gt; phone "6053489999"</span></span></code></pre></div>
-<p><strong>Keys off:</strong> masks for email/phone/URL/IP/MAC/color (clear patterns); lexicons for person and place names. Free text, labels and titles are <code>none</code> — a residual, not a signature. <strong>Trips it up:</strong> names outside the gazetteer are invisible; organizations are an open set with no closed recipe.</p>
+<p><strong>Keys off:</strong> masks for email/phone/URL/IP/MAC/color
+(clear patterns); lexicons for person and place names. Free text, labels
+and titles are <code>none</code> — a residual, not a signature.
+<strong>Trips it up:</strong> names outside the gazetteer are invisible;
+organizations are an open set with no closed recipe.</p>
 </div>
 <div class="section level3">
 <h3 id="number-the-detection-ceiling-shape">Number — the detection ceiling (shape)<a class="anchor" aria-label="anchor" href="#number-the-detection-ceiling-shape"></a>
@@ -575,7 +659,15 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $import_rule</span></span>
 <span><span class="co">#&gt; [1] "{{ default:numeric }}"</span></span></code></pre></div>
-<p><strong>Keys off:</strong> plain quantities/portions are <code>shape</code> — a numeric profile that says “a number” but not which subtype. Currency/range/coordinate add a mask. <strong>Trips it up:</strong> the core limit of the engine — <code>100</code> could be a count, score, index, or lb/kg; <code>0.05</code> a probability, rate, or ratio. These route shallow and wait for the header. Note <code>usd</code> strips the symbol and grouping to a bare number; the currency itself rides along as <code>dd_unit</code>, carried not predicted.</p>
+<p><strong>Keys off:</strong> plain quantities/portions are
+<code>shape</code> — a numeric profile that says “a number” but not
+which subtype. Currency/range/coordinate add a mask. <strong>Trips it
+up:</strong> the core limit of the engine — <code>100</code> could be a
+count, score, index, or lb/kg; <code>0.05</code> a probability, rate, or
+ratio. These route shallow and wait for the header. Note
+<code>usd</code> strips the symbol and grouping to a bare number; the
+currency itself rides along as <code>dd_unit</code>, carried not
+predicted.</p>
 </div>
 <div class="section level3">
 <h3 id="categorical-only-closed-sets-confirm-by-value">Categorical — only closed sets confirm by value<a class="anchor" aria-label="anchor" href="#categorical-only-closed-sets-confirm-by-value"></a>
@@ -587,12 +679,26 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $import_rule</span></span>
 <span><span class="co">#&gt; [1] "{{ as_factor }}"</span></span></code></pre></div>
-<p><strong>Keys off:</strong> only closed-set members confirm by value — geography (USPS/FIPS) and classification codes (NAICS). Nominal, ordinal, Likert and rating scales are <code>none</code>: the category <em>role</em> is a header/codebook fact. <strong>Trips it up:</strong> codes look like IDs or small integers; ordering and level labels cannot be recovered from values, so a factor needs its declared level set to read back from a CSV.</p>
+<p><strong>Keys off:</strong> only closed-set members confirm by value —
+geography (USPS/FIPS) and classification codes (NAICS). Nominal,
+ordinal, Likert and rating scales are <code>none</code>: the category
+<em>role</em> is a header/codebook fact. <strong>Trips it up:</strong>
+codes look like IDs or small integers; ordering and level labels cannot
+be recovered from values, so a factor needs its declared level set to
+read back from a CSV.</p>
 </div>
 <div class="section level3">
 <h3 id="boolean-structured-unknown">Boolean, structured, unknown<a class="anchor" aria-label="anchor" href="#boolean-structured-unknown"></a>
 </h3>
-<p>Boolean keys off a small two-state vocabulary (<code>1/0</code>, <code>y/n</code>, <code>t/f</code>, checkbox); <code><a href="../reference/is_boolean.html">is_boolean()</a></code> is marked loose because <code>0/1</code> overlaps numeric codes, and the boolean <em>class</em> (indicator vs. presence vs. status vs. response) needs the name. Structured keys off serialization syntax (JSON, key-value, WKT/WKB/GeoJSON) and is preserved as a literal — it round-trips as text but stays opaque to the frame. Unknown is the explicit resting place for graceful truncation: retain the source text, log parse errors, do not coerce.</p>
+<p>Boolean keys off a small two-state vocabulary (<code>1/0</code>,
+<code>y/n</code>, <code>t/f</code>, checkbox); <code><a href="../reference/is_boolean.html">is_boolean()</a></code>
+is marked loose because <code>0/1</code> overlaps numeric codes, and the
+boolean <em>class</em> (indicator vs. presence vs. status vs. response)
+needs the name. Structured keys off serialization syntax (JSON,
+key-value, WKT/WKB/GeoJSON) and is preserved as a literal — it
+round-trips as text but stays opaque to the frame. Unknown is the
+explicit resting place for graceful truncation: retain the source text,
+log parse errors, do not coerce.</p>
 </div>
 </div>
 <div class="section level2">
@@ -600,11 +706,14 @@
 </h2>
 <ul>
 <li>
-<code><a href="../articles/guess-data-type.html">vignette("guess-data-type")</a></code> — the classifier in depth.</li>
+<code><a href="../articles/guess-data-type.html">vignette("guess-data-type")</a></code> — the classifier in
+depth.</li>
 <li>
-<code><a href="../articles/data-type-ontology.html">vignette("data-type-ontology")</a></code> — the vocabulary the two verbs speak.</li>
+<code><a href="../articles/data-type-ontology.html">vignette("data-type-ontology")</a></code> — the vocabulary the two
+verbs speak.</li>
 <li>
-<code>DEVELOPMENT-STATUS.md</code> (repo root) — implementation gaps, unimplemented detectors, and the test-data library.</li>
+<code>DEVELOPMENT-STATUS.md</code> (repo root) — implementation
+gaps, unimplemented detectors, and the test-data library.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

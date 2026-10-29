@@ -6,9 +6,12 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Benchmarking and the Stress-Test Design Grid • formex</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Zilla_Slab-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Benchmarking and the Stress-Test Design Grid">
 </head>
@@ -16,7 +19,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">formex</a>
 
@@ -30,7 +33,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
@@ -44,12 +46,21 @@
     <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -75,35 +86,60 @@
 <div class="section level2">
 <h2 id="why-a-benchmark">Why a benchmark<a class="anchor" aria-label="anchor" href="#why-a-benchmark"></a>
 </h2>
-<p><code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> is a router-plus-verifier that resolves a column to a point in the formex ontology (<code>data_type -&gt; semantic_family -&gt; semantic_type -&gt; format_style</code> / <code>unit</code>). As detectors, the ontology, and the router change, two questions need a repeatable, quantitative answer:</p>
+<p><code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> is a router-plus-verifier that
+resolves a column to a point in the formex ontology
+(<code>data_type -&gt; semantic_family -&gt; semantic_type -&gt; format_style</code>
+/ <code>unit</code>). As detectors, the ontology, and the router change,
+two questions need a repeatable, quantitative answer:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>How accurate is it</strong>, level by level, and where does it get things wrong?</li>
+<strong>How accurate is it</strong>, level by level, and where does
+it get things wrong?</li>
 <li>
-<strong>How robust is it</strong> when the data is messy – corrupted spellings, mixed-in values from another type, odd lengths, missing values, stray punctuation?</li>
+<strong>How robust is it</strong> when the data is messy – corrupted
+spellings, mixed-in values from another type, odd lengths, missing
+values, stray punctuation?</li>
 </ol>
-<p>This vignette covers the two layers that answer them: a frozen <strong>benchmark</strong> and a controlled <strong>stress-test grid</strong> built on top of it.</p>
+<p>This vignette covers the two layers that answer them: a frozen
+<strong>benchmark</strong> and a controlled <strong>stress-test
+grid</strong> built on top of it.</p>
 </div>
 <div class="section level2">
 <h2 id="the-frozen-benchmark">The frozen benchmark<a class="anchor" aria-label="anchor" href="#the-frozen-benchmark"></a>
 </h2>
-<p>The benchmark is one row per column, drawn from the internal banked test library and crosswalked to the ontology, carrying the (capped) values and the gold label at every level. Two sets ship with the package, so everything here works offline:</p>
+<p>The benchmark is one row per column, drawn from the internal banked
+test library and crosswalked to the ontology, carrying the (capped)
+values and the gold label at every level. Two sets ship with the
+package, so everything here works offline:</p>
 <ul>
 <li>
-<strong>mini</strong> (~100 cases) – fast, for examples and CI regression guards;</li>
+<strong>mini</strong> (~100 cases) – fast, for examples and CI
+regression guards;</li>
 <li>
-<strong>full</strong> (~800 cases) – the clean banks (curated + synthetic, exact ground truth) plus a vetted, diversity-sampled Sherlock slice, tagged by <code>tier</code> so you can report clean-only and full numbers separately.</li>
+<strong>full</strong> (~800 cases) – the clean banks (curated +
+synthetic, exact ground truth) plus a vetted, diversity-sampled Sherlock
+slice, tagged by <code>tier</code> so you can report clean-only and full
+numbers separately.</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_benchmark_data.html">fx_benchmark_data</a></span><span class="op">(</span><span class="st">"full"</span><span class="op">)</span>          <span class="co"># or "mini"; tier = "clean" / "sherlock"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">d</span><span class="op">[</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"case_id"</span>, <span class="st">"tier"</span>, <span class="st">"data_type"</span>, <span class="st">"semantic_type"</span>,</span>
 <span>           <span class="st">"variant_id"</span>, <span class="st">"gold_style"</span>, <span class="st">"gold_unit"</span>, <span class="st">"values"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
-<p><code>fx_benchmark_data(refresh = TRUE)</code> instead pulls a (possibly larger / newer) full set from a remote host and caches it under <code><a href="https://rdrr.io/r/tools/userdir.html" class="external-link">tools::R_user_dir()</a></code>; the URL is <code>getOption("formex.benchmark_url")</code> or <code>FORMEX_BENCHMARK_URL</code>, defaulting to the package’s GitHub release asset.</p>
+<p><code>fx_benchmark_data(refresh = TRUE)</code> instead pulls a
+(possibly larger / newer) full set from a remote host and caches it
+under <code><a href="https://rdrr.io/r/tools/userdir.html" class="external-link">tools::R_user_dir()</a></code>; the URL is
+<code>getOption("formex.benchmark_url")</code> or
+<code>FORMEX_BENCHMARK_URL</code>, defaulting to the package’s GitHub
+release asset.</p>
 </div>
 <div class="section level2">
 <h2 id="scoring-hierarchical-partial-credit">Scoring: hierarchical partial credit<a class="anchor" aria-label="anchor" href="#scoring-hierarchical-partial-credit"></a>
 </h2>
-<p>A prediction is scored at each ontology level, but a level counts <strong>only if all of its ancestors are also correct</strong> – the ontology is a path, so claiming the right <code>semantic_type</code> under the wrong <code>data_type</code> earns nothing. The per-level results combine into a weighted headline in <code>[0, 1]</code>:</p>
+<p>A prediction is scored at each ontology level, but a level counts
+<strong>only if all of its ancestors are also correct</strong> – the
+ontology is a path, so claiming the right <code>semantic_type</code>
+under the wrong <code>data_type</code> earns nothing. The per-level
+results combine into a weighted headline in <code>[0, 1]</code>:</p>
 <table class="table">
 <thead><tr class="header">
 <th>level</th>
@@ -132,7 +168,11 @@
 </tr>
 </tbody>
 </table>
-<p><code>gold_style</code> / <code>gold_unit</code> are scored only where the ontology pins a determinate value (menus and placeholders, and data-dependent date styles, are left <code>NA</code> and excluded from that case’s denominator). Pass your own <code>weights</code> to re-emphasise.</p>
+<p><code>gold_style</code> / <code>gold_unit</code> are scored only
+where the ontology pins a determinate value (menus and placeholders, and
+data-dependent date styles, are left <code>NA</code> and excluded from
+that case’s denominator). Pass your own <code>weights</code> to
+re-emphasise.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_benchmark.html">fx_benchmark</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span>                   <span class="co"># one timed, scored row per case</span></span>
 <span><span class="va">s</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_benchmark_summary.html">fx_benchmark_summary</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span>
@@ -179,7 +219,8 @@
 </tr>
 </tbody>
 </table>
-<p>By tier (clean ground truth vs. the noisier, header-labelled Sherlock slice):</p>
+<p>By tier (clean ground truth vs. the noisier, header-labelled Sherlock
+slice):</p>
 <table class="table">
 <thead><tr class="header">
 <th>tier</th>
@@ -202,7 +243,9 @@
 </tr>
 </tbody>
 </table>
-<p>By <code>data_type</code> (the full set is temporal-heavy, so the overall numbers lean on temporal’s strength – the balanced <code>"mini"</code> set gives a flatter view):</p>
+<p>By <code>data_type</code> (the full set is temporal-heavy, so the
+overall numbers lean on temporal’s strength – the balanced
+<code>"mini"</code> set gives a flatter view):</p>
 <table class="table">
 <thead><tr class="header">
 <th>data_type</th>
@@ -252,19 +295,32 @@
 </tr>
 </tbody>
 </table>
-<p>The zero rows are the coverage gaps: <code>structured</code> and <code>boolean</code> have working detectors but are not yet wired into the router’s always-on set (see <code>DEVELOPMENT-STATUS.md</code>), so they rarely route. <code>number</code> resolves its <code>data_type</code> well (0.82) but its subtype poorly (0.38) – most quantity subtypes are not value-distinguishable without a header.</p>
+<p>The zero rows are the coverage gaps: <code>structured</code> and
+<code>boolean</code> have working detectors but are not yet wired into
+the router’s always-on set (see <code>DEVELOPMENT-STATUS.md</code>), so
+they rarely route. <code>number</code> resolves its
+<code>data_type</code> well (0.82) but its subtype poorly (0.38) – most
+quantity subtypes are not value-distinguishable without a header.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="the-shape-of-wrong">The shape of “wrong”<a class="anchor" aria-label="anchor" href="#the-shape-of-wrong"></a>
 </h2>
-<p>Accuracy alone does not say <em>how</em> detection fails. <code><a href="../reference/fx_benchmark_confusion.html">fx_benchmark_confusion()</a></code> gives the gold x predicted matrix, a <strong>wrong-shape</strong> table (for each gold type, the distribution of the <em>wrong</em> predictions), and – using the route <code>depth</code> – splits a correct-prefix <strong>graceful truncation</strong> (stopped short, e.g. resolved <code>number</code> but not the subtype) from a committed <strong>misroute</strong> (wrong branch).</p>
+<p>Accuracy alone does not say <em>how</em> detection fails.
+<code><a href="../reference/fx_benchmark_confusion.html">fx_benchmark_confusion()</a></code> gives the gold x predicted matrix,
+a <strong>wrong-shape</strong> table (for each gold type, the
+distribution of the <em>wrong</em> predictions), and – using the route
+<code>depth</code> – splits a correct-prefix <strong>graceful
+truncation</strong> (stopped short, e.g. resolved <code>number</code>
+but not the subtype) from a committed <strong>misroute</strong> (wrong
+branch).</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_benchmark_confusion.html">fx_benchmark_confusion</a></span><span class="op">(</span><span class="va">res</span>, level <span class="op">=</span> <span class="st">"data_type"</span><span class="op">)</span></span>
 <span><span class="va">cm</span><span class="op">$</span><span class="va">matrix</span></span>
 <span><span class="va">cm</span><span class="op">$</span><span class="va">wrong_shape</span>      <span class="co"># where does a gold type land when it is wrong?</span></span>
 <span><span class="va">cm</span><span class="op">$</span><span class="va">outcome</span>          <span class="co"># per data_type: hit / graceful / misroute</span></span></code></pre></div>
-<p>On the full set, the dominant failure modes (share of each gold type’s <em>wrong</em> predictions) are:</p>
+<p>On the full set, the dominant failure modes (share of each gold
+type’s <em>wrong</em> predictions) are:</p>
 <table class="table">
 <thead><tr class="header">
 <th>gold data_type</th>
@@ -299,19 +355,27 @@
 </tr>
 </tbody>
 </table>
-<p>So, concretely: a wrong <code>categorical</code> column most often looks like a <code>number</code>; <code>text</code> that misroutes becomes <code>categorical</code>; <code>boolean</code> collapses to <code>number</code>. That tells you which detectors are competing and where a disambiguator would pay off.</p>
+<p>So, concretely: a wrong <code>categorical</code> column most often
+looks like a <code>number</code>; <code>text</code> that misroutes
+becomes <code>categorical</code>; <code>boolean</code> collapses to
+<code>number</code>. That tells you which detectors are competing and
+where a disambiguator would pay off.</p>
 </div>
 <div class="section level2">
 <h2 id="coverage-gaps">Coverage gaps<a class="anchor" aria-label="anchor" href="#coverage-gaps"></a>
 </h2>
-<p><code><a href="../reference/fx_coverage_gaps.html">fx_coverage_gaps()</a></code> is the machine-readable companion to the coverage notes – the variants with the thinnest support or the lowest type accuracy, flagged worst-first, with the dominant wrong prediction for each.</p>
+<p><code><a href="../reference/fx_coverage_gaps.html">fx_coverage_gaps()</a></code> is the machine-readable companion to
+the coverage notes – the variants with the thinnest support or the
+lowest type accuracy, flagged worst-first, with the dominant wrong
+prediction for each.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/fx_coverage_gaps.html">fx_coverage_gaps</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="tracking-change-over-time">Tracking change over time<a class="anchor" aria-label="anchor" href="#tracking-change-over-time"></a>
 </h2>
-<p>Run the benchmark before and after a change and diff them. Regressions sort to the top.</p>
+<p>Run the benchmark before and after a change and diff them.
+Regressions sort to the top.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">before</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fx_benchmark.html">fx_benchmark</a></span><span class="op">(</span><span class="fu"><a href="../reference/fx_benchmark_data.html">fx_benchmark_data</a></span><span class="op">(</span><span class="st">"full"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co"># ... make a change, reinstall / reload ...</span></span>
@@ -322,7 +386,12 @@
 <div class="section level2">
 <h2 id="the-stress-test-design-grid">The stress-test design grid<a class="anchor" aria-label="anchor" href="#the-stress-test-design-grid"></a>
 </h2>
-<p>The grid is an experimental design on top of the benchmark: each column is perturbed along one <strong>dimension</strong> at a graded <strong>level</strong> (<code>clean</code> / <code>low</code> / <code>medium</code>, with <code>medium</code> calibrated to stress – not obliterate – the signal), re-scored, and compared to its own clean baseline. The dimensions:</p>
+<p>The grid is an experimental design on top of the benchmark: each
+column is perturbed along one <strong>dimension</strong> at a graded
+<strong>level</strong> (<code>clean</code> / <code>low</code> /
+<code>medium</code>, with <code>medium</code> calibrated to stress – not
+obliterate – the signal), re-scored, and compared to its own clean
+baseline. The dimensions:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -337,12 +406,14 @@
 <tbody>
 <tr class="odd">
 <td><code>spelling</code></td>
-<td>class-preserving character substitution (digit-&gt;digit, letter-&gt;letter)</td>
+<td>class-preserving character substitution (digit-&gt;digit,
+letter-&gt;letter)</td>
 <td>1 char / ~30% of chars</td>
 </tr>
 <tr class="even">
 <td><code>length</code></td>
-<td>resample the column to a fixed size (subset: needs enough signal)</td>
+<td>resample the column to a fixed size (subset: needs enough
+signal)</td>
 <td>50 / 100 / 300</td>
 </tr>
 <tr class="odd">
@@ -358,12 +429,14 @@
 </tr>
 <tr class="odd">
 <td><code>case</code></td>
-<td>random upper/lower folding (stresses the state / colour / country lexicons)</td>
+<td>random upper/lower folding (stresses the state / colour / country
+lexicons)</td>
 <td>~10% / all chars</td>
 </tr>
 <tr class="even">
 <td><code>missingness</code></td>
-<td>inject sentinels (<code>""</code>, <code>"NA"</code>, <code>"N/A"</code>, <code>"-"</code>, <code>"null"</code>)</td>
+<td>inject sentinels (<code>""</code>, <code>"NA"</code>,
+<code>"N/A"</code>, <code>"-"</code>, <code>"null"</code>)</td>
 <td>~5% / ~15%</td>
 </tr>
 <tr class="odd">
@@ -383,7 +456,14 @@
 </tr>
 </tbody>
 </table>
-<p>The levels are deliberately kept below the destructive extreme. Contamination caps at 25% in the default grid because, with a single foil type folded in, accuracy must collapse once the foil is the majority (&gt;50%); the optional sweep to 50% locates that empirical breaking point. Position scrambles are <em>expected</em> to break ordered formats such as dates – the bank’s per-case mutation contract (<code>order_is_signal</code>) records which cases that applies to, so a break there is read as correct behaviour rather than a regression.</p>
+<p>The levels are deliberately kept below the destructive extreme.
+Contamination caps at 25% in the default grid because, with a single
+foil type folded in, accuracy must collapse once the foil is the
+majority (&gt;50%); the optional sweep to 50% locates that empirical
+breaking point. Position scrambles are <em>expected</em> to break
+ordered formats such as dates – the bank’s per-case mutation contract
+(<code>order_is_signal</code>) records which cases that applies to, so a
+break there is read as correct behaviour rather than a regression.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a single perturbation, for intuition</span></span>
 <span><span class="fu"><a href="../reference/fx_perturb.html">fx_perturb</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2019-03-15"</span>, <span class="st">"2020-12-31"</span><span class="op">)</span>, <span class="st">"spelling"</span>, <span class="st">"medium"</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
@@ -400,7 +480,9 @@
 <div class="section level3">
 <h3 id="decay-snapshot">Decay snapshot<a class="anchor" aria-label="anchor" href="#decay-snapshot"></a>
 </h3>
-<p>Type-accuracy change from the clean baseline at the <code>medium</code> level (negative = worse), on a 120-column sample of the clean tier:</p>
+<p>Type-accuracy change from the clean baseline at the
+<code>medium</code> level (negative = worse), on a 120-column sample of
+the clean tier:</p>
 <table class="table">
 <thead><tr class="header">
 <th>dimension</th>
@@ -462,13 +544,26 @@
 </tr>
 </tbody>
 </table>
-<p>Reading these: the detectors are most sensitive to <strong>contamination</strong> and <strong>alphanumeric position scrambling</strong>, then <strong>spelling</strong> corruption, and are comparatively resilient to <strong>case</strong> folding and light <strong>missingness</strong>. Contamination degrades smoothly and crosses 0.5 accuracy between a 25% and 40% mix – the empirical breaking point, well above the default <code>medium</code> level. This is where to aim robustness work next, and a baseline to re-measure after each change.</p>
+<p>Reading these: the detectors are most sensitive to
+<strong>contamination</strong> and <strong>alphanumeric position
+scrambling</strong>, then <strong>spelling</strong> corruption, and are
+comparatively resilient to <strong>case</strong> folding and light
+<strong>missingness</strong>. Contamination degrades smoothly and
+crosses 0.5 accuracy between a 25% and 40% mix – the empirical breaking
+point, well above the default <code>medium</code> level. This is where
+to aim robustness work next, and a baseline to re-measure after each
+change.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="rebuilding-the-benchmark">Rebuilding the benchmark<a class="anchor" aria-label="anchor" href="#rebuilding-the-benchmark"></a>
 </h2>
-<p>The frozen sets are produced by <code>data-raw/build_benchmark.R</code> from the local banked test library (<code>dev/bank*</code>, not shipped). Re-run it when the library or the ontology changes; it re-stamps <code>benchmark_version</code> and rewrites both the packaged sets and the remote artifact.</p>
+<p>The frozen sets are produced by
+<code>data-raw/build_benchmark.R</code> from the local banked test
+library (<code>dev/bank*</code>, not shipped). Re-run it when the
+library or the ontology changes; it re-stamps
+<code>benchmark_version</code> and rewrites both the packaged sets and
+the remote artifact.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
