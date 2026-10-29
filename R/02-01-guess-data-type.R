@@ -204,6 +204,47 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   NA_character_
 }
 
+## Is the column a `literal` free-text MIX -- many values that are each an
+## individually recognizable typed token (a percent, a zip, a phone, a url, a
+## date, money, an email), but drawn from SEVERAL such types with none dominant?
+## This is the text/literal leaf: a passthrough column that is not mono-typed yet
+## is not junk either. The gate is deliberately NARROW so literal stays a last
+## resort and does not swallow a clean single type (one recognizer >= 60% -> that
+## type owns the column, handled by its own leaf) or an unknown/heterogeneous
+## junk column (too few values recognized). Only consulted when NOTHING selective
+## confirmed, and it requires >= 3 distinct recognizers and a high recognized
+## share, so it fires on a genuine typed-mixture and almost nothing else.
+#' @keywords internal
+#' @noRd
+.fx_literal_mix <- function(u, min_kinds = 3L, recog_min = 0.80,
+                            dominant_max = 0.60) {
+  u <- u[!is.na(u) & nzchar(trimws(u))]
+  n <- length(u)
+  if (n < 4L) return(FALSE)                     # too short to call a "mixture"
+  s <- trimws(u)
+  kind <- rep(NA_character_, n)
+  mark <- function(hit, label) {
+    take <- is.na(kind) & hit
+    kind[take] <<- label
+  }
+  ## most-specific first so a value is counted once, under its tightest type
+  mark(grepl("@[[:alnum:]][[:alnum:].-]*\\.[[:alpha:]]{2,}$", s), "email")
+  mark(grepl("^(https?|ftp)://|^www\\.", s, ignore.case = TRUE), "url")
+  mark(grepl("^[0-9]{1,3}(\\.[0-9]{1,3}){3}$", s), "ip")
+  mark(grepl("^[-+]?[0-9][0-9,]*(\\.[0-9]+)?\\s*%$", s), "percent")
+  mark(grepl("^[$€£][-+]?[0-9][0-9,]*(\\.[0-9]+)?$", s), "money")
+  mark(grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", s) |
+       grepl("^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}$", s), "date")
+  mark(grepl("^\\(?[0-9]{3}\\)?[ .-][0-9]{3}[ .-][0-9]{4}$", s), "phone")
+  mark(grepl("^[0-9]{5}(-[0-9]{4})?$", s), "zip")
+  recognized <- sum(!is.na(kind))
+  if (recognized / n < recog_min) return(FALSE)             # mostly junk -> not literal
+  tab <- table(kind)
+  if (length(tab) < min_kinds) return(FALSE)                # not a MIX of enough types
+  if (max(tab) / n > dominant_max) return(FALSE)            # one type dominates -> its own leaf
+  TRUE
+}
+
 #' @keywords internal
 #' @noRd
 .fx_route_verify <- function(u, ont = fx_ontology(), router_k = 8,
@@ -241,6 +282,20 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
             (ont$semantic_family == "color" & ont$semantic_type == "color_name") |
             ont$semantic_family == "multiselect" |
             (ont$semantic_family == "contact" & ont$semantic_type == "email")
+  ## §6.1/§6.2: force-verify the implemented-but-rare mask leaves the router
+  ## never shortlists -- the "dark detector" gap. Each now carries a SELECTIVE
+  ## recipe (R/20-fx-stabilize.R), so the foil gate still blocks a false leaf;
+  ## without forcing them here the learned/signature router simply never surfaces
+  ## these rare shapes (colors, ip/mac, phone, month, issn) or the boolean binary
+  ## family, so they stayed at 0% in the benchmark. po_box (mask+lexicon) is
+  ## already covered above; it only needed its selective recipe.
+  always <- always |
+    ont$variant_id %in% c("n0040-f01", "n0041-f01", "n0042-f01", "n0043-f01",  # hex/rgb/hsl/cmyk
+                          "n0036-f01", "n0037-f01",                            # ip/mac
+                          "n0039-f01",                                         # phone
+                          "n0064-f01",                                         # month
+                          "n0073-f05") |                                       # issn
+    ont$data_type == "boolean"                                                 # binary family
   vr <- ont[ont$semantic_type_id %in% unique(router$semantic_type_id) | always, ,
             drop = FALSE]
   vr$confirm <- .fx_rate_by_recipe(u, vr$raw_to_stable_transform)
@@ -263,10 +318,19 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   has_time <- mean(grepl("[0-2]?[0-9]:[0-5][0-9]", u)) >= 0.5
   has_date <- mean(grepl("[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}[-/][0-9]{1,2}[-/][0-9]{2,4}",
                          u)) >= 0.5
+  ## month-granularity tie-break: a year+month with NO day-of-month (199006,
+  ## 1990-08, "Apr 1990") is period/month, not a full calendar date (which the
+  ## genome recipe also parses). Prefer month when the column is year-month only.
+  mon_nm  <- "(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z.]*"
+  ym_only <- !has_date & (
+    mean(grepl("^(19|20)[0-9]{2}[-/ .]?(0[1-9]|1[0-2])$", trimws(u))) >= 0.5 |
+    mean(grepl(paste0("^", mon_nm, "[ ,.-]+(19|20)[0-9]{2}$|^(19|20)[0-9]{2}[ ,.-]+", mon_nm, "$"),
+               trimws(u), ignore.case = TRUE)) >= 0.5)
   tbonus <- rep(0, nrow(vr))
   tbonus[vr$semantic_type == "timestamp"] <- if ( has_time &&  has_date) 1 else 0
   tbonus[vr$semantic_type == "calendar"]  <- if ( has_date && !has_time) 1 else 0
   tbonus[vr$semantic_type == "clock"]     <- if ( has_time && !has_date) 1 else 0
+  tbonus[vr$semantic_type == "month"]     <- if ( ym_only) 1 else 0
 
   ## 1) a SELECTIVE variant (confirms the column, rejects the foil) -> leaf
   sel <- !is.na(vr$confirm) & vr$confirm >= confirm_thr &
@@ -311,6 +375,26 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
       router_method = router_method,
       candidates = list(router = router, verified = verified))
     return(out)
+  }
+
+  ## 1b) nothing selective, but the column is a recognizable typed MIXTURE ->
+  ## the text/literal passthrough leaf (§6.1). Gated after every selective leaf
+  ## (so a mono-typed column already won above) and narrow (see .fx_literal_mix),
+  ## so it does not steal from clean types or from unknown/heterogeneous junk.
+  if (.fx_literal_mix(u)) {
+    lit <- ont[ont$semantic_type == "literal" & ont$data_type == "text", ,
+               drop = FALSE]
+    if (nrow(lit)) {
+      r <- lit[1, ]
+      return(list(
+        data_type = r$data_type, semantic_family = r$semantic_family,
+        semantic_type = r$semantic_type, semantic_type_id = r$semantic_type_id,
+        variant_id = r$variant_id, format_label = r$format_label,
+        format_style = r$format_style,
+        match_kind = r$match_kind, depth = 3L, confidence = NA_real_,
+        dd_unit = NA_character_, router_method = router_method,
+        candidates = list(router = router, verified = verified)))
+    }
   }
 
   ## 2) nothing selective -> router only, truncate to the confident depth.
