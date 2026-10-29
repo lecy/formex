@@ -232,7 +232,7 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   mark(grepl("^(https?|ftp)://|^www\\.", s, ignore.case = TRUE), "url")
   mark(grepl("^[0-9]{1,3}(\\.[0-9]{1,3}){3}$", s), "ip")
   mark(grepl("^[-+]?[0-9][0-9,]*(\\.[0-9]+)?\\s*%$", s), "percent")
-  mark(grepl("^[$€£][-+]?[0-9][0-9,]*(\\.[0-9]+)?$", s), "money")
+  mark(grepl("^[$][-+]?[0-9][0-9,]*(\\.[0-9]+)?$", s), "money")   # ASCII currency marker
   mark(grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", s) |
        grepl("^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}$", s), "date")
   mark(grepl("^\\(?[0-9]{3}\\)?[ .-][0-9]{3}[ .-][0-9]{4}$", s), "phone")
@@ -282,7 +282,7 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
             (ont$semantic_family == "color" & ont$semantic_type == "color_name") |
             ont$semantic_family == "multiselect" |
             (ont$semantic_family == "contact" & ont$semantic_type == "email")
-  ## §6.1/§6.2: force-verify the implemented-but-rare mask leaves the router
+  ## sec 6.1/sec 6.2: force-verify the implemented-but-rare mask leaves the router
   ## never shortlists -- the "dark detector" gap. Each now carries a SELECTIVE
   ## recipe (R/20-fx-stabilize.R), so the foil gate still blocks a false leaf;
   ## without forcing them here the learned/signature router simply never surfaces
@@ -378,7 +378,7 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
   }
 
   ## 1b) nothing selective, but the column is a recognizable typed MIXTURE ->
-  ## the text/literal passthrough leaf (§6.1). Gated after every selective leaf
+  ## the text/literal passthrough leaf (sec 6.1). Gated after every selective leaf
   ## (so a mono-typed column already won above) and narrow (see .fx_literal_mix),
   ## so it does not steal from clean types or from unknown/heterogeneous junk.
   if (.fx_literal_mix(u)) {

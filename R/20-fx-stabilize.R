@@ -155,7 +155,7 @@
   ## family detectors (is_ipv4/is_ipv6, is_mac, is_rgb_color, ...). These leaves
   ## shipped with a {{ none }} identity recipe, so the verifier could never
   ## confirm them (identity leaks on the foil) and the router never shortlisted
-  ## them -- the §6.1 "dark detector" gap. Wiring the detector in as the recipe
+  ## them -- the sec 6.1 "dark detector" gap. Wiring the detector in as the recipe
   ## makes the leaf confirmable AND foil-selective.
   A("as_ip",        function(x,a){ s<-trimws(x); ifelse(is_ipv4(s) | is_ipv6(s), s, NA) })
   A("as_mac",       function(x,a){ s<-trimws(x)
@@ -232,7 +232,7 @@
   ## benchmark carries -- response (yes/no), status (active/inactive, on/off,
   ## open/closed, enabled/disabled), presence (present/absent, "x") -- so the
   ## data_type resolves as boolean regardless of which subtype a column is
-  ## (§6.2; the specific subtype is header-dependent and stays coarse).
+  ## (sec 6.2; the specific subtype is header-dependent and stays coarse).
   A("as_boolean",   function(x,a){ b<-tolower(trimws(x))
     map<-c(yes="TRUE",no="FALSE",y="TRUE",n="FALSE","true"="TRUE","false"="FALSE",
            t="TRUE",f="FALSE","1"="TRUE","0"="FALSE","on"="TRUE","off"="FALSE",

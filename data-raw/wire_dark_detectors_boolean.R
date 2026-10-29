@@ -50,6 +50,20 @@ cat("wrote", csv, "\n")
 ## rebuild the lazy-loaded copy from the just-written CSV (keep the two in sync)
 ontology <- .fx_read_ontology_csv(csv)
 stopifnot(identical(ontology, o))
+
+## mark the non-ASCII strings (euro-strip recipes, DMS coordinate examples) as
+## UTF-8, matching data-raw/mark_utf8_data.R -- otherwise R CMD check raises
+## "checking data for non-ASCII characters ... WARNING". The bytes are unchanged
+## (fx_ontology() reads the CSV with the same bytes), so the CSV<->rda agreement
+## test still holds: Encoding() marks a string, it does not alter its content.
+mark_utf8 <- function(x) {
+  if (is.character(x)) { Encoding(x) <- "UTF-8"; return(x) }
+  if (is.list(x))      { x[] <- lapply(x, mark_utf8); return(x) }
+  x
+}
+ontology <- mark_utf8(ontology)
 if (!dir.exists("data")) dir.create("data")
-save(ontology, file = "data/ontology.rda", version = 2)
-cat(sprintf("wrote data/ontology.rda: %d rows; integrity CLEAN\n", nrow(ontology)))
+save(ontology, file = "data/ontology.rda", version = 2, compress = "xz")
+tools::resaveRdaFiles("data/ontology.rda")
+cat(sprintf("wrote data/ontology.rda: %d rows; integrity CLEAN; UTF-8 marked\n",
+            nrow(ontology)))

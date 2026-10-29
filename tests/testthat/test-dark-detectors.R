@@ -1,4 +1,4 @@
-# §6.1 / §6.2 regression guards: the implemented-but-dark leaves that the router
+# sec 6.1 / sec 6.2 regression guards: the implemented-but-dark leaves that the router
 # never shortlisted now route, because each carries a SELECTIVE recipe and is
 # forced into the always-on verifier set (R/02-01-guess-data-type.R). These run
 # under the shipped default ("auto" = learned router, signature fallback) -- the
