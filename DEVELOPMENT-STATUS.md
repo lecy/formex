@@ -223,6 +223,228 @@ testing gap:
 - Sherlock labels come from headers, so a slice of the "truth" is itself noisy;
   this is intentional (hard negatives) but caps the achievable top-1.
 
+## 6. Forward plan (2026-10-29 addendum)
+
+A roadmap for the two open fronts — finishing the detector set and improving the
+router — plus four design decisions that came out of looking hard at the shipped
+model (`inst/extdata/router_xgb.rds`, 3,853 cases × 441 features, 47 classes, OOF
+top-1 0.771 / top-5 0.946 / top-8 0.965).
+
+### 6.1 Detector implementation roadmap
+
+The remaining unimplemented variants split by **mechanism**, and the mechanism
+dictates the work. Sequenced by leverage:
+
+**Phase A — `mask` detectors (value-detectable, highest routable payoff).**
+These are real detector+verb work but the values carry the signal, so they both
+confirm *and* can be learned-routed once cases exist.
+- `number/currency/{balance,usd,euro}` — `is_currency_amount` (symbol-required)
+  landed for `usd`; generalize to a currency+amount mask with a `unit_type`
+  (USD/EUR/…) and the `write_*` renderer.
+- `number/range/{comma_pair,to_range,confidence_interval}` — `min_max` done;
+  add the CI form and the `lo to hi` style.
+- `number/coordinate/{lat_lon dms, iso6709, lon_lat, lat, lon}` — net-new mask
+  detectors; pair with a decimal-degree canonicalizer.
+- `structured/geometry/{point,polygon}` and `structured/collection|record` —
+  the detectors already exist (`is_wkt_geometry`, `is_geojson`, `is_wkb`,
+  `is_json`); the work is wiring the ontology rows `implemented = yes` and giving
+  them a pass-through/parse recipe. Geometry is already in the verifier's
+  **always-on** set, so it routes without the model (see §6.6).
+- **`boolean/binary` reconciliation (quick win).** `is_boolean()` is shipped and
+  works; the rows say unimplemented. Wire + mark; the *class*
+  (indicator/presence/status/response) is header-gated and belongs in Phase C.
+
+> **Carry-forward rule from the v7 session:** a selective recipe is *necessary
+> but not sufficient* to route. A new `mask` leaf that confirms in isolation
+> (`array`, `version`, `reporting_period`) is still invisible to the learned
+> router until it has training cases or joins the always-on set. **Every Phase-A
+> detector ships with banked cases, or it does not count as routable** (§6.6).
+
+**Phase B — `lexicon` detectors (need a reference list).**
+`text/name/{last_name, full_name, place, handle}`. `first_name` and `place`
+landed; `last_name`/`full_name` reuse the surname gazetteer, `handle` needs a
+small pattern+lexicon. Gated only by shippable, licence-clean lists.
+
+**Phase C — `shape` / `none` types are NOT a detector problem.**
+The whole `number/quantity` block (`measurement`, `count`, `rate`, `ratio`,
+`duration`, `score`, `index`, `rank`, `probability`, `percent`, `percentile`),
+the boolean/categorical *classes*, and `text/{label,title,long}` are **not
+value-typable by subtype** — a column of doubles cannot tell you it is a *rate*
+rather than a *ratio*. These need the column **header/codebook**, i.e. the
+name-side (`nm_*`) feature path, which is currently dark (§6.4). Phase C is
+therefore a *router/arbiter* task (turn the name features on and fuse them), not
+a detector task. Do not ship value-only detectors for these; they will only
+manufacture false leaves.
+
+### 6.2 Router improvement plan
+
+1. **Parity guard. ✅ Landed 2026-10-29.** The artifact stamps
+   `extractor_version = 2.0` but nothing asserted the *live* `fx_extract_features`
+   still matched it. `.fx_router_artifact()` now checks at load time: if
+   `FEATURE_EXTRACTOR_VERSION != art$extractor_version` (or the artifact is
+   unstamped), it drops the learned router and falls back to signature with a
+   one-time warning. This was the one failure mode that silently returned
+   garbage (the original "scored at chance" bug).
+2. **Un-blind the dropped feature classes (§6.4).** Bank cases — synthetic where
+   the type is rare-but-regular (the `bank_temporal` recipe) — for the types the
+   corpus currently has **zero** examples of: SSN, EIN, UUID, IPv4, ZIP+4,
+   YYYYMM, hex hashes, JSON, DMS coordinates, international phone, scientific
+   notation. This simultaneously (a) adds the classes the model can predict and
+   (b) gives the `rx_*` features variance so they stop being dropped.
+3. **Name-side fusion (unlocks Phase C).** Bank columns *with headers*, feed the
+   name to the extractor so the 17 `nm_*` features compute, and train either a
+   name-aware model or a late-fusion arbiter (value-router ⊕ name-signal). This
+   is the only route to the header-gated types.
+4. **Rebalance.** The corpus leans text/categorical/number; `top-1 by
+   match_kind` already shows `mask` (0.964) trailing `genome`/`lexicon` (~1.0).
+   Stratify or class-weight so thin types are not drowned.
+5. **Calibrate the depth gates.** The learned router's top-1 probability sets
+   truncation depth directly (`≥0.50 → 3`, `≥0.25 → 1`). Plot a reliability curve
+   and set those cut-points from calibration rather than by hand.
+6. **CI + non-regression gate.** Wire `fx_benchmark()` + `fx_benchmark_compare()`
+   into the retrain step; a new artifact ships only if it does not regress the
+   shipped one on any level or the per-`match_kind` top-k recall.
+
+### 6.3 Should we sunset the legacy flat detector path?
+
+**Verdict: deprecate, don't delete — and demote it now.** It is not
+synergistic with the router path; it is a parallel, older contract.
+
+Reasons it still earns its place *today*:
+- **Backward contract.** `$guess` / `$ontology` / `$candidates` and the flat
+  coordinate axes (`data_type / data_subtype / data_class / data_format`) are
+  consumed by `guess_column()` and five test suites; the flat `data_format` axis
+  is not 1:1 with the v6/v7 `format_style`/`unit_type` axes.
+- **Independent fallback.** It needs neither xgboost nor the ontology CSV — pure
+  predicate scoring. When `.fx_route_verify()` errors (it is wrapped in
+  `tryCatch → NULL`), the legacy fields still answer.
+- **The detectors are shared, not duplicated.** The `is_*` predicates are reused
+  by the verifier (recipe = detector + transform), so keeping the detectors costs
+  nothing; only the *flat scoring + flat ontology crosswalk* is redundant.
+
+Reasons to retire it on a schedule:
+- **Two ontologies to maintain.** `R/00-data-type-ontology.R` is a hand-kept flat
+  crosswalk that can drift from the v6/v7 ontology — a standing correctness risk.
+- **Cost.** `score_data_type()` runs **all 88 detectors on every call** — exactly
+  the O(all-detectors) scan the router was built to avoid — yet it runs
+  unconditionally because `route = TRUE` is the default.
+
+**Plan:** (1) **✅ Landed 2026-10-29** — `guess_data_type(..., legacy = FALSE)`
+skips the flat scan and returns only the `$route` record (legacy fields present
+but empty); measured at ~13% of the full per-call runtime on a typical column,
+since it no longer scores all 88 detectors. (2) document `$guess`/`$ontology` as
+deprecated-but-supported; (3) remove only after datagoodr and any flat-axis
+consumers migrate to `$route`, and after v7's `format_style`/`unit_type` fully
+subsume the flat `data_format` axis. Target: drop in the release that removes
+`format_label`, alongside the router retrain that release already forces (§6.6).
+
+### 6.4 Feature hygiene: why 36 of 477 features drop out
+
+Measured by reproducing `train_router.R`'s variance filter over the 3,859
+training columns (`data-raw/` diagnostic). **The features are not defective — the
+drop is corpus-driven**, and it splits three ways:
+
+| bucket | n | examples | reading |
+|---|---|---|---|
+| **all-NA (never computes)** | 17 | `nm_amt`, `nm_date`, `nm_person`, `nm_id`, … (16 `nm_*`) + `chk_ein_prefix_rate` | the **name-side block is gated off** — training is value-only, no header is fed, so these are structurally absent, not broken. They light up the moment §6.2(3) feeds headers. |
+| **constant everywhere (sd 0)** | 18 | `rx_ssn`, `rx_ein`, `rx_uuid`, `rx_ipv4`, `rx_zip9`, `rx_yyyymm`, `rx_hexhash`, `rx_jsonfrag`, `rx_latlon_dms`, `rx_phone_intl`, `rx_sci_not`; `in_is_numeric/date/factor/logical`, `is_constant`, `pct_missing` | split in two (below) |
+| **constant where present (gated, sd 0)** | 1 | `range_epoch_ms` (computes on 18.8% of cols, all 0) | near-degenerate on this corpus |
+
+So the answer to "universal or selective?" is **both, and the distinction is the
+useful part**:
+
+- The `in_is_*` flags, `is_constant`, and `pct_missing` are **structurally
+  constant** in the banked pipeline: `recon()` always yields a *character* vector
+  with no NAs and >1 value, so input-class / missingness / degeneracy flags can
+  never vary. These are genuinely uninformative *here* (they would vary on raw
+  typed input) — harmless to drop.
+- The `rx_*` regex-hit rates are constant **at exactly 0** — confirmed over the
+  full 4,036-column matrix, zero non-zero columns. They are not broken; **the
+  corpus simply contains no SSN / EIN / UUID / IPv4 / ZIP+4 / YYYYMM / hex-hash /
+  JSON / DMS-coordinate / intl-phone / scientific-notation columns**. A rate that
+  is 0 for every training column carries no signal and is dropped.
+
+**The payoff:** the dropped-`rx_*` set is a *free blind-spot diagnostic*. It
+enumerates, independently of the label crosswalk, exactly the types the learned
+router has no training signal for — and it corroborates §5.3's "18 implemented
+variants have zero test cases." These are the same types §6.2(2) targets, and
+they map straight onto the `number` / `structured` / thin-`identifier` gaps in
+§3. Recommendation: add an assertion to the retrain script that any `rx_*`
+feature dropped for zero variance **names the type to bank next**, so the gap is
+surfaced at train time rather than discovered by inspection.
+
+### 6.5 Flagging underperforming detectors (difficulty-aware)
+
+`fx_coverage_gaps()` exists but uses a **flat** gate (`max_accuracy = 0.5`,
+`min_support = 3`). The objection is correct: a universal threshold conflates
+three different things — intrinsic difficulty, thin/noisy support, and a genuine
+detector bug. The plan replaces the flat gate with four signals and **two action
+buckets**, so each flag points at a fix:
+
+1. **Per-`match_kind` target, not a single number.** Achievable precision is a
+   function of mechanism: `genome`/`lexicon`/`mask+lexicon` types can reach
+   ~0.95; `shape`/`none` types are header-gated and should be **excluded from
+   value accuracy entirely**, not scored at 0. Set the target by `match_kind`.
+2. **Baseline-relative, not absolute.** Flag a type where the **learned router
+   underperforms the signature router** (run both via `router=`). A type hard for
+   *everyone* is difficulty, not a bug; a type where learned < model-free floor is
+   a real regression. (`fx_benchmark_compare()` already computes these deltas.)
+3. **Stress-delta (robustness).** Use `fx_stress_grid()`: flag types whose
+   accuracy **collapses under mild perturbation** (low whitespace / case /
+   contamination) relative to their own clean-tier score. Brittleness to a space
+   or a stray uppercase is a detector bug regardless of absolute accuracy, and
+   `fx_contamination_curve()` already measures the shape.
+4. **Support-aware confidence.** Put a Wilson interval on the accuracy estimate;
+   only flag "low-accuracy" when the interval's **upper bound** is below target,
+   so thin-support types are not flagged on noise.
+
+**Two buckets, two fixes:** `needs-cases` (thin support, or a dropped `rx_*`
+feature, or absent from the corpus → bank/generate data, §6.2(2)) vs
+`needs-detector-work` (adequate support but low baseline-relative accuracy or
+stress-brittle → fix the predicate/recipe). `fx_coverage_gaps()` grows a
+`target` (default by `match_kind`), a `baseline` run argument, and a
+`stress_drop` column, and emits these two labels instead of the single `"ok" /
+"low-accuracy" / "low-support"` flag.
+
+### 6.6 Router refresh: cadence & triggers
+
+The learned router predicts over a **fixed 47-class set** (`art$levels`).
+Inference maps predicted ids to ontology rows by `match()`, so the framework
+**degrades gracefully, it does not break**: an ontology id not in `art$levels` is
+simply never shortlisted; an `art$levels` id no longer in the ontology is
+dropped. The question is therefore not "does X break the router" but "does X
+leave the router blind to something it should route."
+
+**MUST retrain (correctness):**
+- **Any `fx_extract_features` change** — a feature added, removed, reordered, or
+  recomputed. The artifact bakes in feature names, column order, and median
+  imputations; a mismatch is silent train/serve skew. Bump
+  `FEATURE_EXTRACTOR_VERSION`, retrain, and rely on the §6.2(1) parity guard in
+  the interim.
+- **Removal of `format_label`** in v7 (the router trains on it; already the
+  deferred retrain in `ONTOLOGY-V7-PLAN.md` §5).
+
+**SHOULD retrain (coverage):**
+- A **new routable `semantic_type_id`** added to the ontology — to add it as a
+  predictable class. (Interim: add high-precision types to the verifier's
+  **always-on** set, as geometry/email/color-name already are — this makes them
+  routable with *no* retrain.)
+- **New or expanded training cases** for an under-covered type, especially the
+  §6.4 zero-example types — to lift its top-k recall.
+- A **benchmark regression** where `fx_benchmark_compare()` shows learned losing
+  to signature on a level or `match_kind`.
+
+**NO retrain needed:**
+- A new detector/recipe for an **existing** class — the verifier picks it up and
+  the router already shortlists the class.
+- **Deprecating** a row (ids are never renumbered/reused; `match()` handles it).
+- Pure `fx_stabilize` verb/transform additions (they are not router inputs).
+
+**Cadence:** there is no fixed schedule, nor should there be — retrain is
+**event-driven** by the triggers above, gated by the §6.2(6) non-regression
+check. The one standing recommendation is the parity guard, so that the
+"correctness" triggers can never fail silently between retrains.
+
 ## 6. Benchmark-driven detector priorities (2026-10-29)
 
 > The benchmark is **still in development** — not yet frozen for published
