@@ -2,7 +2,7 @@
 % Please edit documentation in R/14-fx-ontology.R
 \name{fx_ontology}
 \alias{fx_ontology}
-\title{The research data-type ontology (v6)}
+\title{The research data-type ontology (v7)}
 \usage{
 fx_ontology()
 }
@@ -14,7 +14,7 @@ load-bearing identity columns \code{semantic_type_id}, \code{variant_id},
 \code{version_deprecated}, \code{superseded_by}).
 }
 \description{
-The research data-type ontology (v6)
+The research data-type ontology (v7)
 }
 \seealso{
 \code{\link[=fx_validate_ontology]{fx_validate_ontology()}}

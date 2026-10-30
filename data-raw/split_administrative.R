@@ -4,7 +4,7 @@
 ## etc. Split it into one variant row per id family, each with its own recipe.
 ## Re-derives node_label, validates, rebuilds data/ontology.rda. Idempotent.
 source("R/14-fx-ontology.R")
-csv <- "inst/extdata/research_data_type_ontology_v6.csv"
+csv <- "inst/extdata/research_data_type_ontology_v7.csv"
 o   <- .fx_read_ontology_csv(csv)
 
 base <- o[o$semantic_type_id == "n0073", ][1, ]
@@ -32,7 +32,7 @@ prob <- fx_validate_ontology(o)
 if (length(prob)) { cat("VALIDATION FAILED:\n"); cat(prob, sep="\n"); stop("aborted") }
 utils::write.csv(o, csv, row.names = FALSE, na = "")
 ontology <- .fx_read_ontology_csv(csv); save(ontology, file = "data/ontology.rda", compress = "xz")
-inst <- file.path(.libPaths()[1], "formex", "extdata", "research_data_type_ontology_v6.csv")
+inst <- file.path(.libPaths()[1], "formex", "extdata", "research_data_type_ontology_v7.csv")
 if (file.exists(dirname(inst))) file.copy(csv, inst, overwrite = TRUE)   # refresh installed copy
 cat(sprintf("OK  %d rows now; administrative variants:\n", nrow(o)))
 print(o[o$semantic_type_id=="n0073", c("variant_id","format_label","raw_to_stable_transform")], row.names=FALSE)

@@ -3,20 +3,20 @@
 \docType{data}
 \name{ontology}
 \alias{ontology}
-\title{Research data-type ontology (v6), parsed}
+\title{Research data-type ontology (v7), parsed}
 \format{
 A data frame with one row per import recipe (\code{format_label}), keyed by
 \code{semantic_type_id} + \code{variant_id}; \code{match_kind} names the detector-build
 strategy (genome/mask/lexicon/mask+lexicon/shape/none).
 }
 \source{
-\code{inst/extdata/research_data_type_ontology_v6.csv}
+\code{inst/extdata/research_data_type_ontology_v7.csv}
 }
 \usage{
 ontology
 }
 \description{
-The lazy-loaded copy of \code{inst/extdata/research_data_type_ontology_v6.csv}.
+The lazy-loaded copy of \code{inst/extdata/research_data_type_ontology_v7.csv}.
 Identical to \code{\link[=fx_ontology]{fx_ontology()}}; provided for direct \code{formex::ontology} access.
 }
 \keyword{datasets}

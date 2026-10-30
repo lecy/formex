@@ -256,7 +256,7 @@ recall/precision table shown here before you adopt it. Once you are happy:
 2. Add its positive examples to `data-raw/datatypes/<family>.R`.
 3. Register one line in `R/00-data-type-registry.R` so `guess_data_type()` and
    `score_data_type()` pick it up, and add a row to the ontology
-   (`inst/extdata/research_data_type_ontology_v6.csv`) for its semantic type.
+   (`inst/extdata/research_data_type_ontology_v7.csv`) for its semantic type.
 
 See `?generate_autotype_test_cases`, `?build_autotype_results`, and
 `?generate_autotype_report` for details.

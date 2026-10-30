@@ -8,7 +8,7 @@
 ## Run: Rscript data-raw/wire_dark_detectors_boolean.R
 source("R/14-fx-ontology.R")
 
-csv <- "inst/extdata/research_data_type_ontology_v6.csv"
+csv <- "inst/extdata/research_data_type_ontology_v7.csv"
 o <- .fx_read_ontology_csv(csv)
 set <- function(id, col, val) o[[col]][o$variant_id == id] <<- val
 

@@ -7,7 +7,7 @@
 ##   Rscript data-raw/wire_tags.R
 ## ---------------------------------------------------------------------------
 source("R/14-fx-ontology.R")
-csv <- "inst/extdata/research_data_type_ontology_v6.csv"
+csv <- "inst/extdata/research_data_type_ontology_v7.csv"
 o   <- .fx_read_ontology_csv(csv)
 
 o$raw_to_stable_transform[o$variant_id == "n0049-f01"] <- "{{ as_tags }}"

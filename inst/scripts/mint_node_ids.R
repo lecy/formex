@@ -29,7 +29,7 @@ IN  <- "/mnt/user-data/uploads/research_data_type_ontology_v4.csv"
 ##   subclass_id   -> semantic_type_id
 ## data_type is KEPT: it names a modality (what operations are admissible),
 ## not a storage mode.
-OUT <- "/mnt/user-data/outputs/research_data_type_ontology_v6.csv"
+OUT <- "/mnt/user-data/outputs/research_data_type_ontology_v7.csv"
 THIS_VERSION <- "v6"
 
 d <- read.csv(IN, stringsAsFactors = FALSE, check.names = FALSE)
