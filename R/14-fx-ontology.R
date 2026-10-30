@@ -1,7 +1,7 @@
 ## ===========================================================================
 ## 14-fx-ontology.R  --  load and integrity-check the research data-type
-## ontology (v6). The ontology ships twice on purpose (INTEGRATION §3):
-##   * inst/extdata/research_data_type_ontology_v6.csv  -- human-readable/diffable
+## ontology (v7). The ontology ships twice on purpose (INTEGRATION §3):
+##   * inst/extdata/research_data_type_ontology_v7.csv  -- human-readable/diffable
 ##   * data/ontology.rda                                -- parsed, lazy-loaded
 ## fx_ontology() is the accessor; a test asserts the two agree.
 ##
@@ -49,7 +49,7 @@
                   colClasses = "character", na.strings = character(0))
 }
 
-#' The research data-type ontology (v6)
+#' The research data-type ontology (v7)
 #'
 #' @return A data frame of ontology rows (one per format variant), with the
 #'   load-bearing identity columns `semantic_type_id`, `variant_id`,
@@ -59,11 +59,11 @@
 #' @seealso [fx_validate_ontology()]
 #' @export
 fx_ontology <- function(){
-  p <- system.file("extdata", "research_data_type_ontology_v6.csv", package = "formex")
+  p <- system.file("extdata", "research_data_type_ontology_v7.csv", package = "formex")
   if(!nzchar(p) || !file.exists(p)){                       # dev / test fallback
-    for(cand in c("inst/extdata/research_data_type_ontology_v6.csv",
-                  "../../inst/extdata/research_data_type_ontology_v6.csv",
-                  "../../../inst/extdata/research_data_type_ontology_v6.csv"))
+    for(cand in c("inst/extdata/research_data_type_ontology_v7.csv",
+                  "../../inst/extdata/research_data_type_ontology_v7.csv",
+                  "../../../inst/extdata/research_data_type_ontology_v7.csv"))
       if(file.exists(cand)){ p <- cand; break }
   }
   .fx_read_ontology_csv(p)
@@ -160,13 +160,13 @@ fx_validate_ontology <- function(ont = fx_ontology()){
   p
 }
 
-#' Research data-type ontology (v6), parsed
+#' Research data-type ontology (v7), parsed
 #'
-#' The lazy-loaded copy of `inst/extdata/research_data_type_ontology_v6.csv`.
+#' The lazy-loaded copy of `inst/extdata/research_data_type_ontology_v7.csv`.
 #' Identical to [fx_ontology()]; provided for direct `formex::ontology` access.
 #'
 #' @format A data frame with one row per import recipe (`format_label`), keyed by
 #'   `semantic_type_id` + `variant_id`; `match_kind` names the detector-build
 #'   strategy (genome/mask/lexicon/mask+lexicon/shape/none).
-#' @source `inst/extdata/research_data_type_ontology_v6.csv`
+#' @source `inst/extdata/research_data_type_ontology_v7.csv`
 "ontology"

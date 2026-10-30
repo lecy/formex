@@ -9,7 +9,38 @@ template:
 
 navbar:
   structure:
-    left: [intro, articles, reference, news]
+    left: [intro, overview, articles, reference, news]
+  components:
+    overview:
+      text: Package Overview
+      menu:
+      - text: Guess Data Type
+        href: articles/overview-guess-data-type.html
+      - text: The Ontology
+        href: articles/overview-ontology.html
+      - text: Formatting Syntax
+        href: articles/overview-formatting-syntax.html
+    articles:
+      text: Articles
+      menu:
+      - text: Guessing a Column's Type
+        href: articles/guess-data-type.html
+      - text: The Data-Type Ontology
+        href: articles/data-type-ontology.html
+      - text: "Formex: the format-expression syntax"
+        href: articles/formex.html
+      - text: How Detectors Recognize a Type
+        href: articles/detector-kinds.html
+      - text: Data-Type Detector Guide
+        href: articles/data-type-detectors.html
+      - text: Feature Engineering for Type Guessing
+        href: articles/feature-engineering.html
+      - text: The Testing Libraries
+        href: articles/testing-libraries.html
+      - text: Benchmarking and the Stress-Test Design Grid
+        href: articles/benchmarking.html
+      - text: The Type Atlas
+        href: articles/formex-type-atlas.html
 
 reference:
 - title: Detect & classify a column
@@ -103,8 +134,19 @@ reference:
   - matches(".")
 
 articles:
-- title: Get started
-  navbar: ~
+- title: Package overview
+  desc: >
+    Start here. Three short tours of what the package does: how it guesses a
+    column's type, the shared ontology those types live in, and how it cleans and
+    standardizes values.
+  navbar: Package Overview
+  contents:
+  - overview-guess-data-type
+  - overview-ontology
+  - overview-formatting-syntax
+- title: Guides & reference
+  desc: Deeper tutorials and the detection/benchmarking internals.
+  navbar: Articles
   contents:
   - formex
   - guess-data-type

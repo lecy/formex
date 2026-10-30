@@ -1,0 +1,287 @@
+---
+title: "Guess Data Type"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Guess Data Type}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = TRUE, comment = "#>",
+                      message = FALSE, warning = FALSE)
+library(formex)
+
+## --- tiny inline-SVG helpers, shared by the decision-tree diagrams ----------
+## Colours use `currentColor` so the diagrams read in both the light and dark
+## site themes; one accent marks the path that was taken.
+.accent <- "#2c7fb8"; .unit <- "#2ca25f"
+
+.box <- function(cx, cy, label, chosen = FALSE, muted = FALSE,
+                 w = 122, h = 34, accent = .accent) {
+  x <- cx - w / 2; y <- cy - h / 2
+  if (chosen)
+    sprintf(paste0('<rect x="%g" y="%g" rx="7" width="%g" height="%g" fill="%s" ',
+      'fill-opacity="0.15" stroke="%s" stroke-width="2"/><text x="%g" y="%g" ',
+      'text-anchor="middle" font-size="13" font-family="sans-serif" ',
+      'font-weight="600" fill="currentColor">%s</text>'),
+      x, y, w, h, accent, accent, cx, cy + 4, label)
+  else
+    sprintf(paste0('<rect x="%g" y="%g" rx="7" width="%g" height="%g" fill="none" ',
+      'stroke="currentColor" stroke-opacity="0.4" stroke-width="1"%s/><text x="%g" ',
+      'y="%g" text-anchor="middle" font-size="13" font-family="sans-serif" ',
+      'fill="currentColor" fill-opacity="%s">%s</text>'),
+      x, y, w, h, if (muted) ' stroke-dasharray="4 3"' else "",
+      cx, cy + 4, if (muted) "0.4" else "0.55", label)
+}
+.edge <- function(x1, y1, x2, y2, chosen = FALSE, accent = .accent) {
+  if (chosen)
+    sprintf('<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="2"/>',
+            x1, y1, x2, y2, accent)
+  else
+    sprintf(paste0('<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="currentColor" ',
+            'stroke-opacity="0.22" stroke-width="1"/>'), x1, y1, x2, y2)
+}
+.glab <- function(t, y)
+  sprintf(paste0('<text x="84" y="%g" text-anchor="end" font-size="11" ',
+    'font-family="sans-serif" fill="currentColor" fill-opacity="0.5">%s</text>'),
+    y + 4, t)
+.svg <- function(body, w = 580, h = 400)
+  cat(sprintf(paste0('<svg viewBox="0 0 %g %g" role="img" ',
+    'style="max-width:100%%;height:auto;margin:1.2em 0" ',
+    'xmlns="http://www.w3.org/2000/svg">%s</svg>'), w, h, paste(body, collapse = "")))
+```
+
+When you open an unfamiliar data file, the first thing you need to know about
+each column is: **what is this?** Are these dates? dollar amounts? county codes?
+people's names? `guess_data_type()` answers that question. You hand it a column
+of values and it hands back a `$route` --- its best read of what the column is,
+expressed as a path through the package's type **ontology**.
+
+```{r first}
+guess_data_type(c("03/15/2019", "12/31/2020", "01/01/2021"))$route[
+  c("data_type", "semantic_family", "semantic_type", "format_style",
+    "depth", "confidence")]
+```
+
+The rest of this guide shows how to read that answer, why it is shaped as a
+decision tree, and --- most importantly --- why it is allowed to stop early.
+
+## Typing is a walk down a decision tree
+
+The answer is a **path**, four levels deep, from coarse to fine. Typing a column
+means starting at the top with a value and walking down, answering one narrowing
+question at each step. Here is the full walk for a column of dates like
+`03/15/2019`:
+
+```{r tree-date, echo = FALSE, results = "asis"}
+.svg(c(
+  .glab("value", 38), .glab("data type", 110), .glab("family", 182),
+  .glab("type", 254), .glab("format", 326),
+  ## faint edges first, chosen edges drawn on top
+  .edge(360, 55, 305, 93),  .edge(360, 55, 455, 93),
+  .edge(150, 127, 305, 165), .edge(150, 127, 455, 165),
+  .edge(150, 199, 305, 237),
+  .edge(150, 271, 305, 309), .edge(150, 271, 455, 309),
+  .edge(360, 55, 150, 93, TRUE), .edge(150, 127, 150, 165, TRUE),
+  .edge(150, 199, 150, 237, TRUE), .edge(150, 271, 150, 309, TRUE),
+  ## nodes
+  .box(360, 38, "03/15/2019", chosen = TRUE),
+  .box(150, 110, "temporal", chosen = TRUE), .box(305, 110, "number"),
+  .box(455, 110, "text"),
+  .box(150, 182, "date", chosen = TRUE), .box(305, 182, "time"),
+  .box(455, 182, "period"),
+  .box(150, 254, "calendar", chosen = TRUE), .box(305, 254, "timestamp"),
+  .box(150, 326, "mdy_slash", chosen = TRUE), .box(305, 326, "ymd_dash"),
+  .box(455, 326, "mon_mdy"),
+  ## legend
+  .edge(20, 372, 44, 372, TRUE),
+  '<text x="50" y="376" font-size="11" font-family="sans-serif" fill="currentColor" fill-opacity="0.7">path taken</text>',
+  .edge(170, 372, 194, 372),
+  '<text x="200" y="376" font-size="11" font-family="sans-serif" fill="currentColor" fill-opacity="0.7">roads not taken</text>'
+))
+```
+
+Read it left to right, top to bottom:
+
+1. **`data_type`** --- *how should these be treated?* Not words, not categories,
+   not quantities, but points in time. → **`temporal`**.
+2. **`semantic_family`** --- *what broad kind of time?* Not a clock time, not a
+   span. → **`date`**.
+3. **`semantic_type`** --- *what exactly does it mean?* A plain calendar date, not
+   a timestamp with a clock attached. → **`calendar`**.
+4. **`format_style`** --- *how is it written?* Month first, with slashes. →
+   **`mdy_slash`**.
+
+The branches not taken (`number`, `time`, `timestamp`, `ymd_dash` …) are real
+alternatives the engine weighed and ruled out. The value column always confirms
+it:
+
+```{r route-date}
+guess_data_type(c("03/15/2019", "12/31/2020"))$route[
+  c("data_type", "semantic_family", "semantic_type", "format_style", "depth")]
+```
+
+## The bottom of the tree has two facets: *how it's written* and *what it's in*
+
+The leaf level is really two questions, because they are genuinely different.
+Take a column of dollar amounts:
+
+```{r tree-usd, echo = FALSE, results = "asis"}
+.svg(c(
+  .glab("value", 38), .glab("data type", 110), .glab("family", 182),
+  .glab("type", 254), .glab("leaf", 326),
+  .edge(360, 55, 305, 93),  .edge(360, 55, 455, 93),
+  .edge(150, 127, 305, 165), .edge(150, 127, 455, 165),
+  .edge(150, 199, 305, 237), .edge(150, 199, 455, 237),
+  .edge(360, 55, 150, 93, TRUE), .edge(150, 127, 150, 165, TRUE),
+  .edge(150, 199, 150, 237, TRUE),
+  .edge(150, 271, 120, 309, TRUE), .edge(150, 271, 360, 309, TRUE, accent = .unit),
+  .box(360, 38, "$2,300.00", chosen = TRUE),
+  .box(150, 110, "number", chosen = TRUE), .box(305, 110, "text"),
+  .box(455, 110, "temporal"),
+  .box(150, 182, "currency", chosen = TRUE), .box(305, 182, "quantity"),
+  .box(455, 182, "portion"),
+  .box(150, 254, "usd", chosen = TRUE), .box(305, 254, "euro"),
+  .box(455, 254, "balance"),
+  .box(120, 326, "format: usd", chosen = TRUE),
+  .box(360, 326, "unit: USD", chosen = TRUE, accent = .unit),
+  .edge(20, 372, 44, 372, TRUE),
+  '<text x="50" y="376" font-size="11" font-family="sans-serif" fill="currentColor" fill-opacity="0.7">format_style &mdash; how it is written</text>',
+  .edge(300, 372, 324, 372, TRUE, accent = .unit),
+  '<text x="330" y="376" font-size="11" font-family="sans-serif" fill="currentColor" fill-opacity="0.7">unit_type &mdash; what it measures</text>'
+), h = 400)
+```
+
+- **`format_style`** is *how the value is written*. The same amount could arrive
+  as `$2,300.00`, `2300`, or `17,298$`. Style controls how you read it in and
+  write it back out.
+- **`unit_type`** is *what the value is measured in*. `2300` could be dollars or
+  euros; a temperature could be °C or °F; `2019` could be a calendar year or a
+  *fiscal* year. The unit does not change how the value is written, but it
+  changes what it means --- and whether a conversion is even possible.
+
+```{r route-usd}
+guess_data_type(c("$2,300.00", "17,298$", "$-45"))$route[
+  c("data_type", "semantic_family", "semantic_type", "format_style")]
+```
+
+Reaching *either* facet counts as getting to the bottom. A plain date has a
+writing style but no meaningful unit; a bare temperature reading has a unit that
+matters more than its style.
+
+## Graceful failure: get the type right first, then go as deep as you can
+
+Real data is messy, and often the values simply do not say enough to reach a
+leaf. **This is the single most important thing to understand about
+`guess_data_type()`: it stops at the deepest level it can actually defend, and
+refuses to force a guess.**
+
+Consider a column of bare whole numbers --- `0, 1, 42, 17`:
+
+```{r tree-stop, echo = FALSE, results = "asis"}
+.svg(c(
+  .glab("value", 38), .glab("data type", 110), .glab("family", 182),
+  .glab("type", 254), .glab("format", 326),
+  .edge(360, 55, 305, 93),  .edge(360, 55, 455, 93),
+  .edge(150, 127, 305, 165), .edge(150, 127, 455, 165),
+  .edge(150, 199, 305, 237), .edge(150, 199, 455, 237),
+  .edge(360, 55, 150, 93, TRUE), .edge(150, 127, 150, 165, TRUE),
+  .edge(150, 199, 150, 237, TRUE),
+  .edge(150, 271, 150, 309),
+  .box(360, 38, "0, 1, 42, 17", chosen = TRUE),
+  .box(150, 110, "number", chosen = TRUE), .box(305, 110, "text"),
+  .box(455, 110, "categorical"),
+  .box(150, 182, "quantity", chosen = TRUE), .box(305, 182, "currency"),
+  .box(455, 182, "portion"),
+  .box(150, 254, "count", chosen = TRUE), .box(305, 254, "ratio"),
+  .box(455, 254, "rate"),
+  .box(230, 326, "no distinct written form", muted = TRUE, w = 210),
+  '<text x="420" y="322" font-size="12" font-family="sans-serif" font-weight="600" fill="currentColor" fill-opacity="0.7">&#8592; stops here</text>',
+  '<text x="420" y="338" font-size="11" font-family="sans-serif" fill="currentColor" fill-opacity="0.55">depth = 3</text>'
+), h = 360)
+```
+
+```{r route-stop}
+guess_data_type(c("0", "1", "42", "17", "3"))$route[
+  c("data_type", "semantic_family", "semantic_type", "format_style", "depth")]
+```
+
+The engine is certain these are a **`number`**, and narrows confidently to a
+**`count`** --- but a bare integer has no distinctive *written form*, so it stops
+at depth 3 rather than invent a leaf. A column whose values are even less
+decisive stops sooner still:
+
+```{r route-depth1}
+# plain decimals: clearly numeric, but nothing says what kind
+guess_data_type(c("3.7", "8.1", "2.9", "5.4"))$route[
+  c("data_type", "semantic_family", "semantic_type", "depth")]
+```
+
+The `depth` field is exactly how far the walk got:
+
+```
+0  unknown        2  the family       4  the leaf (format_style and/or unit_type)
+1  the data_type  3  the specific type
+```
+
+Why is this the right behavior? Because the **two levels do different jobs**, and
+they fail differently:
+
+- **`data_type` is the load-bearing answer.** It decides how a column is
+  *profiled* and *treated*: a `number` you can sum and average; an `identifier`
+  you must leave alone; a `temporal` you can put on a timeline. Getting this
+  level right is the primary measure of success, and it is almost always
+  reachable.
+- **The leaf is the bonus.** Reaching it unlocks the *exact* recipe for cleaning
+  and safely storing the column (see *Formatting Syntax*). It is the goal, but
+  missing it only means falling back to the safe, general rule for the level you
+  did reach --- never corruption.
+
+So the worst case is never a confidently wrong answer; it is an honest "this far
+and no further," left for a column name or a data dictionary to settle. A column
+name, when you pass one, is used only as a tie-breaker between leaves the values
+already support --- it never overrides the evidence in the values.
+
+## The type:family:type triplet, at a glance
+
+Across a handful of columns, here is what `guess_data_type()` returns --- the
+`data_type : semantic_family : semantic_type` triplet, the leaf format, and how
+far down each one reached:
+
+```{r triplet-table, echo = FALSE}
+examples <- list(
+  "03/15/2019, 12/31/2020"   = c("03/15/2019", "12/31/2020", "01/01/2021"),
+  "2019-03-15, 2020-12-31"   = c("2019-03-15", "2020-12-31"),
+  "$2,300.00, 17,298$, $-45" = c("$2,300.00", "17,298$", "$-45"),
+  "California, TX, Ohio"      = c("California", "TX", "Ohio", "CA"),
+  "06037, 36061, 48201"      = c("06037", "36061", "48201", "17031"),
+  "0, 1, 42, 17"             = c("0", "1", "42", "17", "3"),
+  "3.7, 8.1, 2.9"            = c("3.7", "8.1", "2.9", "5.4")
+)
+tab <- do.call(rbind, lapply(names(examples), function(nm) {
+  r <- guess_data_type(examples[[nm]])$route
+  data.frame(
+    example = nm,
+    `data_type : family : type` =
+      paste(r$data_type, r$semantic_family, r$semantic_type, sep = " : "),
+    format_style = ifelse(is.na(r$format_style), "—", r$format_style),
+    depth = r$depth,
+    check.names = FALSE, stringsAsFactors = FALSE)
+}))
+knitr::kable(tab, row.names = FALSE)
+```
+
+The clean, unambiguous columns reach depth 4 and name a leaf; the bare numbers
+stop short but still get their `data_type` right. That is graceful failure
+working exactly as designed.
+
+## Where to go next
+
+- **The Ontology** --- the full catalog of data types, families, and semantic
+  types that `guess_data_type()` walks through, and the detector used to spot
+  each one.
+- **Formatting Syntax** --- once a column reaches a leaf, `fx_stabilize()` runs
+  the leaf's recipe to clean and standardize the values. That is the second half
+  of the workflow.
+```

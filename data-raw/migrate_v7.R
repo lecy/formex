@@ -18,7 +18,7 @@
 ## Idempotent: safe to re-run.  Run: Rscript data-raw/migrate_v7.R
 ## ---------------------------------------------------------------------------
 source("R/14-fx-ontology.R")
-csv <- "inst/extdata/research_data_type_ontology_v6.csv"
+csv <- "inst/extdata/research_data_type_ontology_v7.csv"
 o   <- .fx_read_ontology_csv(csv)
 
 ## ---- 1. rename dd_data_unit -> unit_type ----------------------------------

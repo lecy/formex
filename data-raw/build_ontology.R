@@ -1,10 +1,10 @@
 ## data-raw/build_ontology.R
-## Parse inst/extdata/research_data_type_ontology_v6.csv into the lazy-loaded
+## Parse inst/extdata/research_data_type_ontology_v7.csv into the lazy-loaded
 ## data/ontology.rda, using the SAME reader the package uses (so the two agree),
 ## and validate integrity before saving. Run: Rscript data-raw/build_ontology.R
 source("R/14-fx-ontology.R")
 
-csv <- "inst/extdata/research_data_type_ontology_v6.csv"
+csv <- "inst/extdata/research_data_type_ontology_v7.csv"
 ontology <- .fx_read_ontology_csv(csv)
 
 probs <- fx_validate_ontology(ontology)

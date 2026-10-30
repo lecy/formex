@@ -52,13 +52,18 @@ gen <- list(
   min_max = function() { lo <- round(stats::runif(N_TARGET, 0, 50)); hi <- lo + round(stats::runif(N_TARGET, 1, 50)); sprintf("%d to %d", lo, hi) },
   confidence_interval = function() { lo <- round(stats::runif(N_TARGET, -2, 3), 2); hi <- lo + round(stats::runif(N_TARGET, .1, 3), 2); sprintf("[%.2f, %.2f]", lo, hi) },
   lat = function() sprintf("%.4f", stats::runif(N_TARGET, -90, 90)),
-  lat_lon = function() sprintf("%.4f, %.4f", stats::runif(N_TARGET, -90, 90), stats::runif(N_TARGET, -180, 180)),
-  lon_lat = function() { d <- function() sprintf("%d° %02d' %02d\" %s", sample(0:179,1), sample(0:59,1), sample(0:59,1), sample(c("E","W"),1)); vapply(seq_len(N_TARGET), function(i) paste(d(), d(), sep=", "), character(1)) },
+  ## lat_lon: a DMS pair, latitude (N/S) first (format-faithful to n0018-f01).
+  lat_lon = function() { tok <- function(mx, h) sprintf("%d° %02d' %02d\" %s", sample(0:mx,1), sample(0:59,1), sample(0:59,1), sample(h,1)); vapply(seq_len(N_TARGET), function(i) paste(tok(89, c("N","S")), tok(179, c("E","W")), sep=", "), character(1)) },
+  ## lon_lat: a DMS pair, longitude (E/W) first then latitude (N/S) (n0019-f01).
+  lon_lat = function() { tok <- function(mx, h) sprintf("%d° %02d' %02d\" %s", sample(0:mx,1), sample(0:59,1), sample(0:59,1), sample(h,1)); vapply(seq_len(N_TARGET), function(i) paste(tok(179, c("E","W")), tok(89, c("N","S")), sep=", "), character(1)) },
   hour_of_day  = function() as.character(pick(0:23)),
   week_of_year = function() as.character(pick(1:53)),
   month = function() pick(c(sprintf("2019%02d", 1:12), format(seq(as.Date("2019-01-01"), by="month", length.out=12), "%b %Y"))),
   balance = function() { v <- round(stats::runif(N_TARGET, -5000, 50000), 2); ifelse(runif(N_TARGET) < .4, formatC(v, format="f", digits=2, big.mark=","), sprintf("%.2f", v)) },
-  euro = function() { v <- round(stats::runif(N_TARGET, -500, 20000), 2); num <- formatC(v, format="f", digits=2, big.mark=".", decimal.mark=","); glyph <- runif(N_TARGET) < .2; ifelse(glyph, paste0(num, "€"), paste0("EUR ", num)) },
+  ## euro: the symbol-bearing leaf -- the euro GLYPH is required (is_currency_amount
+  ## keys on a symbol), prefix or suffix, EU grouping/decimal. A bare "EUR " code
+  ## is NOT a currency amount at the value level, so it is not generated here.
+  euro = function() { v <- round(stats::runif(N_TARGET, -500, 20000), 2); num <- formatC(v, format="f", digits=2, big.mark=".", decimal.mark=","); pre <- runif(N_TARGET) < .5; ifelse(pre, paste0("€", num), paste0(num, "€")) },
   rate = function() sprintf("%.2f", stats::runif(N_TARGET, 0, 100)),
   probability = function() sprintf("%.3f", stats::runif(N_TARGET, 0, 1)),
   odds = function() sprintf("%d:%d", sample(1:20, N_TARGET, TRUE), sample(1:20, N_TARGET, TRUE)),

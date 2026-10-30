@@ -205,6 +205,47 @@ shapes[["n0058-f01"]] <- list(
   list("mixed encodings column B", function() pick(c("true", "false", "y", "n", "on", "off", "x", "")))
 )
 
+## --- number/currency/euro (n0011-f01) : euro GLYPH, EU grouping/decimal ----
+## (sec 6.3) the euro leaf is symbol-based; is_currency_amount keys on the glyph.
+eur_amt <- function(n = N_TARGET) formatC(round(stats::runif(n, -500, 50000), 2),
+            format = "f", digits = 2, big.mark = ".", decimal.mark = ",")
+shapes[["n0011-f01"]] <- list(
+  list("euro suffix glyph (EU format)", function() mix(paste0(eur_amt(40), "€"))),
+  list("euro prefix glyph",            function() mix(paste0("€", eur_amt(40)))),
+  list("euro prefix glyph spaced",     function() mix(paste0("€ ", eur_amt(40))))
+)
+
+## --- number/coordinate (sec 6.3): DMS pairs, decimal pairs, ISO 6709 --------
+dms_tok <- function(mx, h) sprintf("%d° %02d' %02d\" %s",
+            sample(0:mx, 1), sample(0:59, 1), sample(0:59, 1), sample(h, 1))
+## n0018-f01 lat_lon: DMS (N/S first, E/W second) + a western-hemisphere decimal
+## pair (lat 24..49 > lon -124..-67, a DESCENDING comma pair = coordinate, not a range)
+shapes[["n0018-f01"]] <- list(
+  list("lat_lon DMS (N/S, E/W)", function()
+    vapply(seq_len(N_TARGET), function(i)
+      paste(dms_tok(89, c("N","S")), dms_tok(179, c("E","W")), sep = ", "), character(1))),
+  list("lat_lon decimal (W hemisphere)", function()
+    sprintf("%.6f, %.6f", stats::runif(N_TARGET, 24, 49), stats::runif(N_TARGET, -124, -67)))
+)
+## n0018-f02 lat_lon: ISO 6709 compact signed-decimal pair (lat then lon)
+shapes[["n0018-f02"]] <- list(
+  list("lat_lon ISO 6709 compact", function()
+    sprintf("%+08.4f%+09.4f",  stats::runif(N_TARGET, -89, 89), stats::runif(N_TARGET, -179, 179))),
+  list("lat_lon ISO 6709 slash", function()
+    sprintf("%+08.4f%+09.4f/", stats::runif(N_TARGET, -89, 89), stats::runif(N_TARGET, -179, 179)))
+)
+## n0019-f01 lon_lat: DMS (E/W first, N/S second) + a decimal pair whose first
+## component is unambiguously a longitude (|lon| > 90), lon first
+shapes[["n0019-f01"]] <- list(
+  list("lon_lat DMS (E/W, N/S)", function()
+    vapply(seq_len(N_TARGET), function(i)
+      paste(dms_tok(179, c("E","W")), dms_tok(89, c("N","S")), sep = ", "), character(1))),
+  ## eastern hemisphere: lon (91..179) > lat (-85..85), a DESCENDING pair, so it
+  ## is distinguishable from an ascending numeric range and routes to lon_lat.
+  list("lon_lat decimal (E hemisphere, lon>lat)", function()
+    sprintf("%.6f, %.6f", stats::runif(N_TARGET, 91, 179), stats::runif(N_TARGET, -85, 85)))
+)
+
 ## ---- inject the exact shape into label.format_label (read by build_benchmark)
 inject_format_label <- function(path, shape) {
   L <- readLines(path, encoding = "UTF-8", warn = FALSE)

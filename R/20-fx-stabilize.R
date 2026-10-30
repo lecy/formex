@@ -78,6 +78,25 @@
     out[todo][ok[keep]] <- iso[keep] }
   out
 }
+## Symbol-parameterized currency amount: the shared mechanism behind the
+## per-currency verbs. Gate on is_currency_amount() AND the required symbol
+## (so a $-amount confirms usd and NAs out under euro, and vice versa), drop the
+## grouping separator, normalize the decimal mark to ".", then strip the symbol
+## and any residue to a bare number. NA for a non-match -> foil-selective.
+## Adding a currency is a one-liner: .fx_currency_amount(x, "<sym>", grouping, decimal).
+#' @keywords internal
+#' @noRd
+.fx_currency_amount <- function(x, symbol, grouping = ",", decimal = ".") {
+  x  <- as.character(x)
+  ok <- is_currency_amount(x) & grepl(symbol, x, fixed = TRUE)
+  s  <- x
+  if (nzchar(grouping)) s <- gsub(grouping, "", s, fixed = TRUE)   # drop thousands groups
+  if (!identical(decimal, ".")) s <- gsub(decimal, ".", s, fixed = TRUE)  # normalize decimal
+  s  <- gsub("[^0-9.\\-]", "", s)                                  # strip symbol / space / residue
+  v  <- suppressWarnings(as.numeric(s))
+  ifelse(!is.na(ok) & ok & !is.na(v), as.character(v), NA)
+}
+
 .fx_verbs <- function(){
   if (!is.null(.fx_cache$verbs)) return(.fx_cache$verbs)
   V <- new.env(parent = emptyenv()); A <- function(n, f) assign(n, f, V)
@@ -87,16 +106,24 @@
   A("as_rank",      function(x,a) get("as_integer",V)(x,a))
   A("as_percent",   function(x,a){ v<-.fx_num(x); ifelse(is.na(v),NA,as.character(v)) })
   A("as_probability",function(x,a){ v<-.fx_num(x); ifelse(is.na(v)|v< -0.001|v>1.001,NA,as.character(v)) })
-  ## as_usd is SELECTIVE: a $-marked amount strips to a bare number; a non-$
-  ## value (bare number, foil) is NA, so the verifier can confirm usd instead of
-  ## leaking on every number. (balance is the symbol-less, metadata-gated case.)
-  A("as_usd",       function(x,a){ ok<-is_currency_amount(x) & grepl("[$]", x)
-    v<-suppressWarnings(as.numeric(gsub("[^0-9.\\-]","",gsub(",","",x))))
-    ifelse(!is.na(ok) & ok & !is.na(v), as.character(v), NA) })
-  A("as_euro",      function(x,a){ eu<-intToUtf8(0x20acL); ok<-is_currency_amount(x) & grepl(eu, x)
-    s<-gsub(paste0("[",eu,"[:space:]]"),"",x); s<-gsub("\\.","",s); s<-gsub(",",".",s)  # EU: . groups, , decimals
-    v<-suppressWarnings(as.numeric(s)); ifelse(!is.na(ok) & ok & !is.na(v), as.character(v), NA) })
+  ## as_usd / as_euro are SELECTIVE wrappers over .fx_currency_amount(): a
+  ## symbol-marked amount strips to a bare number (USD: $, ,-groups, .-dec; EUR:
+  ## euro glyph, .-groups, ,-dec); a value without that symbol (bare number, the
+  ## other currency, foil) is NA, so the verifier confirms the right leaf instead
+  ## of leaking on every number. (balance is the symbol-less, metadata-gated case.)
+  A("as_usd",       function(x,a) .fx_currency_amount(x, "$"))
+  A("as_euro",      function(x,a) .fx_currency_amount(x, intToUtf8(0x20acL),
+                                                      grouping = ".", decimal = ","))
   A("as_currency",  function(x,a){ v<-suppressWarnings(as.numeric(gsub("[^0-9.\\-]","",gsub(",","",x)))); ifelse(is.na(v),NA,as.character(v)) })
+  ## coordinate pairs: detector-gated selective recipes that canonicalize a DMS,
+  ## decimal-degree, or ISO 6709 pair to a "lat, lon" decimal-degree string
+  ## (latitude first), NA otherwise. The axis order is read from the N/S vs E/W
+  ## hemisphere token (DMS) or the range of the first component (decimal), so
+  ## lat_lon and lon_lat stay distinct. (Bare lat / lon are metadata-gated and
+  ## intentionally have no value-only verb -- see R/dt-coordinate.R.)
+  A("as_coord_latlon",     function(x,a) .fx_coord_canon(x, "latlon"))
+  A("as_coord_lonlat",     function(x,a) .fx_coord_canon(x, "lonlat"))
+  A("as_coord_latlon_iso", function(x,a) .fx_coord_canon(x, "iso"))
   ## structured / version: detector-gated selective recipes (confirm on real
   ## syntax, NA otherwise) so the verifier can confirm these leaves.
   A("as_wkt",       function(x,a){ ty<-toupper(a %||% "")
@@ -109,7 +136,22 @@
   ## require number / separator / number. Rejects nested arrays and dates.
   A("as_range",     function(x,a){ s<-trimws(x)
     s<-sub("^[[(][[:space:]]*", "", s); s<-sub("[[:space:]]*[])]$", "", s)
-    ok<-grepl("^[-+]?[0-9]+([.][0-9]+)?[[:space:]]*(,|to|-)[[:space:]]*[-+]?[0-9]+([.][0-9]+)?$", s)
+    num <- "[-+]?[0-9]+([.][0-9]+)?"
+    ok<-grepl(paste0("^", num, "[[:space:]]*(,|to|-)[[:space:]]*", num, "$"), s)
+    ## A valid comma / `to` range is ASCENDING (min <= max). A DESCENDING comma
+    ## pair is not a range but a western/southern-hemisphere coordinate
+    ## ("34.1, -118.1", lat > lon) -- reject it so it falls through to the
+    ## coordinate leaf. (Dash spans are left untouched: abbreviated year spans
+    ## like "1994-96" read low-high by convention.)
+    mct <- regmatches(s, regexec(
+      paste0("^(", num, ")[[:space:]]*(,|to)[[:space:]]*(", num, ")$"), s))
+    desc <- vapply(mct, function(mm){
+      ## groups: mm[2]=first number, mm[4]=separator, mm[5]=second number
+      ## (the num sub-pattern has its own decimal capture group, mm[3]/mm[6]).
+      if (length(mm) < 6L) return(FALSE)
+      a1 <- suppressWarnings(as.numeric(mm[2])); b1 <- suppressWarnings(as.numeric(mm[5]))
+      !is.na(a1) && !is.na(b1) && a1 > b1 }, logical(1))
+    ok <- ok & !desc
     ## Two shape collisions that a bare NNNN-NNNN range form must yield on:
     ##  * a YYYY-MM (year + 01..12) is a calendar MONTH, not a range (an
     ##    abbreviated span like 1994-96 has a >12 second field, so it is a range);
