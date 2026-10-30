@@ -294,7 +294,9 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
                           "n0036-f01", "n0037-f01",                            # ip/mac
                           "n0039-f01",                                         # phone
                           "n0064-f01",                                         # month
-                          "n0073-f05") |                                       # issn
+                          "n0073-f05",                                         # issn
+                          "n0011-f01",                                         # euro (sec 6.3)
+                          "n0018-f01", "n0018-f02", "n0019-f01") |             # lat_lon dms/iso, lon_lat dms (sec 6.3)
     ont$data_type == "boolean"                                                 # binary family
   vr <- ont[ont$semantic_type_id %in% unique(router$semantic_type_id) | always, ,
             drop = FALSE]

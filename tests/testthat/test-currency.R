@@ -23,6 +23,18 @@ test_that("the usd recipe is selective and strips to a bare number", {
                "usd")
 })
 
+test_that("the euro recipe is selective (EU format) and rejects dollars", {
+  eu <- intToUtf8(0x20acL)
+  expect_equal(fx_transform(c(paste0("2.300,00", eu), paste0(eu, " 17.298"),
+                              paste0("-45,10", eu)), "{{ as_euro }}"),
+               c("2300", "17298", "-45.1"))
+  expect_true(all(is.na(fx_transform(c("$2300.00", "1234"), "{{ as_euro }}"))))  # not euro -> NA
+  euro_col <- paste0(formatC(c(13570.28, 17476.08, 250, 99.99, 1000, -45.1),
+                             format = "f", digits = 2, big.mark = ".",
+                             decimal.mark = ","), eu)
+  expect_equal(guess_data_type(euro_col)$route$semantic_type, "euro")
+})
+
 test_that("is_currency_code is an ISO 4217 lookup", {
   expect_equal(is_currency_code(c("USD", "eur", "ZZZ")),
                c(TRUE, TRUE, FALSE))                 # case-insensitive lookup

@@ -339,6 +339,27 @@ and a stabilize verb: `balance`, `euro` (currency), `min_max`,
 misroute to `measurement` / `min_max` / `rank`. Highest value in the `number`
 block because the surface form *is* typable (unlike the `shape` subtypes below).
 
+**✅ LANDED — currency (euro) + coordinates (2026-10-29).** `euro` (n0011-f01) and
+the coordinate PAIR leaves `lat_lon` (n0018-f01 DMS/decimal, n0018-f02 ISO 6709)
+and `lon_lat` (n0019-f01 DMS/decimal) now route at **type-accuracy 1.00** on the
+benchmark, with **no per-variant regression** (headline 0.800 → 0.804 on the full
+set). `euro` reuses the symbol-parameterized `.fx_currency_amount()` (the generic
+mechanism behind `as_usd`/`as_euro`; adding a currency is now a one-liner). The
+coordinate family is new (`R/dt-coordinate.R`: `is_coord_latlon` / `is_coord_lonlat`
+/ `is_iso6709` + `as_coord_*` verbs), canonicalizing DMS / decimal / ISO 6709 pairs
+to lat-first decimal degrees. All four joined the always-on verifier set (they
+route without a retrain) and ship banked format slices. One supporting fix:
+`as_range` now rejects a **descending** comma/`to` pair (`34.1, -118.1`, lat > lon)
+— a valid range is ascending — so a western/southern-hemisphere decimal coordinate
+falls through to the coordinate leaf instead of being claimed as a `min_max` range;
+ascending ranges (`1.2, 3.4`) are unchanged.
+
+*Deferred (header-gated, Phase C — not value-typable):* `balance` (n0009-f01, a
+symbol-less bare number) and the bare `lat` / `lon` singletons (n0020/n0021, a lone
+decimal in range). A value-only detector for these would manufacture false leaves;
+they belong to the name-side/arbiter work (§7.4). `min_max` to_range /
+`confidence_interval` remain for a later pass.
+
 ### 6.4 P2 — shape numerics and codebook-gated types (fail safe or need header)
 
 - `number/shape`: `probability`, `odds`, `percentile` land **graceful** (correct
@@ -441,13 +462,19 @@ dictates the work. Sequenced by leverage:
 **Phase A — `mask` detectors (value-detectable, highest routable payoff).**
 These are real detector+verb work but the values carry the signal, so they both
 confirm *and* can be learned-routed once cases exist.
-- `number/currency/{balance,usd,euro}` — `is_currency_amount` (symbol-required)
-  landed for `usd`; generalize to a currency+amount mask with a `unit_type`
-  (USD/EUR/…) and the `write_*` renderer.
+- `number/currency/{balance,usd,euro}` — ✅ **done (usd, euro)**. `usd` and
+  `euro` share the symbol-parameterized `.fx_currency_amount()` mask (unit_type
+  USD/EUR); adding a currency is a one-liner. `balance` stays deferred — it is
+  symbol-less, so header-gated (Phase C), not a value mask. `write_*` currency
+  renderer / cross-currency conversion is still open (§7.1 renderers).
 - `number/range/{comma_pair,to_range,confidence_interval}` — `min_max` done;
-  add the CI form and the `lo to hi` style.
-- `number/coordinate/{lat_lon dms, iso6709, lon_lat, lat, lon}` — net-new mask
-  detectors; pair with a decimal-degree canonicalizer.
+  add the CI form and the `lo to hi` style. (`as_range` now also rejects a
+  descending comma pair, reserving those for the coordinate leaf — see §6.3.)
+- `number/coordinate/{lat_lon dms/decimal, iso6709, lon_lat dms/decimal}` — ✅
+  **done**. New `R/dt-coordinate.R` detectors + `as_coord_*` decimal-degree
+  canonicalizer, all at type-accuracy 1.00 (§6.3). The bare `lat` / `lon`
+  singletons stay deferred (header-gated: a lone in-range decimal is not
+  value-typable).
 - `structured/geometry/{point,polygon}` and `structured/collection|record` —
   the detectors already exist (`is_wkt_geometry`, `is_geojson`, `is_wkb`,
   `is_json`); the work is wiring the ontology rows `implemented = yes` and giving

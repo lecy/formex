@@ -51,6 +51,22 @@
   that never appear in the corpus** as `support == 0` `needs-cases` rows -- the
   coverage blind spots the per-case signals cannot see.
 
+* **Currency + coordinate detectors (§6.3 mask build).** The `number/currency`
+  and `number/coordinate` mask leaves now route from values alone, each at
+  benchmark type-accuracy 1.00 with no per-variant regression:
+  - **Currency:** `euro` joins `usd`, both via a new symbol-parameterized
+    `.fx_currency_amount()` mechanism (the glyph is required; EU dot-thousands /
+    comma-decimal handled), so adding a currency is a one-line change.
+  - **Coordinates:** a new family (`R/dt-coordinate.R`) with `is_coord_latlon()`,
+    `is_coord_lonlat()`, `is_iso6709()` detectors and `as_coord_*` verbs that
+    canonicalize degrees-minutes-seconds, decimal-degree, and ISO 6709 **pairs**
+    to a lat-first decimal-degree string. Axis order comes from the N/S vs E/W
+    hemisphere letters (DMS) or the component ranges (decimal). Bare single
+    `lat` / `lon` columns are intentionally not detected (header-gated).
+  - `as_range` (min_max) now treats only an **ascending** comma/`to` pair as a
+    range; a descending pair (`34.1, -118.1`, lat > lon) is a coordinate. Bracketed
+    and `to` ranges and the `confidence_interval` form are unchanged.
+
 * **Date output styles + style detection.** The transform registry gains a
   vocabulary of calendar written styles (`mdy_slash`, `dmy_slash`, `ymd_dash`,
   `ymd_compact`, `mon_mdy`, `mon_dmy`, …), each readable and writable, so a date
