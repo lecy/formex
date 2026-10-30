@@ -1,0 +1,285 @@
+---
+title: "Formatting Syntax"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Formatting Syntax}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = TRUE, comment = "#>",
+                      message = FALSE, warning = FALSE)
+library(formex)
+o <- fx_ontology()
+
+## Pull a recipe column straight from the ontology, so the "format observed" and
+## "stabilizer" columns in the tables below are exactly what the engine runs.
+of <- function(type, fl = NULL, col) {
+  r <- o[o$semantic_type == type, , drop = FALSE]
+  if (!is.null(fl)) r <- r[r$format_label == fl, , drop = FALSE]
+  r[[col]][1]
+}
+stab <- function(x, type, fl = NULL)
+  paste(suppressWarnings(fx_stabilize(x, type, fl, warn = FALSE)$stable),
+        collapse = " ;; ")
+code <- function(s) paste0("<code>", s, "</code>")
+
+## Build one RAW -> STABLE workflow row. Everything but `target` is live.
+wrow <- function(raw, type, fl = NULL, target) {
+  data.frame(
+    RAW               = paste(raw, collapse = " ;; "),
+    `semantic type`   = if (is.null(fl)) type else paste0(type, " / ", fl),
+    `format observed` = code(of(type, fl, "data_format")),
+    stabilizer        = code(of(type, fl, "raw_to_stable_transform")),
+    `target format`   = target,
+    STABLE            = stab(raw, type, fl),
+    check.names = FALSE, stringsAsFactors = FALSE)
+}
+wtable <- function(...) knitr::kable(rbind(...), row.names = FALSE, escape = FALSE)
+```
+
+`guess_data_type()` tells you *what* a column is. **Stabilizing** is the other
+half of `formex`: taking the raw values and rewriting them into a clean, standard,
+analysis-ready form --- and attaching the rule that lets anyone reopen the file
+without corrupting it. This is the package's workhorse data-management
+functionality, and it is entirely **rule-driven**: every semantic type in the
+ontology ships with a pre-set transformation recipe, so cleaning a column is a
+lookup, not a bespoke script.
+
+This guide explains the stabilizer by example, through a table that recurs
+throughout:
+
+| column | what it is |
+|---|---|
+| **RAW** | an example value as it arrives in the file |
+| **semantic type** | where `guess_data_type()` placed it |
+| **format observed** | the pattern the raw value matches, in `formex` syntax |
+| **stabilizer** | the function the recipe runs |
+| **target format** | what the cleaned value looks like |
+| **STABLE** | the new, standardized value |
+
+The one syntax rule: anything inside `{{ … }}` is parsed by `formex`; anything
+outside is a human comment. (The full grammar is the *Formex: the
+format-expression syntax* article.) Every "format observed" and "stabilizer"
+cell below is read live from `fx_ontology()`, and every **STABLE** value is the
+live output of `fx_stabilize()`.
+
+## The workflow at a glance
+
+```{r master, echo = FALSE}
+wtable(
+  wrow(c("03/15/2019", "12/31/2020"),       "calendar",            target = "ISO 8601 date"),
+  wrow(c("$2,300.00", "17,298$", "$-45"),    "usd",                 target = "numeric (unit: USD)"),
+  wrow(c("California", "TX", "Ohio"),         "geographic", "us_state", target = "USPS 2-letter"),
+  wrow(c("yes", "0", "t", "x", "no"),        "mixed",               target = "TRUE / FALSE"),
+  wrow("40° 44' 55\" N, 74° 00' 22\" W", "lat_lon", "dms", target = "decimal degrees")
+)
+```
+
+Read any row left to right: a messy RAW value, matched by a **format**, run
+through a **stabilizer**, lands on a clean **STABLE** value. The rest of this
+guide takes the main transformation families one at a time.
+
+## Calendar dates: many ways in, one way out
+
+Dates are the canonical case. The same day arrives written a dozen ways; the
+stabilizer normalizes every one to unambiguous ISO `YYYY-MM-DD`, so the column is
+internally consistent and no locale can re-read `03/04` as the wrong day.
+
+```{r dates-table, echo = FALSE}
+wtable(
+  wrow(c("03/15/2019", "12/31/2020"),       "calendar", target = "ISO 8601"),
+  wrow(c("2019-03-15", "2020-12-31"),        "calendar", target = "ISO 8601"),
+  wrow(c("March 15, 2019", "December 31, 2020"), "calendar", target = "ISO 8601")
+)
+```
+
+```{r dates-run}
+fx_stabilize(c("03/15/2019", "March 15, 2019", "2019-03-15"), "calendar")$stable
+```
+
+The recipe also hands back an **import rule** --- for a date, `{{ as_yyyymmdd }}`
+--- that tells the next reader to load the clean value back as a true date, not
+as text. Classification and stabilization speak the same ontology, so the output
+of one flows straight into the other:
+
+```{r dates-loop}
+x     <- c("03/15/2019", "12/31/2020", "01/01/2021")
+route <- guess_data_type(x)$route
+fx_stabilize(x, route$semantic_type)$stable
+```
+
+## Date-times and time zones: the zone is a *unit*
+
+A timestamp is a date plus a clock. The stabilizer normalizes the *written form*
+to ISO 8601 (`2019-03-15T14:30:00`), whatever shape it arrived in:
+
+```{r dt-table, echo = FALSE}
+wtable(
+  wrow(c("2019-03-15 14:30:00", "2020-12-31 08:05:00"), "timestamp", target = "ISO 8601 date-time"),
+  wrow(c("3/15/2019 14:30", "12/31/2020 8:05"),          "timestamp", target = "ISO 8601 date-time")
+)
+```
+
+```{r dt-run}
+fx_stabilize(c("2019-03-15 14:30:00", "3/15/2019 14:30"), "timestamp")$stable
+```
+
+**Where does the time zone go?** This is exactly what `unit_type` is for. The
+`timestamp` leaf records its unit as `datetime; timezone`:
+
+```{r dt-unit}
+o$unit_type[o$semantic_type == "timestamp"]
+```
+
+Normalizing the *format* (how the clock is written) and converting the *unit*
+(which zone it is in) are two different operations. `formex` always normalizes the
+format; a zone *conversion* --- say, rendering a UTC column in US/Eastern --- is a
+**unit conversion**, the same category of operation as Celsius→Fahrenheit or
+calendar-year→fiscal-year. Those run through the transform planner
+([`fx_plan_transform()`](../reference/fx_plan_transform.html)) and fire only when
+a converter for that unit pair is registered. So the zone is never silently
+dropped from the model: it is tracked as the unit, ready for a conversion step
+when one is wired in.
+
+## Geographic transformations
+
+Geographies are a closed, table-backed vocabulary, which makes them ideal for
+rule-driven cleaning: a `lookup` collapses every spelling to one canonical code,
+and a coordinate recipe reprojects messy degree notations to decimal degrees.
+
+```{r geo-table, echo = FALSE}
+wtable(
+  wrow(c("California", "TX", "Ohio"),  "geographic", "us_state",    target = "USPS 2-letter"),
+  wrow(c("France", "FR"),              "geographic", "iso_country", target = "ISO 3166 alpha-2"),
+  wrow(c("06037", "36061"),            "geographic", "county_fips", target = "5-digit FIPS"),
+  wrow("40° 44' 55\" N, 74° 00' 22\" W", "lat_lon", "dms", target = "decimal degrees (EPSG:4326)")
+)
+```
+
+```{r geo-run}
+# free-text state names and abbreviations collapse to one canonical code
+fx_stabilize(c("California", "TX", "Ohio", "new york"), "geographic", "us_state")$stable
+
+# a degrees-minutes-seconds pair is reprojected to decimal degrees, latitude first
+fx_stabilize("40° 44' 55\" N, 74° 00' 22\" W", "lat_lon", "dms")$stable
+```
+
+Note the `county_fips` import rule is `{{ as_factor }}`, and the broader
+`geographic` *key* type hardens a numeric GEOID by prefixing it (`FIPS-06037`) so
+no spreadsheet can strip its leading zero. The recipe is selective, too: a value
+that is not a valid 5-digit county (a stray 4-digit form number, say) stabilizes
+to `NA` rather than being force-padded into a bogus code.
+
+## Cleaning messy variables
+
+The same machinery tidies the everyday mess of real survey and administrative
+data.
+
+**Currencies** strip symbols and grouping marks and return a bare number you can
+compute on --- while the currency itself rides along as the `unit_type` rather
+than being buried in the text. European notation (dot-thousands, comma-decimal)
+is a separate leaf with its own recipe:
+
+```{r clean-currency, echo = FALSE}
+wtable(
+  wrow(c("$2,300.00", "17,298$", "$-45"), "usd",  target = "numeric (unit: USD)"),
+  wrow(c("2.300,00 €", "€ 45,00"), "euro", target = "numeric (unit: EUR)")
+)
+```
+
+**Mixed-encoding booleans** --- the classic IRS-990 case where one column holds
+`yes`, `0`, `t`, and a bare `x` --- collapse to clean logicals:
+
+```{r clean-bool, echo = FALSE}
+wtable(
+  wrow(c("yes", "0", "t", "x", "no"), "mixed", target = "TRUE / FALSE")
+)
+```
+
+```{r clean-bool-run}
+fx_stabilize(c("yes", "0", "t", "x", "no"), "mixed")$stable
+```
+
+**Ordered categories** keep their level order for analysis. The code→label
+dictionary lives alongside the data; the recipe records that the result is an
+ordered factor:
+
+```{r clean-ordered, echo = FALSE}
+wtable(
+  wrow(c("1", "2", "3", "2", "1"), "ordered", target = "ordered factor")
+)
+```
+
+In every case the stabilizer reports what it could *not* convert rather than
+failing silently --- the `conversion_log` in the `fx_stabilize()` return records
+how many present values were dropped to `NA`, and why.
+
+## Bring your own: a custom stabilizer
+
+The shipped recipes cover the common cases, but a project often needs its own ---
+collapsing a column into house-specific buckets, applying an internal coding
+scheme. The design is open: a stabilizer is just an R function of the values, and
+a recipe names it in its **stabilizer** column. You keep your project's functions
+in a small script --- call it `dg.R` --- and the recipe refers to them by name.
+
+Say you want to collapse US states into Census regions. The function, as it would
+live in `dg.R`:
+
+```{r custom-fn}
+# --- dg.R : project-specific stabilizers ------------------------------------
+as_region <- function(x, a = NA) {
+  region <- c(
+    CT = "Northeast", ME = "Northeast", MA = "Northeast", NH = "Northeast",
+    RI = "Northeast", VT = "Northeast", NJ = "Northeast", NY = "Northeast",
+    PA = "Northeast",
+    IL = "Midwest", IN = "Midwest", MI = "Midwest", OH = "Midwest",
+    WI = "Midwest", IA = "Midwest", KS = "Midwest", MN = "Midwest",
+    MO = "Midwest", NE = "Midwest", ND = "Midwest", SD = "Midwest",
+    DE = "South", FL = "South", GA = "South", MD = "South", NC = "South",
+    SC = "South", VA = "South", DC = "South", WV = "South", AL = "South",
+    KY = "South", MS = "South", TN = "South", AR = "South", LA = "South",
+    OK = "South", TX = "South",
+    AZ = "West", CO = "West", ID = "West", MT = "West", NV = "West",
+    NM = "West", UT = "West", WY = "West", AK = "West", CA = "West",
+    HI = "West", OR = "West", WA = "West")
+  unname(region[toupper(trimws(x))])
+}
+```
+
+Once that name is registered in `formex`'s verb library (assume it is wired in
+here), an ontology row can reference it in its **stabilizer** column exactly like
+a built-in, and the workflow table reads the same as every row above:
+
+```{r custom-table, echo = FALSE}
+knitr::kable(data.frame(
+  RAW               = "NY ;; CA ;; TX ;; IL",
+  `semantic type`   = "geographic / us_region",
+  `format observed` = code("{{ lexicon:usps_state }}"),
+  stabilizer        = code("{{ as_region }}"),
+  `target format`   = "census_region (factor)",
+  STABLE            = paste(as_region(c("NY", "CA", "TX", "IL")), collapse = " ;; "),
+  check.names = FALSE, stringsAsFactors = FALSE),
+  row.names = FALSE, escape = FALSE)
+```
+
+```{r custom-run}
+# the recipe's stabilizer, applied directly
+as_region(c("NY", "CA", "TX", "IL"))
+```
+
+That is the whole point of a rule-driven engine: whether a transformation ships
+with the package or you wrote it this morning, it plugs into the same
+RAW → format → stabilizer → STABLE pathway, and the resulting file is cleaned and
+self-describing by the same rules.
+
+## Where to go next
+
+- **Guess Data Type** --- how a column is routed to the semantic type whose
+  recipe you see here.
+- **The Ontology** --- the full catalog of types, each with the formats and units
+  its recipes cover.
+- **Formex: the format-expression syntax** --- the complete `{{ … }}` grammar
+  reference behind the "format observed" and "stabilizer" columns.
+```
