@@ -33,13 +33,22 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-package-overview" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Package Overview</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-package-overview">
+<li><a class="dropdown-item" href="../articles/overview-guess-data-type.html">Guess Data Type</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-ontology.html">The Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-formatting-syntax.html">Formatting Syntax</a></li>
+  </ul>
+</li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
@@ -61,6 +70,7 @@
     <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
   </ul>
 </li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/lecy/formex/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -77,40 +87,27 @@
       <h1>The Testing Libraries</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/lecy/formex/blob/HEAD/vignettes/testing-libraries.Rmd" class="external-link"><code>vignettes/testing-libraries.Rmd</code></a></small>
       <div class="d-none name"><code>testing-libraries.Rmd</code></div>
     </div>
 
     
     
-<p><code>formex</code> has two jobs — recognizing a single value with a
-<strong>detector</strong>, and classifying a whole
-<strong>column</strong> with the guesser — and it is built and tested
-against two matching libraries of examples. One ships inside the
-package; the other is a larger development-only corpus. This guide
-explains where each came from, how they were standardized, and what they
-are used for now.</p>
+<p><code>formex</code> has two jobs — recognizing a single value with a <strong>detector</strong>, and classifying a whole <strong>column</strong> with the guesser — and it is built and tested against two matching libraries of examples. One ships inside the package; the other is a larger development-only corpus. This guide explains where each came from, how they were standardized, and what they are used for now.</p>
 <div class="section level2">
 <h2 id="why-two-libraries">Why two libraries<a class="anchor" aria-label="anchor" href="#why-two-libraries"></a>
 </h2>
 <p>The two jobs need different kinds of test data:</p>
 <ul>
-<li>A <strong>detector</strong> answers <em>is this one value an X?</em>
-To test it you need many individual values of type X — and, just as
-important, many <em>plausible-but-wrong</em> values that should be
-rejected.</li>
-<li>The <strong>classifier</strong> answers <em>what is this whole
-column?</em> To test it you need many real columns, each labeled with
-the type it actually is.</li>
+<li>A <strong>detector</strong> answers <em>is this one value an X?</em> To test it you need many individual values of type X — and, just as important, many <em>plausible-but-wrong</em> values that should be rejected.</li>
+<li>The <strong>classifier</strong> answers <em>what is this whole column?</em> To test it you need many real columns, each labeled with the type it actually is.</li>
 </ul>
-<p>So there is a <strong>value library</strong> for detectors and a
-<strong>column library</strong> for the classifier.</p>
+<p>So there is a <strong>value library</strong> for detectors and a <strong>column library</strong> for the classifier.</p>
 </div>
 <div class="section level2">
 <h2 id="library-1-the-detector-fixture-data_type_tests">Library 1 — the detector fixture (<code>data_type_tests</code>)<a class="anchor" aria-label="anchor" href="#library-1-the-detector-fixture-data_type_tests"></a>
 </h2>
-<p>This one ships with the package. It is a labeled set of example
-<em>values</em> for every detector, and you can open it directly:</p>
+<p>This one ships with the package. It is a labeled set of example <em>values</em> for every detector, and you can open it directly:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">data_type_tests</span><span class="op">)</span>                 <span class="co"># one entry per detector type</span></span>
 <span><span class="co">#&gt; [1] 88</span></span>
@@ -122,23 +119,8 @@ the type it actually is.</li>
 <span><span class="co">#&gt; 1       ein 15-4464349 valid</span></span>
 <span><span class="co">#&gt; 2       ein 58-9042990 valid</span></span>
 <span><span class="co">#&gt; 3       ein 17-5287634 valid</span></span></code></pre></div>
-<p><strong>How it was acquired.</strong> For each type, a small set of
-real, correct example values (the <code>valid</code> label) was
-collected — real EINs, real dates, real ORCID iDs. Hand-collected
-positives are cheap but they only test <em>recall</em> (does the
-detector accept real values?). The hard half — <em>precision</em> (does
-it reject near-misses?) — needs wrong-but-believable values, and those
-are expensive to find by hand.</p>
-<p><strong>How it was standardized.</strong> Rather than hunt for
-negatives, <code>formex</code> <em>generates</em> them from the
-positives using the <strong>AutoType</strong> method (see <em>How
-Detectors Recognize a Type</em>): each real value is mutated into
-near-misses along four tiers (<code>S1</code>, <code>S2</code>,
-<code>S3</code>, <code>SP</code>) that each break a different part of
-the value’s structure. Every type then has the same uniform shape — a
-table of <code>case</code> values each tagged <code>valid</code> or with
-its mutation tier — and the whole thing is <strong>frozen</strong> so
-the numbers are reproducible:</p>
+<p><strong>How it was acquired.</strong> For each type, a small set of real, correct example values (the <code>valid</code> label) was collected — real EINs, real dates, real ORCID iDs. Hand-collected positives are cheap but they only test <em>recall</em> (does the detector accept real values?). The hard half — <em>precision</em> (does it reject near-misses?) — needs wrong-but-believable values, and those are expensive to find by hand.</p>
+<p><strong>How it was standardized.</strong> Rather than hunt for negatives, <code>formex</code> <em>generates</em> them from the positives using the <strong>AutoType</strong> method (see <em>How Detectors Recognize a Type</em>): each real value is mutated into near-misses along four tiers (<code>S1</code>, <code>S2</code>, <code>S3</code>, <code>SP</code>) that each break a different part of the value’s structure. Every type then has the same uniform shape — a table of <code>case</code> values each tagged <code>valid</code> or with its mutation tier — and the whole thing is <strong>frozen</strong> so the numbers are reproducible:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">data_type_tests</span><span class="op">[[</span><span class="st">"ein"</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">label</span><span class="op">)</span>   <span class="co"># valid positives + generated negatives</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -146,25 +128,13 @@ the numbers are reproducible:</p>
 <span><span class="co">#&gt;   199   197   200    54    10</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">data_type_tests</span>, <span class="va">nrow</span>, <span class="fl">0L</span><span class="op">)</span><span class="op">)</span>   <span class="co"># total cases across all types</span></span>
 <span><span class="co">#&gt; [1] 68878</span></span></code></pre></div>
-<p><strong>What it is used for now.</strong> It is the bench every
-detector is tested on: the <em>Data-Type Detector Guide</em> runs each
-<code>is_*</code> function over this fixture and reports recall and
-per-tier false-positive rates. It is also the <strong>development
-environment for a new detector</strong> — you collect a handful of
-positives, call <code><a href="../reference/generate_autotype_test_cases.html">generate_autotype_test_cases()</a></code> to build the
-same positive + hard-negative mix, and tune your predicate against it
-before adopting it.</p>
+<p><strong>What it is used for now.</strong> It is the bench every detector is tested on: the <em>Data-Type Detector Guide</em> runs each <code>is_*</code> function over this fixture and reports recall and per-tier false-positive rates. It is also the <strong>development environment for a new detector</strong> — you collect a handful of positives, call <code><a href="../reference/generate_autotype_test_cases.html">generate_autotype_test_cases()</a></code> to build the same positive + hard-negative mix, and tune your predicate against it before adopting it.</p>
 </div>
 <div class="section level2">
 <h2 id="library-2-the-column-bank-development-only">Library 2 — the column bank (development only)<a class="anchor" aria-label="anchor" href="#library-2-the-column-bank-development-only"></a>
 </h2>
-<p>The classifier is trained and measured against a much larger library
-of real <strong>columns</strong>, each labeled with its type. This one
-is development scaffolding — it is regenerated from its sources rather
-than shipped in the package — but it is what makes the learned router
-possible.</p>
-<p><strong>How it was acquired.</strong> It draws on three sources, for
-about <strong>4,000 labeled columns</strong> in total:</p>
+<p>The classifier is trained and measured against a much larger library of real <strong>columns</strong>, each labeled with its type. This one is development scaffolding — it is regenerated from its sources rather than shipped in the package — but it is what makes the learned router possible.</p>
+<p><strong>How it was acquired.</strong> It draws on three sources, for about <strong>4,000 labeled columns</strong> in total:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -180,64 +150,34 @@ about <strong>4,000 labeled columns</strong> in total:</p>
 <tr class="odd">
 <td><strong>Sherlock / VizNet</strong></td>
 <td>~3,400</td>
-<td>real-world columns from a large public collection; labels come from
-the original headers, so they are realistically noisy</td>
+<td>real-world columns from a large public collection; labels come from the original headers, so they are realistically noisy</td>
 </tr>
 <tr class="even">
 <td><strong>synthetic (temporal)</strong></td>
 <td>~440</td>
-<td>generated date/time columns with <em>exact</em> known labels, to
-give the sparse temporal types a dense, balanced set to learn from</td>
+<td>generated date/time columns with <em>exact</em> known labels, to give the sparse temporal types a dense, balanced set to learn from</td>
 </tr>
 <tr class="odd">
 <td><strong>GitTables</strong></td>
 <td>~180</td>
-<td>real columns that keep their own independent headers, usable for
-testing the name-based side too</td>
+<td>real columns that keep their own independent headers, usable for testing the name-based side too</td>
 </tr>
 </tbody>
 </table>
-<p>The Sherlock collection has well over a hundred thousand columns —
-far too many, and mostly redundant. Rather than take a random sample,
-<code>formex</code> picks a <strong>diverse</strong> subset: it profiles
-each column and chooses ones that are as different from each other as
-possible, which maximizes variety and deliberately surfaces hard,
-confusable cases.</p>
-<p><strong>How it was standardized for integration.</strong> The three
-sources arrive in completely different formats, so a small, shared
-pipeline turns each into one uniform shape:</p>
+<p>The Sherlock collection has well over a hundred thousand columns — far too many, and mostly redundant. Rather than take a random sample, <code>formex</code> picks a <strong>diverse</strong> subset: it profiles each column and chooses ones that are as different from each other as possible, which maximizes variety and deliberately surfaces hard, confusable cases.</p>
+<p><strong>How it was standardized for integration.</strong> The three sources arrive in completely different formats, so a small, shared pipeline turns each into one uniform shape:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Read</strong> each source column into a common record (its
-values, its header).</li>
+<strong>Read</strong> each source column into a common record (its values, its header).</li>
 <li>
-<strong>Crosswalk</strong> the source’s own label vocabulary onto
-the <code>formex</code> ontology, so a Sherlock “city” label and a
-GitTables “city” label both land on the same <code>formex</code>
-type.</li>
+<strong>Crosswalk</strong> the source’s own label vocabulary onto the <code>formex</code> ontology, so a Sherlock “city” label and a GitTables “city” label both land on the same <code>formex</code> type.</li>
 <li>
-<strong>Bank</strong> each column as a uniform test case, logging
-any that are rejected.</li>
+<strong>Bank</strong> each column as a uniform test case, logging any that are rejected.</li>
 <li>
-<strong>Profile</strong> every banked column with
-<code><a href="../reference/fx_extract_features.html">fx_extract_features()</a></code> and attach its ontology labels,
-producing one big labeled table — roughly 4,000 rows, one per column,
-with the ~477 features from the <em>Feature Engineering</em> vignette
-plus the answer key.</li>
+<strong>Profile</strong> every banked column with <code><a href="../reference/fx_extract_features.html">fx_extract_features()</a></code> and attach its ontology labels, producing one big labeled table — roughly 4,000 rows, one per column, with the ~477 features from the <em>Feature Engineering</em> vignette plus the answer key.</li>
 </ol>
-<p>That final table is the substrate the router and verifier are trained
-and scored on.</p>
-<p><strong>What it is used for now.</strong> The column bank is the
-<strong>development environment for classifiers</strong>: it is where
-the learned router is trained, where new routing or verification ideas
-are measured before they ship, and where coverage gaps are found. (At
-the current development snapshot, about half of the ontology’s types
-have at least one real column in the bank; the thinly-covered ones —
-rare geometries, some coordinates — are flagged as places where a
-confident accuracy claim would rest on too few examples.) It is also
-where a <em>new</em> classifier feature earns its place: you add the
-feature, re-fit on the bank, and check whether it actually separates the
-types it was meant to.</p>
+<p>That final table is the substrate the router and verifier are trained and scored on.</p>
+<p><strong>What it is used for now.</strong> The column bank is the <strong>development environment for classifiers</strong>: it is where the learned router is trained, where new routing or verification ideas are measured before they ship, and where coverage gaps are found. (At the current development snapshot, about half of the ontology’s types have at least one real column in the bank; the thinly-covered ones — rare geometries, some coordinates — are flagged as places where a confident accuracy claim would rest on too few examples.) It is also where a <em>new</em> classifier feature earns its place: you add the feature, re-fit on the bank, and check whether it actually separates the types it was meant to.</p>
 </div>
 <div class="section level2">
 <h2 id="the-two-libraries-side-by-side">The two libraries, side by side<a class="anchor" aria-label="anchor" href="#the-two-libraries-side-by-side"></a>
@@ -284,25 +224,18 @@ types it was meant to.</p>
 </tr>
 </tbody>
 </table>
-<p>Together they mirror the two halves of the engine: the value library
-keeps the detectors precise, and the column library keeps the guesser
-honest about which types it can actually tell apart.</p>
+<p>Together they mirror the two halves of the engine: the value library keeps the detectors precise, and the column library keeps the guesser honest about which types it can actually tell apart.</p>
 </div>
 <div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <ul>
 <li>
-<strong>How Detectors Recognize a Type</strong> and the
-<strong>Data-Type Detector Guide</strong> — the detectors the value
-library tests, and the AutoType mutation tiers.</li>
+<strong>How Detectors Recognize a Type</strong> and the <strong>Data-Type Detector Guide</strong> — the detectors the value library tests, and the AutoType mutation tiers.</li>
 <li>
-<strong>Feature Engineering for Type Guessing</strong> — the column
-profile the bank is built from and the model is trained on.</li>
+<strong>Feature Engineering for Type Guessing</strong> — the column profile the bank is built from and the model is trained on.</li>
 <li>
-<code><a href="../reference/generate_autotype_test_cases.html">generate_autotype_test_cases()</a></code>,
-<code><a href="../reference/build_autotype_results.html">build_autotype_results()</a></code> — the tools for building a new
-detector’s fixture.</li>
+<code><a href="../reference/generate_autotype_test_cases.html">generate_autotype_test_cases()</a></code>, <code><a href="../reference/build_autotype_results.html">build_autotype_results()</a></code> — the tools for building a new detector’s fixture.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

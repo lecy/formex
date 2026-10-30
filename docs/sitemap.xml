@@ -9,6 +9,9 @@
 <url><loc>https://lecy.github.io/formex/articles/formex.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/guess-data-type.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/index.html</loc></url>
+<url><loc>https://lecy.github.io/formex/articles/overview-formatting-syntax.html</loc></url>
+<url><loc>https://lecy.github.io/formex/articles/overview-guess-data-type.html</loc></url>
+<url><loc>https://lecy.github.io/formex/articles/overview-ontology.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/testing-libraries.html</loc></url>
 <url><loc>https://lecy.github.io/formex/authors.html</loc></url>
 <url><loc>https://lecy.github.io/formex/DEVELOPMENT-STATUS.html</loc></url>
@@ -96,6 +99,8 @@
 <url><loc>https://lecy.github.io/formex/reference/is_clock_time.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_cmyk_color.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_color_name.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/is_coord_latlon.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/is_coord_lonlat.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_country_code.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_county_fips.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_csa.html</loc></url>
@@ -126,6 +131,7 @@
 <url><loc>https://lecy.github.io/formex/reference/is_ipv4.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_ipv6.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_isbn.html</loc></url>
+<url><loc>https://lecy.github.io/formex/reference/is_iso6709.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_iso_date.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_iso_datetime.html</loc></url>
 <url><loc>https://lecy.github.io/formex/reference/is_issn.html</loc></url>

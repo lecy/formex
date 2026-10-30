@@ -17,11 +17,18 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="articles/formex.html">Get started</a></li>
 <li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-package-overview" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Package Overview</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-package-overview"><li><a class="dropdown-item" href="articles/overview-guess-data-type.html">Guess Data Type</a></li>
+    <li><a class="dropdown-item" href="articles/overview-ontology.html">The Ontology</a></li>
+    <li><a class="dropdown-item" href="articles/overview-formatting-syntax.html">Formatting Syntax</a></li>
+  </ul></li>
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="articles/data-type-ontology.html">The Data-Type Ontology</a></li>
+    <li><a class="dropdown-item" href="articles/formex.html">Formex: the format-expression syntax</a></li>
     <li><a class="dropdown-item" href="articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
@@ -51,29 +58,26 @@
     </div>
 
 <div id="formex-v7-plan--read_write_-verbs-and-a-two-axis-leaf" class="section level1">
-
-<blockquote>
-<p>Scope + design note, 2026-10-26. Responds to <code>datagoodr/dev/formex-devnote-schema-simplification.md</code> (asks 2, 3, 4) and to the proposal to split <code>format_label</code> into a unit axis and a style axis. The quick fixes from that note (the <code>as_yyyy</code>/<code>as_ein</code> recipe bugs, the stale CSV) are already landed; this note is the larger, not-yet-implemented work.</p>
-</blockquote>
+<blockquote><p>Scope + design note, 2026-10-26. Responds to <code>datagoodr/dev/formex-devnote-schema-simplification.md</code> (asks 2, 3, 4) and to the proposal to split <code>format_label</code> into a unit axis and a style axis. The quick fixes from that note (the <code>as_yyyy</code>/<code>as_ein</code> recipe bugs, the stale CSV) are already landed; this note is the larger, not-yet-implemented work.</p></blockquote>
 <div class="section level2">
-<h2 id="id_1-three-operations-not-one">1. Three operations, not one<a class="anchor" aria-label="anchor" href="#id_1-three-operations-not-one"></a></h2>
+<h2 id="1-three-operations-not-one">1. Three operations, not one<a class="anchor" aria-label="anchor" href="#1-three-operations-not-one"></a></h2>
 <p>Today one verb per ontology row (<code>raw_to_stable_transform = {{ as_mmddyyyy }}</code>) bakes the parse <em>and</em> the canonical output into a single step, so formex can only ever emit the canonical/ISO form. Decompose it into three composable pieces:</p>
-<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>verb</th>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr class="header"><th>verb</th>
 <th>direction</th>
 <th>example</th>
 <th>notes</th>
-</tr></thead><tbody><tr><td><code>read_&lt;style&gt;</code></td>
+</tr></thead><tbody><tr class="odd"><td><code>read_&lt;style&gt;</code></td>
 <td>written form → canonical internal value</td>
 <td>
 <code>read_mmddyyyy("03/15/2019")</code> → a Date</td>
 <td>this is today’s <code>as_*</code>, the parse half</td>
-</tr><tr><td><code>write_&lt;style&gt;</code></td>
+</tr><tr class="even"><td><code>write_&lt;style&gt;</code></td>
 <td>canonical value → a chosen written form</td>
 <td>
 <code>write_yyyymmdd(date)</code> → <code>"2019-03-15"</code>
 </td>
 <td>the new half</td>
-</tr><tr><td><code>convert_&lt;unit→unit&gt;</code></td>
+</tr><tr class="odd"><td><code>convert_&lt;unit→unit&gt;</code></td>
 <td>canonical value in one unit → another unit</td>
 <td>
 <code>convert_C_F(20)</code> → <code>68</code>
@@ -86,8 +90,8 @@
 <p><strong>Mapping to the current code.</strong> <code>read_*</code> aliases the existing verb table in <code>R/20-fx-stabilize.R</code> (<code>as_mmddyyyy</code>, <code>as_email</code>, <code>as_ein</code>, …); datagoodr already renamed its ingest verbs <code>as_* → read_*</code>, so the vocabularies line up. <code>write_*</code> is net-new: a small renderer per <code>format_style</code> (below). <code>convert_*</code> is a third, smaller registry keyed on <code>(from_unit, to_unit)</code> — most units have no converter and that is fine (the pair is simply unavailable).</p>
 </div>
 <div class="section level2">
-<h2 id="id_2-the-leaf-is-two-axes-format_style-and-unit_type">2. The leaf is two axes: <code>format_style</code> and <code>unit_type</code>
-<a class="anchor" aria-label="anchor" href="#id_2-the-leaf-is-two-axes-format_style-and-unit_type"></a></h2>
+<h2 id="2-the-leaf-is-two-axes-format_style-and-unit_type">2. The leaf is two axes: <code>format_style</code> and <code>unit_type</code>
+<a class="anchor" aria-label="anchor" href="#2-the-leaf-is-two-axes-format_style-and-unit_type"></a></h2>
 <p><code>format_label</code> today is mostly a copy of <code>semantic_type</code> (<code>calendar/calendar</code>, <code>usd/usd</code>, <code>email/email</code>) and only occasionally does real work (<code>range/{comma_pair,to_range}</code>, <code>coordinate/{dms,iso6709}</code>). The proposal — a good one — is to replace it with two orthogonal sub-axes so a variant is a <em>combination</em> rather than an enumerated leaf:</p>
 <ul><li>
 <strong><code>format_style</code></strong> — the <em>written rendering</em> that determines parse and render but not meaning: date field-order <strong>and</strong> separators (the mask together), currency suffix-scaling (<code>$12b</code>), abbreviated-vs-full (<code>CA</code> vs <code>California</code>), comma-pair vs <code>lo to hi</code>. This is what <code>read_*</code>/<code>write_*</code> key on. Usually value-detectable.</li>
@@ -101,19 +105,19 @@
 </div>
 <div class="section level3">
 <h3 id="worked-mapping">Worked mapping<a class="anchor" aria-label="anchor" href="#worked-mapping"></a></h3>
-<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>path</th>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr class="header"><th>path</th>
 <th>today <code>format_label</code>
 </th>
 <th>→ <code>format_style</code>
 </th>
 <th><code>unit_type</code></th>
-</tr></thead><tbody><tr><td>temporal/date/calendar</td>
+</tr></thead><tbody><tr class="odd"><td>temporal/date/calendar</td>
 <td><code>calendar</code></td>
 <td>
 <code>mdy_slash</code> · <code>ymd_dash</code> · <code>mdy_smash</code>
 </td>
 <td>—</td>
-</tr><tr><td>temporal/period/year</td>
+</tr><tr class="even"><td>temporal/period/year</td>
 <td><code>year</code></td>
 <td>
 <code>bare</code> · <code>FYyyyy</code>
@@ -121,7 +125,7 @@
 <td>
 <code>calendar</code> · <code>fiscal</code>
 </td>
-</tr><tr><td>number/currency</td>
+</tr><tr class="odd"><td>number/currency</td>
 <td>
 <code>usd</code> / <code>euro</code> / <code>balance</code>
 </td>
@@ -131,12 +135,12 @@
 <td>
 <code>USD</code> · <code>EUR</code>
 </td>
-</tr><tr><td>number/quantity/measurement</td>
+</tr><tr class="even"><td>number/quantity/measurement</td>
 <td><code>measurement</code></td>
 <td><code>plain</code></td>
 <td>
 <code>kg</code> · <code>m</code> · <code>C</code> · <code>F</code> … (metadata)</td>
-</tr><tr><td>text/name/place</td>
+</tr><tr class="odd"><td>text/name/place</td>
 <td><code>place</code></td>
 <td>
 <code>abbreviated</code> · <code>full</code>
@@ -144,7 +148,7 @@
 <td>
 <code>state</code> · <code>county</code> · <code>country</code>
 </td>
-</tr><tr><td>number/range/min_max</td>
+</tr><tr class="even"><td>number/range/min_max</td>
 <td>
 <code>comma_pair</code> / <code>to_range</code>
 </td>
@@ -156,12 +160,12 @@
 </div>
 </div>
 <div class="section level2">
-<h2 id="id_3-dd_data_unit--unit_type">3. <code>dd_data_unit</code> → <code>unit_type</code>
-<a class="anchor" aria-label="anchor" href="#id_3-dd_data_unit--unit_type"></a></h2>
+<h2 id="3-dd_data_unit--unit_type">3. <code>dd_data_unit</code> → <code>unit_type</code>
+<a class="anchor" aria-label="anchor" href="#3-dd_data_unit--unit_type"></a></h2>
 <p>Rename <code>dd_data_unit</code> to <strong><code>unit_type</code></strong> and move it to sit <strong>after</strong> <code>format_label</code>/<code>format_style</code> in the column order. Today it holds a <em>menu</em> of possible units (<code>measurement → unit-specific (kg;;m;;C;;L)</code>); under the new model it becomes the resolved (or candidate) value of the unit axis. This is one concept, not two — the rename and the <code>format_label</code> split land together, or we end up with two “unit” fields. The temperature case is the payoff: <code>unit_type</code> of <code>C</code> with a defined <code>convert_C_F</code> and a <code>desired_default_format</code>/target unit of <code>F</code> gives a real, declarable unit transform.</p>
 </div>
 <div class="section level2">
-<h2 id="id_4-new-ontology-columns-datagoodr-asks-3--4">4. New ontology columns (datagoodr asks 3 &amp; 4)<a class="anchor" aria-label="anchor" href="#id_4-new-ontology-columns-datagoodr-asks-3--4"></a></h2>
+<h2 id="4-new-ontology-columns-datagoodr-asks-3--4">4. New ontology columns (datagoodr asks 3 &amp; 4)<a class="anchor" aria-label="anchor" href="#4-new-ontology-columns-datagoodr-asks-3--4"></a></h2>
 <ul><li>replace <code>format_label</code> with <code>format_style</code> + <code>unit_type</code> (unit_type from the renamed <code>dd_data_unit</code>).</li>
 <li>
 <code>stable_format</code> → <strong>examples only</strong>; move any verb token out of it.</li>
@@ -169,7 +173,7 @@
 <li>carry <code>read_*</code>/<code>write_*</code> tokens in a format DSL with prefix discipline (<code>fx:</code> token · <code>strp:</code> R format · <code>re:</code> regex) and <code>::</code> reserved for compose (datagoodr ask 6).</li>
 </ul></div>
 <div class="section level2">
-<h2 id="id_5-migration-surface-why-this-is-v7-not-an-edit">5. Migration surface (why this is v7, not an edit)<a class="anchor" aria-label="anchor" href="#id_5-migration-surface-why-this-is-v7-not-an-edit"></a></h2>
+<h2 id="5-migration-surface-why-this-is-v7-not-an-edit">5. Migration surface (why this is v7, not an edit)<a class="anchor" aria-label="anchor" href="#5-migration-surface-why-this-is-v7-not-an-edit"></a></h2>
 <p>Touches: the 96 ontology rows + <code>variant_id</code> scheme; <code>R/14-fx-ontology.R</code> (<code>fx_validate_ontology</code> axis checks); the router (<code>format_label</code> is a training label/feature); the verifier and <code>$route</code> builder (<code>R/02-01-guess-data-type.R</code>); <code><a href="reference/fx_stabilize.html">fx_stabilize()</a></code>’s lookup key (currently <code>semantic_type</code> + <code>format_label</code>); the Sherlock/GitTables crosswalk; and datagoodr’s governance mapping. Sequence:</p>
 <ol style="list-style-type: decimal"><li>
 <strong>v7 schema</strong> — add <code>format_style</code> + <code>unit_type</code> (+ <code>desired_default_format</code>), backfill from today’s <code>format_label</code>/<code>dd_data_unit</code>, keep <code>format_label</code> as a derived convenience for one release.</li>
@@ -181,7 +185,7 @@
 <strong>detector</strong> resolves <code>format_style</code> (and <code>unit_type</code> where value-detectable) as the depth-4 step; router/verifier retrained on the new label axis.</li>
 </ol></div>
 <div class="section level2">
-<h2 id="id_5a-transformability-as-a-path-search-prototyped">5a. Transformability as a path search (prototyped)<a class="anchor" aria-label="anchor" href="#id_5a-transformability-as-a-path-search-prototyped"></a></h2>
+<h2 id="5a-transformability-as-a-path-search-prototyped">5a. Transformability as a path search (prototyped)<a class="anchor" aria-label="anchor" href="#5a-transformability-as-a-path-search-prototyped"></a></h2>
 <p>With input and output both expressed as a format <code>(semantic_type, unit_type, format_style)</code>, stabilizing a column is a <strong>graph search</strong>: is there a path from the input format to the desired one through the registry of <code>read_</code>/<code>write_</code>/<code>convert_</code> edges? A path exists only “if you can get there from here” — a unit change needs a registered <code>convert_*</code>, so the search <em>answers</em> the transformability question instead of assuming it.</p>
 <p>Nodes are value states; edges are the three operations:</p>
 <pre><code>written(style_a) --read_a--&gt;  canonical(unit_a) --convert_a_b--&gt; canonical(unit_b) --write_b--&gt; written(style_b)</code></pre>
@@ -219,7 +223,7 @@
 <strong><code>convert_</code> edges per unit pair</strong> — temperature done; fiscal/calendar year needs the fiscal-year-end convention from datagoodr. (The currency-amount detector is done — <code>usd</code> / <code>is_currency_amount</code>.) (The <code>tags</code> detector is now done — <code>is_tags</code> / <code>as_tags</code> wire <code>categorical/multiselect/tags</code>.)</li>
 </ul></div>
 <div class="section level2">
-<h2 id="id_6-does-separating-add-clarity--verdict">6. Does separating add clarity? — verdict<a class="anchor" aria-label="anchor" href="#id_6-does-separating-add-clarity--verdict"></a></h2>
+<h2 id="6-does-separating-add-clarity--verdict">6. Does separating add clarity? — verdict<a class="anchor" aria-label="anchor" href="#6-does-separating-add-clarity--verdict"></a></h2>
 <p>Yes. It removes a redundancy that affects most of the ontology, turns an enumerated leaf set into a compositional space the detector can resolve one axis at a time, and — most importantly — separates the three operations (detect / render / convert) so that user-controllable output and genuine unit conversions (temperature, currency) each have a home. The cost is a real v7 migration, and the one caveat is to keep <code>unit_type</code> for true units (not date field-order) so “resolve the unit” means the same thing in every family.</p>
 </div>
 </div>

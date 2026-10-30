@@ -17,11 +17,18 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
 <li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-package-overview" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Package Overview</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-package-overview"><li><a class="dropdown-item" href="../articles/overview-guess-data-type.html">Guess Data Type</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-ontology.html">The Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-formatting-syntax.html">Formatting Syntax</a></li>
+  </ul></li>
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
@@ -37,6 +44,7 @@
     <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
     <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
   </ul></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/lecy/formex/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -46,7 +54,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Is it an ICD-9 code?</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/lecy/formex/blob/HEAD/R/dt-scibio.R" class="external-link"><code>R/dt-scibio.R</code></a></small>
       <div class="d-none name"><code>is_icd9_code.Rd</code></div>
     </div>
 

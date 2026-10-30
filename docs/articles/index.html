@@ -17,11 +17,18 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
 <li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-package-overview" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Package Overview</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-package-overview"><li><a class="dropdown-item" href="../articles/overview-guess-data-type.html">Guess Data Type</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-ontology.html">The Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-formatting-syntax.html">Formatting Syntax</a></li>
+  </ul></li>
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
@@ -50,8 +57,19 @@
     </div>
 
     <div class="section ">
-      <h3>Get started</h3>
-      <div class="section-desc"></div>
+      <h3>Package overview</h3>
+      <div class="section-desc"><p>Start here. Three short tours of what the package does: how it guesses a column’s type, the shared ontology those types live in, and how it cleans and standardizes values.</p></div>
+
+      <dl><dt><a href="overview-guess-data-type.html">Guess Data Type</a></dt>
+        <dd>
+        </dd><dt><a href="overview-ontology.html">The Ontology</a></dt>
+        <dd>
+        </dd><dt><a href="overview-formatting-syntax.html">Formatting Syntax</a></dt>
+        <dd>
+      </dd></dl></div>
+    <div class="section ">
+      <h3>Guides &amp; reference</h3>
+      <div class="section-desc"><p>Deeper tutorials and the detection/benchmarking internals.</p></div>
 
       <dl><dt><a href="formex.html">Formex: the format-expression syntax</a></dt>
         <dd>
@@ -72,7 +90,8 @@
         </dd><dt><a href="formex-type-atlas.html">The Type Atlas</a></dt>
         <dd>
       </dd></dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

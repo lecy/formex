@@ -17,11 +17,18 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="articles/formex.html">Get started</a></li>
 <li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-package-overview" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Package Overview</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-package-overview"><li><a class="dropdown-item" href="articles/overview-guess-data-type.html">Guess Data Type</a></li>
+    <li><a class="dropdown-item" href="articles/overview-ontology.html">The Ontology</a></li>
+    <li><a class="dropdown-item" href="articles/overview-formatting-syntax.html">Formatting Syntax</a></li>
+  </ul></li>
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="articles/data-type-ontology.html">The Data-Type Ontology</a></li>
+    <li><a class="dropdown-item" href="articles/formex.html">Formex: the format-expression syntax</a></li>
     <li><a class="dropdown-item" href="articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
@@ -52,7 +59,6 @@
 
 
 <div id="ontology-design-principles" class="section level1">
-
 <div class="section level2">
 <h2 id="what-this-ontology-is-for">What this ontology is for<a class="anchor" aria-label="anchor" href="#what-this-ontology-is-for"></a></h2>
 <p>It is a taxonomy for <strong>inference</strong>, not for meaning. Every structural decision answers one question: <em>does this distinction help a machine guess correctly from the data alone?</em> A distinction that is important to a domain expert but invisible in the values does not earn a row.</p>
@@ -68,16 +74,16 @@
 <hr></div>
 <div class="section level2">
 <h2 id="vocabulary">Vocabulary<a class="anchor" aria-label="anchor" href="#vocabulary"></a></h2>
-<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>Column</th>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr class="header"><th>Column</th>
 <th>What it names</th>
-</tr></thead><tbody><tr><td><code>data_type</code></td>
+</tr></thead><tbody><tr class="odd"><td><code>data_type</code></td>
 <td>The <strong>modality</strong> — which operations are meaningful on this data</td>
-</tr><tr><td><code>semantic_family</code></td>
+</tr><tr class="even"><td><code>semantic_family</code></td>
 <td>The broad kind of thing</td>
-</tr><tr><td><code>semantic_type</code></td>
+</tr><tr class="odd"><td><code>semantic_type</code></td>
 <td>
 <strong>The unit of analysis.</strong> The thing a detector predicts and is scored on</td>
-</tr><tr><td><code>format variant</code></td>
+</tr><tr class="even"><td><code>format variant</code></td>
 <td>One way of writing a semantic type down</td>
 </tr></tbody></table><p><code>semantic_type</code> is deliberately the term used across the column-type-annotation literature, so the work is legible without translation.</p>
 <p><code>data_type</code> is <strong>not</strong> storage type. Storage modes do not carve the space usefully: categorical variables, identifiers, and serialized structures have no distinct storage mode of their own — they are all strings. What separates them is what you are permitted to <em>do</em> with them.</p>
@@ -85,49 +91,49 @@
 <div class="section level2">
 <h2 id="the-split-ladder">The split ladder<a class="anchor" aria-label="anchor" href="#the-split-ladder"></a></h2>
 <p>Four levels, each with its own admission test:</p>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Level</th>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th>Level</th>
 <th>Question</th>
 <th>Admit a new node when</th>
-</tr></thead><tbody><tr><td><strong>data_type</strong></td>
+</tr></thead><tbody><tr class="odd"><td><strong>data_type</strong></td>
 <td>What operations are admissible?</td>
 <td>The candidate supports a distinct operation set</td>
-</tr><tr><td><strong>semantic_family</strong></td>
+</tr><tr class="even"><td><strong>semantic_family</strong></td>
 <td>What broad kind of thing is it?</td>
 <td>It inherits the type’s operations and adds shared parsing or validation</td>
-</tr><tr><td><strong>semantic_type</strong></td>
+</tr><tr class="odd"><td><strong>semantic_type</strong></td>
 <td>What is it, specifically?</td>
 <td>Meaning differs <strong>and</strong> the difference is detectable from data</td>
-</tr><tr><td><strong>format variant</strong></td>
+</tr><tr class="even"><td><strong>format variant</strong></td>
 <td>How is it written?</td>
 <td>It needs a different transform expression</td>
 </tr></tbody></table><div class="section level3">
 <h3 id="data_type-is-defined-by-admissible-operations">data_type is defined by admissible operations<a class="anchor" aria-label="anchor" href="#data_type-is-defined-by-admissible-operations"></a></h3>
 <p>You cannot difference a string. You can difference a date or a dollar amount, so conceptually those are numbers — but differencing two dates yields a <em>duration</em>, not a date, which is why temporal is its own modality rather than a family under number. Identifiers look numeric and are never arithmetic: the only admissible operations are equality and joins.</p>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>data_type</th>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th>data_type</th>
 <th>Admissible operations</th>
 <th>Why not a neighbour</th>
-</tr></thead><tbody><tr><td><code>number</code></td>
+</tr></thead><tbody><tr class="odd"><td><code>number</code></td>
 <td>arithmetic, differencing, aggregation, ordering</td>
 <td>—</td>
-</tr><tr><td><code>temporal</code></td>
+</tr><tr class="even"><td><code>temporal</code></td>
 <td>ordering, differencing (→ duration), binning</td>
 <td>differencing is not closed; summation is meaningless</td>
-</tr><tr><td><code>identifier</code></td>
+</tr><tr class="odd"><td><code>identifier</code></td>
 <td>equality, joins, counting distinct</td>
 <td>digits, but arithmetic is never valid</td>
-</tr><tr><td><code>categorical</code></td>
+</tr><tr class="even"><td><code>categorical</code></td>
 <td>equality, grouping, counting; ordering only if ordered</td>
 <td>closed vocabulary, no arithmetic</td>
-</tr><tr><td><code>boolean</code></td>
+</tr><tr class="odd"><td><code>boolean</code></td>
 <td>logical algebra, counting, rate calculation</td>
 <td>two-valued, special-cased everywhere</td>
-</tr><tr><td><code>text</code></td>
+</tr><tr class="even"><td><code>text</code></td>
 <td>matching, tokenizing, lexical ordering</td>
 <td>no closed vocabulary asserted</td>
-</tr><tr><td><code>structured</code></td>
+</tr><tr class="odd"><td><code>structured</code></td>
 <td>must be decomposed before any operation</td>
 <td>compound; operations belong to the parts</td>
-</tr><tr><td><code>unknown</code></td>
+</tr><tr class="even"><td><code>unknown</code></td>
 <td>none asserted</td>
 <td>the honest default</td>
 </tr></tbody></table><p>This is why the top level is nearly closed. New operation sets are rare, and adding one is a much larger claim than adding a family or a type.</p>
@@ -136,9 +142,7 @@
 <div class="section level2">
 <h2 id="inheritance-what-makes-the-levels-cohere">Inheritance: what makes the levels cohere<a class="anchor" aria-label="anchor" href="#inheritance-what-makes-the-levels-cohere"></a></h2>
 <p>The tree is an inheritance chain in the object-oriented sense, and that is not decoration — it is the rule that determines whether a proposed node belongs where you want to put it, and the thing that makes extension a decision procedure rather than a matter of taste.</p>
-<blockquote>
-<p><strong>Every child satisfies every constraint of its parent, and adds at least one of its own.</strong></p>
-</blockquote>
+<blockquote><p><strong>Every child satisfies every constraint of its parent, and adds at least one of its own.</strong></p></blockquote>
 <p>Two tests, both of which a candidate must pass:</p>
 <ul><li>
 <strong>Inheritance test.</strong> Anything true of the parent must be true of the child. If a candidate violates a property of the family it is being filed under, either the family is wrong or the candidate belongs somewhere else. A <code>semantic_type</code> under <code>number</code> that cannot be summed or differenced is not a number; it is an identifier that happens to be written in digits.</li>
@@ -168,16 +172,16 @@
 <div class="section level2">
 <h2 id="the-three-format-columns-are-a-refinement-roadmap">The three format columns are a refinement roadmap<a class="anchor" aria-label="anchor" href="#the-three-format-columns-are-a-refinement-roadmap"></a></h2>
 <p>Each format row carries three rules, and they point at three different destinations. Read together they are a rule-based data refinement pipeline:</p>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Column</th>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th>Column</th>
 <th>Question it answers</th>
 <th>Destination</th>
-</tr></thead><tbody><tr><td><code>data_format</code></td>
+</tr></thead><tbody><tr class="odd"><td><code>data_format</code></td>
 <td>How do I recognize this, and how do I read it in <strong>without corrupting it</strong>?</td>
 <td>the parser</td>
-</tr><tr><td><code>raw_to_stable_transform</code></td>
+</tr><tr class="even"><td><code>raw_to_stable_transform</code></td>
 <td>How do I re-express it in a <strong>canonical, corruption-resistant</strong> form?</td>
 <td>the archive</td>
-</tr><tr><td><code>stable_import_rule</code></td>
+</tr><tr class="odd"><td><code>stable_import_rule</code></td>
 <td>How should the stable form be <strong>ingested so it lands ready for analysis</strong>?</td>
 <td>the analyst</td>
 </tr></tbody></table><pre><code>raw  --[data_format]--&gt;  read safely
@@ -190,17 +194,17 @@
 <h2 id="the-three-way-test-for-any-new-distinction">The three-way test for any new distinction<a class="anchor" aria-label="anchor" href="#the-three-way-test-for-any-new-distinction"></a></h2>
 <p>When two manifestations differ, ask in this order:</p>
 <div class="section level3">
-<h3 id="id_1-does-the-difference-change-what-the-value-means">1. Does the difference change what the value <em>means</em>?<a class="anchor" aria-label="anchor" href="#id_1-does-the-difference-change-what-the-value-means"></a></h3>
+<h3 id="1-does-the-difference-change-what-the-value-means">1. Does the difference change what the value <em>means</em>?<a class="anchor" aria-label="anchor" href="#1-does-the-difference-change-what-the-value-means"></a></h3>
 <p>→ <strong>New semantic_type</strong>, but only if it passes the guessability test below.</p>
 <p><code>identifier/id/geographic</code> (FIPS) and <code>categorical/mutually_exclusive/classification_code</code> (NAICS) mean different things.</p>
 </div>
 <div class="section level3">
-<h3 id="id_2-does-the-difference-change-how-the-value-is-written">2. Does the difference change how the value is <em>written</em>?<a class="anchor" aria-label="anchor" href="#id_2-does-the-difference-change-how-the-value-is-written"></a></h3>
+<h3 id="2-does-the-difference-change-how-the-value-is-written">2. Does the difference change how the value is <em>written</em>?<a class="anchor" aria-label="anchor" href="#2-does-the-difference-change-how-the-value-is-written"></a></h3>
 <p>→ <strong>New variant</strong> (a new row under the same semantic_type), if and only if it requires a different transform expression. See the variant rule below.</p>
 <p><code>2024-03-15</code> and <code>03/15/2024</code> mean the same thing and differ only in surface.</p>
 </div>
 <div class="section level3">
-<h3 id="id_3-does-the-difference-change-only-the-unit">3. Does the difference change only the <em>unit</em>?<a class="anchor" aria-label="anchor" href="#id_3-does-the-difference-change-only-the-unit"></a></h3>
+<h3 id="3-does-the-difference-change-only-the-unit">3. Does the difference change only the <em>unit</em>?<a class="anchor" aria-label="anchor" href="#3-does-the-difference-change-only-the-unit"></a></h3>
 <p>→ <strong>Neither.</strong> Units are dictionary metadata, not ontology structure.</p>
 <p><code>100 lbs</code> and <code>100 kg</code> are the same semantic_type, same variant. The unit lives in <code>dd_data_unit</code>, because it affects interpretation but not parsing or representation.</p>
 <p><strong>Units are not formats.</strong> This is the rule most likely to be violated by accident, because a unit suffix looks like a format difference. It isn’t: the parse is identical, the stable representation is identical, and only the dictionary entry changes.</p>
@@ -208,21 +212,19 @@
 </div>
 <div class="section level2">
 <h2 id="the-variant-rule">The variant rule<a class="anchor" aria-label="anchor" href="#the-variant-rule"></a></h2>
-<blockquote>
-<p><strong>One row per transform expression, not per surface appearance.</strong></p>
-</blockquote>
+<blockquote><p><strong>One row per transform expression, not per surface appearance.</strong></p></blockquote>
 <p>If two manifestations are reachable by the same formex expression, they are the same variant. The row defines a <em>rule</em>, not an <em>appearance</em>.</p>
 <p>Worked example, USD currency:</p>
-<table class="table"><thead><tr><th>Raw</th>
+<table class="table"><thead><tr class="header"><th>Raw</th>
 <th>Expression</th>
 <th>Same row?</th>
-</tr></thead><tbody><tr><td><code>$87,000</code></td>
+</tr></thead><tbody><tr class="odd"><td><code>$87,000</code></td>
 <td><code>{{ [strip:$,][range:-Inf,Inf][dec:.2] }}</code></td>
 <td>yes</td>
-</tr><tr><td><code>13.76$</code></td>
+</tr><tr class="even"><td><code>13.76$</code></td>
 <td>same</td>
 <td>yes</td>
-</tr><tr><td><code>13.76 USD</code></td>
+</tr><tr class="odd"><td><code>13.76 USD</code></td>
 <td>needs a token-aware strip</td>
 <td><strong>no — new variant</strong></td>
 </tr></tbody></table><p>The first two share a transform; the third does not, because stripping <code>$</code> and <code>,</code> leaves <code>USD</code> behind.</p>
@@ -240,29 +242,27 @@
 <div class="section level2">
 <h2 id="the-guessability-test-and-the-collapse-rule">The guessability test (and the collapse rule)<a class="anchor" aria-label="anchor" href="#the-guessability-test-and-the-collapse-rule"></a></h2>
 <p>A semantic_type split is only valid if the semantic_typees are <strong>separable from the data alone</strong>. This is testable, not a judgment call:</p>
-<blockquote>
-<p>Bank examples of both. Compute <code>signature_distance</code>. If no detector can separate them above chance, the split is not supported and the semantic_typees <strong>collapse back into one</strong>.</p>
-</blockquote>
+<blockquote><p>Bank examples of both. Compute <code>signature_distance</code>. If no detector can separate them above chance, the split is not supported and the semantic_typees <strong>collapse back into one</strong>.</p></blockquote>
 <p>This runs in both directions. It prevents the ontology from growing distinctions the data cannot support, and it flags existing ones that should be merged. It also gives ontology maintenance an objective stopping rule rather than relying on the maintainer’s patience.</p>
 <p>A meaning-based distinction that fails this test does not disappear from the world — it just isn’t ontology structure. It becomes a dictionary attribute, which is where FIPS-vs-NAICS-style distinctions ultimately have to live anyway.</p>
 <hr></div>
 <div class="section level2">
 <h2 id="homogeneous-vs-heterogeneous-unit-columns">Homogeneous vs heterogeneous unit columns<a class="anchor" aria-label="anchor" href="#homogeneous-vs-heterogeneous-unit-columns"></a></h2>
 <p>The unit rule above assumes the unit is <strong>constant down the column</strong>. When it varies, stripping becomes lossy and the row structure changes:</p>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Column</th>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th>Column</th>
 <th>Situation</th>
 <th>Handling</th>
-</tr></thead><tbody><tr><td>
+</tr></thead><tbody><tr class="odd"><td>
 <code>100 lbs</code>, <code>200 lbs</code>
 </td>
 <td>unit constant</td>
 <td>strip to number, unit → dictionary. Lossless.</td>
-</tr><tr><td>
+</tr><tr class="even"><td>
 <code>100 lbs</code>, <code>60 kg</code>
 </td>
 <td>unit varies, one dimension</td>
 <td>convert to canonical unit <strong>or</strong> split into value + unit columns</td>
-</tr><tr><td>
+</tr><tr class="odd"><td>
 <code>100 F</code>, <code>30 miles</code>
 </td>
 <td>unit varies across dimensions</td>
@@ -293,9 +293,7 @@
 <h2 id="why-the-ontology-is-nested">Why the ontology is nested<a class="anchor" aria-label="anchor" href="#why-the-ontology-is-nested"></a></h2>
 <p>The hierarchy is not organizational tidiness. It is the mechanism that makes a <strong>partial answer</strong> possible, and partial answers are the normal case.</p>
 <p>We know it is a fruit. We are not sure it is a Granny Smith. So we label it <code>fruit</code> and stop. That is not a wrong answer — it is a true answer given at the depth the evidence supports.</p>
-<blockquote>
-<p><strong>Graceful failure is omission of granularity, not misclassification.</strong></p>
-</blockquote>
+<blockquote><p><strong>Graceful failure is omission of granularity, not misclassification.</strong></p></blockquote>
 <p>A flat list of 85 semantic types would force every detector into a binary: commit to a leaf, or abstain entirely. Both are bad. Committing manufactures false precision; abstaining throws away the substantial information that a column is numeric, or temporal, or an identifier. A nested ontology lets the system return exactly what it knows.</p>
 <div class="section level3">
 <h3 id="a-prediction-is-a-path-prefix-not-a-leaf">A prediction is a path prefix, not a leaf<a class="anchor" aria-label="anchor" href="#a-prediction-is-a-path-prefix-not-a-leaf"></a></h3>
@@ -329,23 +327,21 @@ number/currency/usd             not supported by the data -- stop here</code></p
 <strong>Failure of type</strong> — <code>87000</code> routes to <code>text</code> or <code>categorical</code>. This is a real failure, because downstream handling is now wrong.</li>
 </ul><p><code>data_format_default_type</code> and <code>data_format_default_class</code> exist to make the first outcome deterministic rather than incidental. When a value is <strong>underspecified</strong> — when the data itself carries no signal that could route it to the granular node — the fallback columns say where it lands.</p>
 <p>This has a direct consequence for what does and does not get a row:</p>
-<blockquote>
-<p><strong>A manifestation only earns a row if the data alone can route it there.</strong></p>
-</blockquote>
+<blockquote><p><strong>A manifestation only earns a row if the data alone can route it there.</strong></p></blockquote>
 <p>There is no <code>number/currency/usd</code> row for bare <code>87000</code>, because nothing in those digits says currency. Currency-ness arrives from the header, the dictionary, or the human reviewer. Listing it as a row would train a detector to claim territory it cannot defend, and the misfire would be invisible because the label would look correct.</p>
 <p>This supersedes the “one row, many detectors” idea. A row’s detectors and its transform cover the same set of manifestations; anything the transform accepts but no detector can recognize is handled by the fallback, not by a second detector. The narrow exception is genuine mask variation within one transform (<code>13.76 USD</code> and <code>USD 13.76</code>), which is one row with two patterns.</p>
 <p><strong>The first guess is meant to be rough.</strong> Output feeds a data governance file that a human reviews and overrides — a reviewer who knows the file is all financials will promote <code>number</code> to <code>number/currency/usd</code> themselves, which unlocks the class-based functionality. That changes the cost function: the cost of a wrong guess is reviewer attention, not silent corruption. Precision gating should therefore be tuned to minimize review burden and to keep failures legible and ranked, not to approach precision 1.0 as an autonomous system would.</p>
 <div class="section level3">
 <h3 id="two-failures-that-look-identical">Two failures that look identical<a class="anchor" aria-label="anchor" href="#two-failures-that-look-identical"></a></h3>
 <p>The fallback fires in two very different situations, and the output is the same either way:</p>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th></th>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th></th>
 <th>Cause</th>
 <th>Is the fallback correct?</th>
-</tr></thead><tbody><tr><td><strong>Underspecification</strong></td>
+</tr></thead><tbody><tr class="odd"><td><strong>Underspecification</strong></td>
 <td>The data carries no signal that could route it deeper. <code>87000</code> is not recognizably currency.</td>
 <td>
 <strong>Yes.</strong> No detector could have done better.</td>
-</tr><tr><td><strong>Detector inadequacy</strong></td>
+</tr><tr class="even"><td><strong>Detector inadequacy</strong></td>
 <td>The signal was present; the detector missed it.</td>
 <td>
 <strong>No.</strong> The fallback is masking a real bug.</td>
@@ -354,32 +350,28 @@ number/currency/usd             not supported by the data -- stop here</code></p
 <div class="section level3">
 <h3 id="the-fallback-must-be-a-proper-ancestor">The fallback must be a proper ancestor<a class="anchor" aria-label="anchor" href="#the-fallback-must-be-a-proper-ancestor"></a></h3>
 <p>A hard rule, and one that is mechanically checkable:</p>
-<blockquote>
-<p>A fallback may only move <strong>up</strong> the path. Never sideways.</p>
-</blockquote>
+<blockquote><p>A fallback may only move <strong>up</strong> the path. Never sideways.</p></blockquote>
 <p>Falling from <code>usd</code> to <code>eur</code> is misclassification. Falling from <code>usd</code> to <code>currency</code>, or to <code>number</code>, is truncation. Any fallback target that is not a prefix of the attempted path is a bug in the ontology, not a graceful failure.</p>
 <hr></div>
 </div>
 <div class="section level2">
 <h2 id="stable-representation">Stable representation<a class="anchor" aria-label="anchor" href="#stable-representation"></a></h2>
 <p>A <strong>stable data type</strong> is one that any generic CSV reader will ingest into an in-memory representation preserving the integrity and the meaning of the variable.</p>
-<blockquote>
-<p>A variable can be stabilized only if the transformation causes <strong>no loss of information</strong> while <strong>improving representation</strong>. Both halves are required.</p>
-</blockquote>
+<blockquote><p>A variable can be stabilized only if the transformation causes <strong>no loss of information</strong> while <strong>improving representation</strong>. Both halves are required.</p></blockquote>
 <div class="section level3">
 <h3 id="three-corruption-mechanisms-three-different-tests">Three corruption mechanisms, three different tests<a class="anchor" aria-label="anchor" href="#three-corruption-mechanisms-three-different-tests"></a></h3>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Mechanism</th>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th>Mechanism</th>
 <th>Example</th>
 <th>Test</th>
-</tr></thead><tbody><tr><td><strong>Value destroyed</strong></td>
+</tr></thead><tbody><tr class="odd"><td><strong>Value destroyed</strong></td>
 <td>FIPS <code>06037</code> read as integer → <code>6037</code>
 </td>
 <td>Compare characters after round-trip</td>
-</tr><tr><td><strong>Meaning misread</strong></td>
+</tr><tr class="even"><td><strong>Meaning misread</strong></td>
 <td>
 <code>MAR1</code> gene symbol → 1-Mar; <code>ACGT</code> → date</td>
 <td>Screen against known reader triggers</td>
-</tr><tr><td><strong>Grammar ambiguous</strong></td>
+</tr><tr class="odd"><td><strong>Grammar ambiguous</strong></td>
 <td>
 <code>03-04-2024</code> — dd-mm and mm-dd share a mask</td>
 <td>Do two readers or two locales disagree?</td>
@@ -388,9 +380,7 @@ number/currency/usd             not supported by the data -- stop here</code></p
 <div class="section level3">
 <h3 id="every-strip-needs-a-receipt">Every strip needs a receipt<a class="anchor" aria-label="anchor" href="#every-strip-needs-a-receipt"></a></h3>
 <p>The losslessness half of the rule reduces to one testable condition:</p>
-<blockquote>
-<p>Anything removed by a transform must be either <strong>provably redundant across the column</strong> (constant, therefore recoverable) or <strong>recorded elsewhere</strong> (dictionary, unit field, metadata column).</p>
-</blockquote>
+<blockquote><p>Anything removed by a transform must be either <strong>provably redundant across the column</strong> (constant, therefore recoverable) or <strong>recorded elsewhere</strong> (dictionary, unit field, metadata column).</p></blockquote>
 <p><code>[strip:$,]</code> is legal because the comma is redundant and the currency is recorded in the dictionary. Stripping <code>lbs</code> is legal when the unit is constant and captured in <code>dd_data_unit</code>; it is <strong>illegal</strong> when the unit varies down the column, because nothing recovers it. This is the same rule that governs units, stated generally.</p>
 <p>Two mechanical properties every transform should satisfy:</p>
 <ul><li>
@@ -402,9 +392,7 @@ number/currency/usd             not supported by the data -- stop here</code></p
 </div>
 <div class="section level2">
 <h2 id="when-a-stable-import-rule-is-necessary">When a stable import rule is necessary<a class="anchor" aria-label="anchor" href="#when-a-stable-import-rule-is-necessary"></a></h2>
-<blockquote>
-<p><strong>Heuristic:</strong> once transformed into its most stable version, will stats programs or Excel guess the correct data type? If yes, no rule. If no, a rule.</p>
-</blockquote>
+<blockquote><p><strong>Heuristic:</strong> once transformed into its most stable version, will stats programs or Excel guess the correct data type? If yes, no rule. If no, a rule.</p></blockquote>
 <p>This is testable rather than a judgment call. <code>roundtrip_check.R</code> implements it: write the stable values to CSV, read them back with default reader settings, and compare against <code>default_storage</code>. Four triggers, any of which requires a rule:</p>
 <pre><code>VALUE_CHANGED               characters did not survive the round-trip
 TYPE_WRONG                  inferred class differs from default_storage
@@ -421,9 +409,7 @@ EXCEL_HAZARD                matches a known Excel corruption trigger</code></pre
 <div class="section level2">
 <h2 id="completing-the-round-trip-invertibility">Completing the round trip: invertibility<a class="anchor" aria-label="anchor" href="#completing-the-round-trip-invertibility"></a></h2>
 <p>The stress test above asks whether the stable form survives a reader. The other half of the round trip asks whether the <strong>raw form can be recovered from the stable form</strong>.</p>
-<blockquote>
-<p>A transform is sound if <code>T⁻¹(T(raw))</code> recovers the raw <strong>information</strong>, or if the difference is confined to a <strong>declared, bounded</strong> loss.</p>
-</blockquote>
+<blockquote><p>A transform is sound if <code>T⁻¹(T(raw))</code> recovers the raw <strong>information</strong>, or if the difference is confined to a <strong>declared, bounded</strong> loss.</p></blockquote>
 <div class="section level3">
 <h3 id="information-invertibility-vs-presentation-invertibility">Information invertibility vs presentation invertibility<a class="anchor" aria-label="anchor" href="#information-invertibility-vs-presentation-invertibility"></a></h3>
 <p>These are different requirements and only one of them is mandatory.</p>
@@ -452,17 +438,17 @@ recovered 40 44 55 N           exact</code></pre>
 <p>Rounding is where the declared loss appears:</p>
 <pre><code>stable    40.7486   (4 dp)  -&gt; recovered  40 44 54.96 N   error 0.04" ~ 1.2 m
 stable    40.74861  (5 dp)  -&gt; recovered  40 44 54.9996 N error 0.0004" ~ 1 cm</code></pre>
-<table class="table"><thead><tr><th>Decimal places</th>
+<table class="table"><thead><tr class="header"><th>Decimal places</th>
 <th>Ground resolution at the equator</th>
-</tr></thead><tbody><tr><td>3</td>
+</tr></thead><tbody><tr class="odd"><td>3</td>
 <td>111 m</td>
-</tr><tr><td>4</td>
+</tr><tr class="even"><td>4</td>
 <td>11.1 m</td>
-</tr><tr><td>5</td>
+</tr><tr class="odd"><td>5</td>
 <td>1.11 m</td>
-</tr><tr><td>6</td>
+</tr><tr class="even"><td>6</td>
 <td>0.11 m</td>
-</tr><tr><td>7</td>
+</tr><tr class="odd"><td>7</td>
 <td>0.01 m</td>
 </tr></tbody></table><p>Truncating to four decimal places is a legitimate stabilization <strong>only if the row declares it</strong> — a choice to accept ~11 m resolution, not an accident. That is the distinction the ontology has to record.</p>
 </div>
@@ -479,45 +465,45 @@ precision_bound           the magnitude of the accepted loss, in real units</cod
 <p>Excel is the most common downstream consumer of research CSVs and the most aggressive at reinterpreting them. Grouped by mechanism, because the remedy differs by group.</p>
 <div class="section level3">
 <h3 id="a-type-coercion-on-read">A. Type coercion on read<a class="anchor" aria-label="anchor" href="#a-type-coercion-on-read"></a></h3>
-<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr><th>#</th>
+<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr class="header"><th>#</th>
 <th>Pathology</th>
 <th>Trigger</th>
 <th>Damage</th>
 <th>Remedy</th>
-</tr></thead><tbody><tr><td>A1</td>
+</tr></thead><tbody><tr class="odd"><td>A1</td>
 <td>Leading zeros stripped</td>
 <td><code>^0\\d+</code></td>
 <td>
 <code>06037 → 6037</code>. Hits FIPS, ZIP, EIN, SSN, phone, account and routing numbers, any zero-padded code</td>
 <td>Force text; import rule required</td>
-</tr><tr><td>A2</td>
+</tr><tr class="even"><td>A2</td>
 <td>Identifier read as date</td>
 <td>
 <code>d-d</code>, <code>d/d</code>, <code>d.d</code> patterns</td>
 <td>
 <code>1-2 → 2-Jan</code>. Hits version strings, ratios, ranges, dotted codes</td>
 <td>Force text; avoid hyphen/slash in stable form</td>
-</tr><tr><td>A3</td>
+</tr><tr class="odd"><td>A3</td>
 <td>Gene and product symbols read as dates</td>
 <td>
 <code>MAR1</code>, <code>SEPT2</code>, <code>DEC1</code>, <code>OCT4</code>
 </td>
 <td>Silent conversion to a date serial. Widespread enough in genomics that HGNC renamed affected gene symbols</td>
 <td>Force text</td>
-</tr><tr><td>A4</td>
+</tr><tr class="even"><td>A4</td>
 <td>Nucleotide strings read as dates</td>
 <td>short <code>[ACGT]</code> runs and similar</td>
 <td>
 <code>DEC</code> and month-like fragments convert</td>
 <td>Force text</td>
-</tr><tr><td>A5</td>
+</tr><tr class="odd"><td>A5</td>
 <td>Fractions read as dates</td>
 <td>
 <code>1/2</code>, <code>3/4</code>
 </td>
 <td><code>3/4 → 4-Mar</code></td>
 <td>Force text</td>
-</tr><tr><td>A6</td>
+</tr><tr class="even"><td>A6</td>
 <td>Scientific-notation strings evaluated</td>
 <td>
 <code>1E5</code>, <code>2E3</code>
@@ -525,14 +511,14 @@ precision_bound           the magnitude of the accepted loss, in real units</cod
 <td>
 <code>1E5 → 100000</code>. Hits alphanumeric product and gene codes</td>
 <td>Force text</td>
-</tr><tr><td>A7</td>
+</tr><tr class="odd"><td>A7</td>
 <td>Boolean words coerced</td>
 <td>
 <code>TRUE</code>, <code>FALSE</code>
 </td>
 <td>Become logical; string case is lost on re-export</td>
 <td>Force text if the literal matters</td>
-</tr><tr><td>A8</td>
+</tr><tr class="even"><td>A8</td>
 <td>Missing-value tokens become error cells</td>
 <td>
 <code>#N/A</code>, <code>#NULL!</code>
@@ -542,34 +528,34 @@ precision_bound           the magnitude of the accepted loss, in real units</cod
 </tr></tbody></table></div>
 <div class="section level3">
 <h3 id="b-precision-loss">B. Precision loss<a class="anchor" aria-label="anchor" href="#b-precision-loss"></a></h3>
-<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr><th>#</th>
+<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr class="header"><th>#</th>
 <th>Pathology</th>
 <th>Trigger</th>
 <th>Damage</th>
 <th>Remedy</th>
-</tr></thead><tbody><tr><td>B1</td>
+</tr></thead><tbody><tr class="odd"><td>B1</td>
 <td>15-significant-digit ceiling</td>
 <td>numeric strings ≥ 16 digits</td>
 <td>Digits beyond the 15th become zeros. Hits credit cards, IMEI, long barcodes, large surrogate keys</td>
 <td>Force text</td>
-</tr><tr><td>B2</td>
+</tr><tr class="even"><td>B2</td>
 <td>Scientific notation display</td>
 <td>large or small magnitudes</td>
 <td>Value is intact in memory but the <strong>displayed and re-exported</strong> form is <code>1.23E+15</code>
 </td>
 <td>Force text, or fix column format</td>
-</tr><tr><td>B3</td>
+</tr><tr class="odd"><td>B3</td>
 <td>Floating-point display rounding</td>
 <td>many decimal places</td>
 <td>Re-export writes the rounded display value</td>
 <td>Declare <code>precision_bound</code>
 </td>
-</tr><tr><td>B4</td>
+</tr><tr class="even"><td>B4</td>
 <td>Time as fraction of a day</td>
 <td><code>hh:mm:ss</code></td>
 <td>Durations over 24 h wrap; <code>25:30</code> becomes next-day</td>
 <td>Store as numeric minutes or ISO 8601 duration</td>
-</tr><tr><td>B5</td>
+</tr><tr class="odd"><td>B5</td>
 <td>1900 leap-year bug</td>
 <td>dates before 1 Mar 1900</td>
 <td>Excel treats 29 Feb 1900 as real, so serials are off by one</td>
@@ -577,28 +563,28 @@ precision_bound           the magnitude of the accepted loss, in real units</cod
 </tr></tbody></table></div>
 <div class="section level3">
 <h3 id="c-locale-dependence--the-same-file-different-results-on-different-machines">C. Locale dependence — the same file, different results on different machines<a class="anchor" aria-label="anchor" href="#c-locale-dependence--the-same-file-different-results-on-different-machines"></a></h3>
-<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr><th>#</th>
+<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr class="header"><th>#</th>
 <th>Pathology</th>
 <th>Trigger</th>
 <th>Damage</th>
 <th>Remedy</th>
-</tr></thead><tbody><tr><td>C1</td>
+</tr></thead><tbody><tr class="odd"><td>C1</td>
 <td>Ambiguous date order</td>
 <td><code>03/04/2024</code></td>
 <td>US reads Mar 4, most of Europe reads 3 Apr. Silent, and it differs by machine</td>
 <td>ISO <code>yyyy-mm-dd</code>, plus an import rule</td>
-</tr><tr><td>C2</td>
+</tr><tr class="even"><td>C2</td>
 <td>Decimal separator inversion</td>
 <td><code>1,234</code></td>
 <td>Comma is a thousands separator in some locales and a decimal point in others</td>
 <td>Strip separators at stabilization; declare in the transform</td>
-</tr><tr><td>C3</td>
+</tr><tr class="odd"><td>C3</td>
 <td>List separator</td>
 <td>
 <code>;</code> vs <code>,</code> as the CSV delimiter</td>
 <td>Files split into the wrong columns entirely</td>
 <td>Declare the delimiter; prefer quoted output</td>
-</tr><tr><td>C4</td>
+</tr><tr class="even"><td>C4</td>
 <td>Currency symbol parsing</td>
 <td><code>€1.234,56</code></td>
 <td>Symbol and separator conventions vary together</td>
@@ -606,27 +592,27 @@ precision_bound           the magnitude of the accepted loss, in real units</cod
 </tr></tbody></table></div>
 <div class="section level3">
 <h3 id="d-parsing-and-security">D. Parsing and security<a class="anchor" aria-label="anchor" href="#d-parsing-and-security"></a></h3>
-<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr><th>#</th>
+<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr class="header"><th>#</th>
 <th>Pathology</th>
 <th>Trigger</th>
 <th>Damage</th>
 <th>Remedy</th>
-</tr></thead><tbody><tr><td>D1</td>
+</tr></thead><tbody><tr class="odd"><td>D1</td>
 <td>Formula injection</td>
 <td>leading <code>=</code>, <code>+</code>, <code>@</code>, or <code>-</code> before a non-digit</td>
 <td>Cell is evaluated as a formula. Also a genuine security issue for exported CSVs</td>
 <td>Prefix a text qualifier on export; flag on import</td>
-</tr><tr><td>D2</td>
+</tr><tr class="even"><td>D2</td>
 <td>Autocorrect on edit</td>
 <td>manual entry or autofill</td>
 <td>Values silently altered during human editing</td>
 <td>Out of scope for import, but worth flagging in the governance file</td>
-</tr><tr><td>D3</td>
+</tr><tr class="odd"><td>D3</td>
 <td>Whitespace invisibility</td>
 <td>leading, trailing, or non-breaking spaces</td>
 <td>Comparisons and joins fail with no visible cause. Non-breaking spaces arrive via web paste</td>
 <td>Trim at stabilization; treat <code>U+00A0</code> explicitly</td>
-</tr><tr><td>D4</td>
+</tr><tr class="even"><td>D4</td>
 <td>Quoting inconsistency</td>
 <td>embedded delimiters, unescaped quotes</td>
 <td>Row alignment breaks mid-file</td>
@@ -634,22 +620,22 @@ precision_bound           the magnitude of the accepted loss, in real units</cod
 </tr></tbody></table></div>
 <div class="section level3">
 <h3 id="e-capacity-and-encoding">E. Capacity and encoding<a class="anchor" aria-label="anchor" href="#e-capacity-and-encoding"></a></h3>
-<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr><th>#</th>
+<table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr class="header"><th>#</th>
 <th>Pathology</th>
 <th>Trigger</th>
 <th>Damage</th>
 <th>Remedy</th>
-</tr></thead><tbody><tr><td>E1</td>
+</tr></thead><tbody><tr class="odd"><td>E1</td>
 <td>Row ceiling</td>
 <td>&gt; 1,048,576 rows</td>
 <td>Silent truncation on open</td>
 <td>Never route large files through Excel</td>
-</tr><tr><td>E2</td>
+</tr><tr class="even"><td>E2</td>
 <td>Cell character ceiling</td>
 <td>&gt; 32,767 characters</td>
 <td>Long text truncated</td>
 <td>Flag long-text columns</td>
-</tr><tr><td>E3</td>
+</tr><tr class="odd"><td>E3</td>
 <td>UTF-8 without BOM</td>
 <td>non-ASCII characters</td>
 <td>Mojibake in names, addresses, place names</td>
@@ -672,9 +658,7 @@ precision_bound           the magnitude of the accepted loss, in real units</cod
 <p>A researcher working with clinical data needs ICD-10 codes, NPI numbers, and LOINC identifiers. One working with nonprofit filings needs EINs, NTEE codes, and FIPS. One working with genomics needs accession numbers and gene symbols. None of those belong in a core that all three share — but all three should be able to declare them without forking anything.</p>
 <div class="section level3">
 <h3 id="the-core-membership-test">The core-membership test<a class="anchor" aria-label="anchor" href="#the-core-membership-test"></a></h3>
-<blockquote>
-<p>A node belongs in the core if it is encountered across <strong>unrelated domains</strong>. Otherwise it belongs in an extension.</p>
-</blockquote>
+<blockquote><p>A node belongs in the core if it is encountered across <strong>unrelated domains</strong>. Otherwise it belongs in an extension.</p></blockquote>
 <p>Dates, currency, postal codes, and email addresses pass. NTEE codes do not — they matter enormously in one domain and are invisible everywhere else. This is a test about breadth of encounter, not about importance.</p>
 <p>The test runs in both directions. An extension node that turns up independently in three unrelated extensions has demonstrated it is generic, and is a candidate for promotion into the core.</p>
 </div>
@@ -707,21 +691,21 @@ superseded_by        semantic_type_id(s), ";;"-separated for splits
 change_note          free text: what changed and why</code></pre>
 <p><strong>Rows are never deleted.</strong> Set <code>version_deprecated</code> so a stale reference in an old case file resolves to something that can explain itself, rather than failing on a missing key. A retired node is still readable history.</p>
 <p>Four kinds of change, with determinate blast radius:</p>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Change</th>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th>Change</th>
 <th>Case impact</th>
 <th>Scoring impact</th>
-</tr></thead><tbody><tr><td><strong>Rename</strong></td>
+</tr></thead><tbody><tr class="odd"><td><strong>Rename</strong></td>
 <td>none — the ID survives</td>
 <td>none</td>
-</tr><tr><td><strong>Merge</strong></td>
+</tr><tr class="even"><td><strong>Merge</strong></td>
 <td>mechanical relabel; keep the older ID, deprecate the other</td>
 <td>recompute affected pairs</td>
-</tr><tr><td>
+</tr><tr class="odd"><td>
 <strong>Move</strong> (reparent)</td>
 <td>none — the ID survives</td>
 <td>
 <strong>all pairs</strong> — <code>path_distance</code> changes for every pair involving the node, so sibling weights and the evaluation metric must be recomputed</td>
-</tr><tr><td><strong>Split</strong></td>
+</tr><tr class="even"><td><strong>Split</strong></td>
 <td>
 <strong>mandatory re-review</strong> — both fragments get new IDs, <code>superseded_by</code> points back to the retired parent</td>
 <td>recompute affected pairs</td>

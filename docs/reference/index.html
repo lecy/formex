@@ -17,11 +17,18 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
 <li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-package-overview" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Package Overview</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-package-overview"><li><a class="dropdown-item" href="../articles/overview-guess-data-type.html">Guess Data Type</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-ontology.html">The Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-formatting-syntax.html">Formatting Syntax</a></li>
+  </ul></li>
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
@@ -135,7 +142,7 @@
           <code><a href="fx_ontology.html">fx_ontology()</a></code>
 
         </dt>
-        <dd>The research data-type ontology (v6)</dd>
+        <dd>The research data-type ontology (v7)</dd>
       </dl><dl><dt>
 
           <code><a href="fx_validate_ontology.html">fx_validate_ontology()</a></code>
@@ -291,6 +298,18 @@
 
         </dt>
         <dd>Is it a named color?</dd>
+      </dl><dl><dt>
+
+          <code><a href="is_coord_latlon.html">is_coord_latlon()</a></code>
+
+        </dt>
+        <dd>Is it a latitude/longitude pair (latitude first)?</dd>
+      </dl><dl><dt>
+
+          <code><a href="is_coord_lonlat.html">is_coord_lonlat()</a></code>
+
+        </dt>
+        <dd>Is it a longitude/latitude pair (longitude first)?</dd>
       </dl><dl><dt>
 
           <code><a href="is_country_code.html">is_country_code()</a></code>
@@ -471,6 +490,12 @@
 
         </dt>
         <dd>Is it an ISBN (10 or 13)?</dd>
+      </dl><dl><dt>
+
+          <code><a href="is_iso6709.html">is_iso6709()</a></code>
+
+        </dt>
+        <dd>Is it an ISO 6709 lat/lon pair?</dd>
       </dl><dl><dt>
 
           <code><a href="is_iso_date.html">is_iso_date()</a></code>
@@ -935,7 +960,7 @@
           <code><a href="fx_coverage_gaps.html">fx_coverage_gaps()</a></code>
 
         </dt>
-        <dd>Coverage gaps: types the benchmark types poorly or barely covers</dd>
+        <dd>Coverage gaps: difficulty-aware flagging of underperforming detectors</dd>
       </dl><dl><dt>
 
           <code><a href="fx_perturb.html">fx_perturb()</a></code>
@@ -1197,7 +1222,7 @@
           <code><a href="fx_coverage_gaps.html">fx_coverage_gaps()</a></code>
 
         </dt>
-        <dd>Coverage gaps: types the benchmark types poorly or barely covers</dd>
+        <dd>Coverage gaps: difficulty-aware flagging of underperforming detectors</dd>
       </dl><dl><dt>
 
           <code><a href="fx_dgf_fields.html">fx_dgf_fields()</a></code>
@@ -1257,7 +1282,7 @@
           <code><a href="fx_ontology.html">fx_ontology()</a></code>
 
         </dt>
-        <dd>The research data-type ontology (v6)</dd>
+        <dd>The research data-type ontology (v7)</dd>
       </dl><dl><dt>
 
           <code><a href="fx_ontology_diff.html">fx_ontology_diff()</a></code>
@@ -1494,6 +1519,18 @@
         <dd>Is it a named color?</dd>
       </dl><dl><dt>
 
+          <code><a href="is_coord_latlon.html">is_coord_latlon()</a></code>
+
+        </dt>
+        <dd>Is it a latitude/longitude pair (latitude first)?</dd>
+      </dl><dl><dt>
+
+          <code><a href="is_coord_lonlat.html">is_coord_lonlat()</a></code>
+
+        </dt>
+        <dd>Is it a longitude/latitude pair (longitude first)?</dd>
+      </dl><dl><dt>
+
           <code><a href="is_country_code.html">is_country_code()</a></code>
 
         </dt>
@@ -1672,6 +1709,12 @@
 
         </dt>
         <dd>Is it an ISBN (10 or 13)?</dd>
+      </dl><dl><dt>
+
+          <code><a href="is_iso6709.html">is_iso6709()</a></code>
+
+        </dt>
+        <dd>Is it an ISO 6709 lat/lon pair?</dd>
       </dl><dl><dt>
 
           <code><a href="is_iso_date.html">is_iso_date()</a></code>
@@ -1953,7 +1996,7 @@
           <code><a href="ontology.html">ontology</a></code>
 
         </dt>
-        <dd>Research data-type ontology (v6), parsed</dd>
+        <dd>Research data-type ontology (v7), parsed</dd>
       </dl><dl><dt>
 
           <code><a href="score_data_type.html">score_data_type()</a></code>

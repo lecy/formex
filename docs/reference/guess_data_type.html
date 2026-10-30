@@ -29,11 +29,18 @@ or gracefully truncates to the depth the router agrees on."></head><body>
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
 <li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-package-overview" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Package Overview</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-package-overview"><li><a class="dropdown-item" href="../articles/overview-guess-data-type.html">Guess Data Type</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-ontology.html">The Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-formatting-syntax.html">Formatting Syntax</a></li>
+  </ul></li>
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
@@ -49,6 +56,7 @@ or gracefully truncates to the depth the router agrees on."></head><body>
     <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
     <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
   </ul></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/lecy/formex/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -58,7 +66,7 @@ or gracefully truncates to the depth the router agrees on."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Guess the ontology-anchored data type of a column</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/lecy/formex/blob/HEAD/R/02-01-guess-data-type.R" class="external-link"><code>R/02-01-guess-data-type.R</code></a></small>
       <div class="d-none name"><code>guess_data_type.Rd</code></div>
     </div>
 
@@ -83,6 +91,7 @@ or gracefully truncates to the depth the router agrees on.</p>
 <span>  detectors <span class="op">=</span> <span class="fu">data_type_detectors</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  route <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  legacy <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ontology <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  router_k <span class="op">=</span> <span class="fl">8</span>,</span>
 <span>  confirm_thr <span class="op">=</span> <span class="fl">0.8</span>,</span>
@@ -118,7 +127,8 @@ legacy <code>guess</code>; below it, <code>guess</code> is <code>NA</code> (unkn
 
 
 <dt id="arg-detectors">detectors<a class="anchor" aria-label="anchor" href="#arg-detectors"></a></dt>
-<dd><p>A named list of detector functions; defaults to the registry.</p></dd>
+<dd><p>A named list of detector functions; defaults to the registry.
+Unused when <code>legacy = FALSE</code>.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -128,6 +138,15 @@ legacy <code>guess</code>; below it, <code>guess</code> is <code>NA</code> (unkn
 <dt id="arg-route">route<a class="anchor" aria-label="anchor" href="#arg-route"></a></dt>
 <dd><p>If <code>TRUE</code> (default), also compute the v6 router-&gt;verifier
 <code>route</code> record. Set <code>FALSE</code> to skip it (pure legacy behavior).</p></dd>
+
+
+<dt id="arg-legacy">legacy<a class="anchor" aria-label="anchor" href="#arg-legacy"></a></dt>
+<dd><p>If <code>TRUE</code> (default), compute the legacy flat-detector
+<code>guess</code> / <code>ontology</code> / <code>candidates</code> fields. Set <code>FALSE</code> to skip that scan
+and return only the <code>route</code> record; the legacy fields are still present but
+empty (<code>guess = NA</code>, <code>candidates = NULL</code>). A speedup for callers that read
+only <code>$route</code>, since it avoids scoring every registered detector. Setting
+both <code>route</code> and <code>legacy</code> to <code>FALSE</code> returns an empty record.</p></dd>
 
 
 <dt id="arg-ontology">ontology<a class="anchor" aria-label="anchor" href="#arg-ontology"></a></dt>
@@ -170,7 +189,8 @@ ran.</p></dd>
 <dd><p>The guess's pass rate.</p></dd>
 
 <dt>candidates</dt>
-<dd><p>Ranked data frame of types clearing <code>floor</code>.</p></dd>
+<dd><p>Ranked data frame of types clearing <code>floor</code> (<code>NULL</code>
+when <code>legacy = FALSE</code>).</p></dd>
 
 <dt>n</dt>
 <dd><p>Number of unique values scored.</p></dd>

@@ -17,11 +17,18 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="articles/formex.html">Get started</a></li>
 <li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-package-overview" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Package Overview</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-package-overview"><li><a class="dropdown-item" href="articles/overview-guess-data-type.html">Guess Data Type</a></li>
+    <li><a class="dropdown-item" href="articles/overview-ontology.html">The Ontology</a></li>
+    <li><a class="dropdown-item" href="articles/overview-formatting-syntax.html">Formatting Syntax</a></li>
+  </ul></li>
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="articles/data-type-ontology.html">The Data-Type Ontology</a></li>
+    <li><a class="dropdown-item" href="articles/formex.html">Formex: the format-expression syntax</a></li>
     <li><a class="dropdown-item" href="articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
@@ -51,12 +58,9 @@
     </div>
 
 <div id="formex--development-status-gaps--the-test-data-library" class="section level1">
-
-<blockquote>
-<p>Status snapshot, 2026-10-25. A companion to the user-facing <em>Type Atlas</em> vignette (<code>vignettes/formex-type-atlas.Rmd</code>). The Atlas describes what each type <em>is</em>; this note records what is <em>built</em>, what is <em>not</em>, and what the detectors were tested against. Numbers are from the shipped ontology (<code><a href="reference/fx_ontology.html">fx_ontology()</a></code>, 96 variants) and the dev test library (<code>dev/feature_matrix_all.rds</code>, 4,036 columns). The <code>dev/</code> tree is local scaffolding and is not shipped or version-controlled, so the library figures are a point-in-time measurement, not a build artifact.</p>
-</blockquote>
+<blockquote><p>Status snapshot, 2026-10-25. A companion to the user-facing <em>Type Atlas</em> vignette (<code>vignettes/formex-type-atlas.Rmd</code>). The Atlas describes what each type <em>is</em>; this note records what is <em>built</em>, what is <em>not</em>, and what the detectors were tested against. Numbers are from the shipped ontology (<code><a href="reference/fx_ontology.html">fx_ontology()</a></code>, 96 variants) and the dev test library (<code>dev/feature_matrix_all.rds</code>, 4,036 columns). The <code>dev/</code> tree is local scaffolding and is not shipped or version-controlled, so the library figures are a point-in-time measurement, not a build artifact.</p></blockquote>
 <div class="section level2">
-<h2 id="id_1-where-the-engine-stands">1. Where the engine stands<a class="anchor" aria-label="anchor" href="#id_1-where-the-engine-stands"></a></h2>
+<h2 id="1-where-the-engine-stands">1. Where the engine stands<a class="anchor" aria-label="anchor" href="#1-where-the-engine-stands"></a></h2>
 <p>The two public verbs are both wired and pass the suite (121 tests, 0 failures):</p>
 <ul><li>
 <code><a href="reference/guess_data_type.html">guess_data_type()</a></code> — two-stage router → verifier, returning the <code>$route</code> record plus the legacy fields.</li>
@@ -65,7 +69,7 @@
 </ul><p>Still per the plan and not formex’s to build: the <code>datagoodr</code> governance-file schema and the actual extraction of the moved files out of <code>datagoodr</code> (see <code>INTEGRATION-NOTES.md</code>).</p>
 </div>
 <div class="section level2">
-<h2 id="id_2-implementation-coverage-what-has-a-working-detector">2. Implementation coverage (what has a working detector)<a class="anchor" aria-label="anchor" href="#id_2-implementation-coverage-what-has-a-working-detector"></a></h2>
+<h2 id="2-implementation-coverage-what-has-a-working-detector">2. Implementation coverage (what has a working detector)<a class="anchor" aria-label="anchor" href="#2-implementation-coverage-what-has-a-working-detector"></a></h2>
 <p>Of <strong>97</strong> ontology variants, <strong>48 (49%) are marked <code>implemented = "yes"</code></strong> — a wired, exercised detector. The rest are declared recipes (data_format / transform / stable_format / import_rule are populated) waiting on a detector, verb, or gazetteer.</p>
 <blockquote>
 <p><strong>v7 session update.</strong> Coverage rose 36 → 46 by wiring test-backed, foil-selective detectors (<code>data-raw/wire_detectors_v7.R</code>): <code>day_of_week</code> / <code>month_of_year</code> (new <code>as_dow</code> / <code>as_moy</code>), <code>first_name</code>, <code>quarter</code>, <code>domain</code>, <code>usd</code> (new <code>is_currency_amount</code> — symbol-required), <code>place</code> (<code>lookup:place</code>), <code>min_max</code> range, and <code>point</code> / <code>polygon</code> (<code>is_wkt_geometry</code>, keyword-gated). Key finding worth carrying forward: a selective recipe is necessary but <strong>not sufficient</strong> to route — the learned router never shortlists very rare <code>mask</code> leaves (<code>array</code>, <code>version</code>, <code>reporting_period</code> confirm in isolation but never reach the verifier), so they stay unimplemented until either the router has training cases or they join the verifier’s always-on set (as the <code>geometry</code> family now does). Two verb bugs were fixed along the way: the DSL arg parser left a trailing <code>]</code> on <code>verb[arg]</code>, and <code>as_range</code> was loose enough to claim nested arrays as ranges.</p>
@@ -73,53 +77,53 @@
 </blockquote>
 <div class="section level3">
 <h3 id="by-data-type">By data type<a class="anchor" aria-label="anchor" href="#by-data-type"></a></h3>
-<table class="table"><thead><tr><th>data type</th>
+<table class="table"><thead><tr class="header"><th>data type</th>
 <th>implemented / total</th>
-</tr></thead><tbody><tr><td>identifier</td>
+</tr></thead><tbody><tr class="odd"><td>identifier</td>
 <td>9 / 10</td>
-</tr><tr><td>temporal</td>
+</tr><tr class="even"><td>temporal</td>
 <td>6 / 12</td>
-</tr><tr><td>text</td>
+</tr><tr class="odd"><td>text</td>
 <td>14 / 24</td>
-</tr><tr><td>categorical</td>
+</tr><tr class="even"><td>categorical</td>
 <td>7 / 13</td>
-</tr><tr><td><strong>number</strong></td>
+</tr><tr class="odd"><td><strong>number</strong></td>
 <td><strong>0 / 23</strong></td>
-</tr><tr><td><strong>boolean</strong></td>
+</tr><tr class="even"><td><strong>boolean</strong></td>
 <td><strong>0 / 5</strong></td>
-</tr><tr><td><strong>structured</strong></td>
+</tr><tr class="odd"><td><strong>structured</strong></td>
 <td><strong>0 / 6</strong></td>
-</tr><tr><td>unknown</td>
+</tr><tr class="even"><td>unknown</td>
 <td>0 / 3 (by design — the residual bucket)</td>
 </tr></tbody></table></div>
 <div class="section level3">
 <h3 id="by-detection-mechanism">By detection mechanism<a class="anchor" aria-label="anchor" href="#by-detection-mechanism"></a></h3>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th><code>match_kind</code></th>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th><code>match_kind</code></th>
 <th>implemented / total</th>
 <th>reading</th>
-</tr></thead><tbody><tr><td>genome</td>
+</tr></thead><tbody><tr class="odd"><td>genome</td>
 <td>3 / 3</td>
 <td>complete — dates, timestamps, clock</td>
-</tr><tr><td>mask+lexicon</td>
+</tr><tr class="even"><td>mask+lexicon</td>
 <td>6 / 7</td>
 <td>strong — addresses, FIPS, state</td>
-</tr><tr><td>mask</td>
+</tr><tr class="odd"><td>mask</td>
 <td>20 / 48</td>
 <td>half — IDs/web/color/contact done; coords, ranges, geometry, booleans open</td>
-</tr><tr><td>lexicon</td>
+</tr><tr class="even"><td>lexicon</td>
 <td>4 / 10</td>
 <td>person/place/country/handle recipes still open</td>
-</tr><tr><td><strong>shape</strong></td>
+</tr><tr class="odd"><td><strong>shape</strong></td>
 <td><strong>0 / 12</strong></td>
 <td>the whole <code>number/quantity</code> + <code>portion</code> block — not value-typable by subtype</td>
-</tr><tr><td>none</td>
+</tr><tr class="even"><td>none</td>
 <td>3 / 16</td>
 <td>
 <code>none</code> is “not value-detectable”; these need header/codebook</td>
 </tr></tbody></table></div>
 </div>
 <div class="section level2">
-<h2 id="id_3-unimplemented-detectors-grouped">3. Unimplemented detectors, grouped<a class="anchor" aria-label="anchor" href="#id_3-unimplemented-detectors-grouped"></a></h2>
+<h2 id="3-unimplemented-detectors-grouped">3. Unimplemented detectors, grouped<a class="anchor" aria-label="anchor" href="#3-unimplemented-detectors-grouped"></a></h2>
 <p>Highest leverage first (the mechanism tells you whether the work is a detector, a verb, or a reference list).</p>
 <p><strong><code>number</code> — the biggest gap (0 of 23).</strong> Every quantity, portion, currency, range and coordinate variant is unimplemented. - <code>shape</code> (not subtype-detectable from values; need the header): <code>measurement</code>, <code>count</code>, <code>rate</code>, <code>ratio</code>, <code>duration</code>, <code>score</code>, <code>index</code>, <code>rank</code>, <code>probability</code>, <code>odds</code>, <code>percent</code>, <code>percentile</code>. - <code>mask</code> (detector + verb is real work): <code>currency/{balance,usd,euro}</code>, <code>range/{comma_pair,to_range,confidence_interval}</code>, <code>coordinate/{lat_lon dms, lat_lon iso6709, lon_lat, lat, lon}</code>.</p>
 <p><strong><code>boolean</code> (0 of 5).</strong> <code><a href="reference/is_boolean.html">is_boolean()</a></code> exists and recognizes the two-state vocabulary, but no <code>binary</code> variant is marked implemented and the class (<code>indicator</code> / <code>presence</code> / <code>status</code> / <code>response</code> / <code>mixed</code>) needs the header. Worth reconciling: the detector is shipped but the ontology rows say otherwise.</p>
@@ -130,7 +134,7 @@
 <p><strong><code>identifier</code> (9 of 10).</strong> Only <code>id/version</code> remains.</p>
 </div>
 <div class="section level2">
-<h2 id="id_4-repo-hygiene-gaps">4. Repo hygiene gaps<a class="anchor" aria-label="anchor" href="#id_4-repo-hygiene-gaps"></a></h2>
+<h2 id="4-repo-hygiene-gaps">4. Repo hygiene gaps<a class="anchor" aria-label="anchor" href="#4-repo-hygiene-gaps"></a></h2>
 <ul><li>
 <del><strong>Ontology drift.</strong></del> Resolved: the stale <code>data-types/…_v6.csv</code> duplicate was removed; <code><a href="reference/fx_ontology.html">fx_ontology()</a></code> reads <code>inst/extdata/</code> (the authority). (Older design snapshots <code>…_v2/v3/v4.csv</code> remain for history.)</li>
 <li>
@@ -140,30 +144,30 @@
 <li>The benign <code>NAs introduced by coercion to integer range</code> warning fires ~18× across the suite (numeric-coercion paths) — cosmetic, worth bounding.</li>
 </ul></div>
 <div class="section level2">
-<h2 id="id_5-the-test-data-library">5. The test-data library<a class="anchor" aria-label="anchor" href="#id_5-the-test-data-library"></a></h2>
+<h2 id="5-the-test-data-library">5. The test-data library<a class="anchor" aria-label="anchor" href="#5-the-test-data-library"></a></h2>
 <p>The detectors are measured against a <strong>unified library of 4,036 real and synthetic columns</strong>, one row per column, assembled from three sources and crosswalked to the formex ontology.</p>
 <div class="section level3">
-<h3 id="id_51-columns-ingested-by-source">5.1 Columns ingested, by source<a class="anchor" aria-label="anchor" href="#id_51-columns-ingested-by-source"></a></h3>
-<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>source</th>
+<h3 id="51-columns-ingested-by-source">5.1 Columns ingested, by source<a class="anchor" aria-label="anchor" href="#51-columns-ingested-by-source"></a></h3>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th>source</th>
 <th>columns</th>
 <th>nature</th>
-</tr></thead><tbody><tr><td><strong>Sherlock / VizNet</strong></td>
+</tr></thead><tbody><tr class="odd"><td><strong>Sherlock / VizNet</strong></td>
 <td>3,423</td>
 <td>real columns sampled from the ~137K-column VizNet test split; 78-type Sherlock label vocabulary. Labels derive from headers, so they are noisier — deliberately, as hard negatives</td>
-</tr><tr><td><strong>synthetic_temporal</strong></td>
+</tr><tr class="even"><td><strong>synthetic_temporal</strong></td>
 <td>436</td>
 <td>generated columns across the temporal leaves, exact ground truth, an easy + mutated-hard mix, to give the router the dense, balanced temporal neighbourhood the wild corpora lack</td>
-</tr><tr><td><strong>GitTables</strong></td>
+</tr><tr class="odd"><td><strong>GitTables</strong></td>
 <td>177</td>
 <td>real columns with independent headers (so usable for the name-side evaluation too)</td>
-</tr><tr><td><strong>total</strong></td>
+</tr><tr class="even"><td><strong>total</strong></td>
 <td><strong>4,036</strong></td>
 <td></td>
 </tr></tbody></table><p>By formex data type the library leans heavily text/categorical/number:</p>
 <pre><code>text 1339 · categorical 1283 · number 667 · temporal 553 · identifier 149 · unknown 38 · structured 5 · boolean 2</code></pre>
 </div>
 <div class="section level3">
-<h3 id="id_52-how-they-were-standardized-into-one-library">5.2 How they were standardized into one library<a class="anchor" aria-label="anchor" href="#id_52-how-they-were-standardized-into-one-library"></a></h3>
+<h3 id="52-how-they-were-standardized-into-one-library">5.2 How they were standardized into one library<a class="anchor" aria-label="anchor" href="#52-how-they-were-standardized-into-one-library"></a></h3>
 <p>A corpus-agnostic banking core (<code>dev/bank_core.R</code>) turns every source into the same shape, so everything downstream is identical regardless of origin:</p>
 <ol style="list-style-type: decimal"><li>
 <strong>Record.</strong> Each source column becomes a record <code>list(values, label, table_id, header)</code> via a per-corpus <strong>adapter</strong> (GitTables CSV, Sherlock parquet, the temporal generator). Heterogeneous value encodings — stringified Python lists, Arrow list-columns, materialized vectors — are parsed to a clean character vector; headers are snake-cased.</li>
@@ -177,9 +181,9 @@
 <strong>Feature matrix.</strong> <code>dev/build_feature_matrix.R</code> assembles the labeled substrate the router/verifier train on: one row per banked column, the value-only v2 feature profile (~471 features) plus public-domain gazetteer membership features, joined to the label axes (<code>data_type</code> → <code>variant_id</code>). Result: <code>feature_matrix_all.rds</code>, 4,036 × 491.</li>
 </ol></div>
 <div class="section level3">
-<h3 id="id_53-test-cases-per-formex-variant-after-crosswalk">5.3 Test cases per formex variant (after crosswalk)<a class="anchor" aria-label="anchor" href="#id_53-test-cases-per-formex-variant-after-crosswalk"></a></h3>
+<h3 id="53-test-cases-per-formex-variant-after-crosswalk">5.3 Test cases per formex variant (after crosswalk)<a class="anchor" aria-label="anchor" href="#53-test-cases-per-formex-variant-after-crosswalk"></a></h3>
 <p>Crosswalking to the ontology, <strong>53 of 96 variants carry at least one test case; 43 carry none.</strong> Among variants that have cases: median <strong>24</strong>, mean <strong>73</strong>, max <strong>611</strong>. The distribution is very uneven:</p>
-<table class="table"><thead><tr><th>cases per variant</th>
+<table class="table"><thead><tr class="header"><th>cases per variant</th>
 <th>1</th>
 <th>2–5</th>
 <th>6–10</th>
@@ -187,7 +191,7 @@
 <th>26–50</th>
 <th>51–100</th>
 <th>100+</th>
-</tr></thead><tbody><tr><td>variants</td>
+</tr></thead><tbody><tr class="odd"><td>variants</td>
 <td>6</td>
 <td>9</td>
 <td>4</td>
@@ -196,31 +200,31 @@
 <td>6</td>
 <td>12</td>
 </tr></tbody></table><p>Best-covered variants:</p>
-<table class="table"><thead><tr><th>variant</th>
+<table class="table"><thead><tr class="header"><th>variant</th>
 <th>cases</th>
 <th>path</th>
-</tr></thead><tbody><tr><td><code>n0044-f01</code></td>
+</tr></thead><tbody><tr class="odd"><td><code>n0044-f01</code></td>
 <td>611</td>
 <td>categorical / unordered</td>
-</tr><tr><td><code>n0046-f01</code></td>
+</tr><tr class="even"><td><code>n0046-f01</code></td>
 <td>459</td>
 <td>categorical / iso_country</td>
-</tr><tr><td><code>n0028-f01</code></td>
+</tr><tr class="odd"><td><code>n0028-f01</code></td>
 <td>371</td>
 <td>text / organization</td>
-</tr><tr><td><code>n0027-f01</code></td>
+</tr><tr class="even"><td><code>n0027-f01</code></td>
 <td>359</td>
 <td>text / first_name</td>
-</tr><tr><td><code>n0001-f01</code></td>
+</tr><tr class="odd"><td><code>n0001-f01</code></td>
 <td>223</td>
 <td>number / measurement</td>
-</tr><tr><td><code>n0059-f01</code></td>
+</tr><tr class="even"><td><code>n0059-f01</code></td>
 <td>182</td>
 <td>temporal / calendar</td>
-</tr><tr><td><code>n0002-f01</code></td>
+</tr><tr class="odd"><td><code>n0002-f01</code></td>
 <td>148</td>
 <td>number / count</td>
-</tr><tr><td><code>n0073-f01</code></td>
+</tr><tr class="even"><td><code>n0073-f01</code></td>
 <td>77</td>
 <td>identifier / ein</td>
 </tr></tbody></table><p><strong>The coverage and the implementation status do not line up</strong>, which is the main testing gap:</p>
@@ -231,12 +235,273 @@
 <li>Whole families are thin or empty: <code>number/coordinate</code> (3 cases), <code>structured/geometry</code> (1), <code>boolean/binary</code> (2), <code>text/contact</code> (2). Any accuracy claim there rests on a handful of columns.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="id_54-caveats">5.4 Caveats<a class="anchor" aria-label="anchor" href="#id_54-caveats"></a></h3>
+<h3 id="54-caveats">5.4 Caveats<a class="anchor" aria-label="anchor" href="#54-caveats"></a></h3>
 <ul><li>The library is banked against an earlier ontology snapshot (the build scripts reference a 92–94-row ontology); the crosswalk targets v6 <em>paths</em>, so labels resolve, but the 96-row shipped ontology has moved since.</li>
 <li>
 <code>dev/stabilize_rate.R</code> — the source of the per-mechanism confirm rates — reads only the Sherlock + synthetic-temporal banks (<code>feature_matrix.rds</code>, 3,859 columns), not GitTables, and counts <code>none</code> / open-set types as not-stabilized.</li>
 <li>Sherlock labels come from headers, so a slice of the “truth” is itself noisy; this is intentional (hard negatives) but caps the achievable top-1.</li>
 </ul></div>
+</div>
+<div class="section level2">
+<h2 id="6-benchmark-driven-detector-priorities-2026-10-29">6. Benchmark-driven detector priorities (2026-10-29)<a class="anchor" aria-label="anchor" href="#6-benchmark-driven-detector-priorities-2026-10-29"></a></h2>
+<blockquote><p>The benchmark is <strong>still in development</strong> — not yet frozen for published reference. The frozen set now covers <strong>all 97 ontology variants</strong> (was 51): <code>data-raw/scaffold_gap_cases.R</code> banks one format-faithful case per previously-uncovered variant into <code>dev/bank_v2</code> (values from the <code>data-raw/datatypes/*.R</code> detector fixtures, or a seeded generator where no fixture exists), and <code>build_benchmark.R</code> now bundles the full set in <code>inst/extdata/benchmark_full.rds</code>. These scaffolds are <code>method = "scaffold_synthetic"</code>, <code>confidence = "low"</code> — regression anchors and a gap probe, <strong>not</strong> gold-vetted corpus columns; confirm/relabel before any published accuracy claim.</p></blockquote>
+<p>Running <code><a href="reference/fx_benchmark.html">fx_benchmark()</a></code> over the newly-covered variants splits cleanly into two very different kinds of failure. <strong>The split, not the headline number, is the finding</strong> — it says whether the work is router tuning or new detector code.</p>
+<div class="section level3">
+<h3 id="61-p0--router-recall-11-implemented-detectors-are-dark">6.1 P0 — router recall: 11 <em>implemented</em> detectors are dark<a class="anchor" aria-label="anchor" href="#61-p0--router-recall-11-implemented-detectors-are-dark"></a></h3>
+<p>These variants are <code>implemented = "yes"</code> with a selective recipe, yet the router never routes to them (prediction is <code>&lt;none&gt;</code> or a wrong neighbour). No new detector code is needed — the fix is in the shortlist/router. This is the single highest-ROI item and confirms the §2 note that <em>a selective recipe is necessary but not sufficient to route; the learned router never shortlists very rare <code>mask</code> leaves.</em></p>
+<table class="table"><thead><tr class="header"><th>variant</th>
+<th>path</th>
+<th>predicted instead</th>
+</tr></thead><tbody><tr class="odd"><td><code>n0040-f01</code></td>
+<td>text/color/<strong>hex</strong>
+</td>
+<td><code>&lt;none&gt;</code></td>
+</tr><tr class="even"><td><code>n0041-f01</code></td>
+<td>text/color/<strong>rgb</strong>
+</td>
+<td>measurement</td>
+</tr><tr class="odd"><td><code>n0042-f01</code></td>
+<td>text/color/<strong>hsl</strong>
+</td>
+<td>measurement</td>
+</tr><tr class="even"><td><code>n0043-f01</code></td>
+<td>text/color/<strong>cmyk</strong>
+</td>
+<td><code>&lt;none&gt;</code></td>
+</tr><tr class="odd"><td><code>n0036-f01</code></td>
+<td>text/web/<strong>ip</strong>
+</td>
+<td><code>&lt;none&gt;</code></td>
+</tr><tr class="even"><td><code>n0037-f01</code></td>
+<td>text/web/<strong>mac</strong>
+</td>
+<td><code>&lt;none&gt;</code></td>
+</tr><tr class="odd"><td><code>n0039-f01</code></td>
+<td>text/contact/<strong>phone</strong>
+</td>
+<td><code>&lt;none&gt;</code></td>
+</tr><tr class="even"><td><code>n0032-f01</code></td>
+<td>text/postal/<strong>po_box</strong>
+</td>
+<td>unordered</td>
+</tr><tr class="odd"><td><code>n0064-f01</code></td>
+<td>temporal/period/<strong>month</strong>
+</td>
+<td>calendar</td>
+</tr><tr class="even"><td><code>n0022-f01</code></td>
+<td>text/text/<strong>literal</strong>
+</td>
+<td><code>&lt;none&gt;</code></td>
+</tr><tr class="odd"><td><code>n0073-f05</code></td>
+<td>identifier/id/<strong>administrative (issn)</strong>
+</td>
+<td><strong>date_range</strong></td>
+</tr></tbody></table><p><strong>Action.</strong> Add confirmable <code>mask</code> leaves to the verifier’s always-on set (as the <code>geometry</code> family already is) or seed the learned router with these cases so it shortlists them. <code>issn → date_range</code> is a genuine confusability bug (<code>NNNN-NNNN</code> collides with a date range) — give it a <code>hard_negative</code> / <code>disambiguator</code> entry.</p>
+<p><strong>✅ LANDED (2026-10-29).</strong> All eleven now route. The fix was the <em>always-on verifier set</em>, not a retrain: the dark <code>mask</code> leaves (<code>hex</code>, <code>rgb</code>, <code>hsl</code>, <code>cmyk</code>, <code>ip</code>, <code>mac</code>, <code>phone</code>, <code>month</code>, <code>issn</code>) plus the whole <code>boolean</code> family are forced into the candidate set in <code>.fx_route_verify()</code>, and each was given a SELECTIVE recipe that reuses its existing detector (<code>as_rgb</code>/<code>as_hsl</code>/<code>as_cmyk</code>/ <code>as_ip</code>/<code>as_mac</code>/<code>as_po_box</code>/<code>as_month</code>, <code>as_hex</code>/<code>as_phone</code>/<code>as_issn</code> tightened), so the foil gate still blocks a false leaf. <code>po_box</code> (already <code>mask+lexicon</code>, so already always-on) only needed its recipe. The <code>issn ↔︎ date_range</code> collision is resolved in the recipe, not by cardinality (benchmark ISSN columns <em>repeat</em>, so a cardinality rule would pick the wrong leaf): <code>as_range</code> yields a checksum-valid <code>NNNN-NNNN</code> to the <code>issn</code> leaf, exactly as it yields a <code>YYYY-MM</code> to <code>month</code> — but it keeps a plausible year-year span (both 19xx/20xx) as a range, so <code>2000-2005</code> stays <code>date_range</code>. <code>month</code> vs <code>calendar</code> is broken by a month-granularity tie-break (year+month, no day). Per-type <strong>type-accuracy</strong> before → after on the full set:</p>
+<table class="table"><thead><tr class="header"><th>leaf</th>
+<th>before</th>
+<th>after</th>
+<th></th>
+<th>leaf</th>
+<th>before</th>
+<th>after</th>
+</tr></thead><tbody><tr class="odd"><td>hex</td>
+<td>0.00</td>
+<td>0.80</td>
+<td></td>
+<td>po_box</td>
+<td>0.00</td>
+<td>1.00</td>
+</tr><tr class="even"><td>rgb</td>
+<td>0.00</td>
+<td>1.00</td>
+<td></td>
+<td>month</td>
+<td>0.00</td>
+<td>0.80</td>
+</tr><tr class="odd"><td>hsl</td>
+<td>0.00</td>
+<td>1.00</td>
+<td></td>
+<td>literal</td>
+<td>0.00</td>
+<td>0.50</td>
+</tr><tr class="even"><td>cmyk</td>
+<td>0.00</td>
+<td>1.00</td>
+<td></td>
+<td>issn</td>
+<td>0.25</td>
+<td>0.50</td>
+</tr><tr class="odd"><td>ip</td>
+<td>0.00</td>
+<td>0.75</td>
+<td></td>
+<td>phone</td>
+<td>0.00</td>
+<td>0.67</td>
+</tr><tr class="even"><td>mac</td>
+<td>0.00</td>
+<td>1.00</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr></tbody></table><p>The sub-1.0 cases are synthetic-slice artifacts, not misroutes: the bare-hex <code>a1b2c3</code> slice is intentionally rejected (it collides with short hashes/ids), the IPv6 <code>::</code> degenerate form, the <code>NNNN-NNNX</code> ISSN slice carries <em>invalid</em> synthetic checksums, and <code>literal</code> fires only on a recognizable typed MIXTURE (2 of its 4 deliberately-mixed slices qualify; the others are too sparse to call). The <code>literal</code> passthrough is gated last and narrow, so it never steals a clean type or an <code>unknown/heterogeneous</code> junk column.</p>
+</div>
+<div class="section level3">
+<h3 id="62-p0--the-boolean-data-type-is-0">6.2 P0 — the boolean data type is 0%<a class="anchor" aria-label="anchor" href="#62-p0--the-boolean-data-type-is-0"></a></h3>
+<p><code>presence</code> / <code>status</code> / <code>response</code> / <code>mixed</code> all misroute (to <code>unordered</code> or <code>&lt;none&gt;</code>); <code>acc_data_type</code> for <code>boolean</code> is <strong>0.00</strong> on the benchmark. <code><a href="reference/is_boolean.html">is_boolean()</a></code> exists but no <code>binary</code> variant is wired, so an entire data type is invisible. Wire the boolean verifier into the always-on set and reconcile the ontology <code>implemented</code> flags.</p>
+<p><strong>✅ LANDED (2026-10-29).</strong> <code>boolean</code> is detected at the data_type level across every binary vocabulary. <code>as_boolean</code> was broadened past yes/no/t/f/1/0/on/off to the two-state status/presence vocabularies (<code>active</code>/<code>inactive</code>, <code>enabled</code>/<code>disabled</code>, <code>open</code>/<code>closed</code>, <code>present</code>/<code>absent</code>, <code>x</code>), and all five <code>binary</code> variants are forced into the always-on set. A third state NAs out and drops confirm below threshold, so a genuine multi-state categorical is <em>not</em> captured. <code>acc_data_type</code> for <code>boolean</code> goes <strong>0.00 → ~1.00</strong> (every subtype now resolves <code>data_type == "boolean"</code>); the specific subtype stays coarse (it is header-dependent — the verifier predicts <code>indicator</code> for all of them, so <code>acc_type</code> for the family is ~0.10, which is expected and documented). The stale <code>implemented</code> flags were reconciled: <code>boolean</code> binary (<code>n0054..n0058</code>) and <code>person</code> <code>last_name</code>/<code>full_name</code> (<code>n0027-f02/f03</code>, which the benchmark already hits) are now <code>yes</code>.</p>
+<p><strong>Headline movement (full set, 917 cases).</strong> <code>data_type</code> 0.799 → 0.855, <code>family</code> 0.737 → 0.797, <code>semantic_type</code> 0.692 → 0.735, headline <strong>0.744 → 0.798</strong>; <code>text</code> 0.496 → 0.723 and <code>identifier</code> 0.426 → 0.447 by data_type, with <strong>no per-variant regression</strong> (<code><a href="reference/fx_coverage_gaps.html">fx_coverage_gaps()</a></code> clean; <code>date_range</code>, <code>calendar</code>, clean numerics/zips all held). The learned router was <strong>not</strong> retrained — the scaffold cases are <code>confidence=low</code> measurement anchors.</p>
+</div>
+<div class="section level3">
+<h3 id="63-p1--number-masks-real-detector--verb-work">6.3 P1 — number masks (real detector + verb work)<a class="anchor" aria-label="anchor" href="#63-p1--number-masks-real-detector--verb-work"></a></h3>
+<p><code>implemented = "no"</code>, <code>mask</code>-detectable from values, so each needs a detector and a stabilize verb: <code>balance</code>, <code>euro</code> (currency), <code>min_max</code>, <code>confidence_interval</code> (range), <code>lat</code>, <code>lat_lon</code>, <code>lon_lat</code> (coordinate). They misroute to <code>measurement</code> / <code>min_max</code> / <code>rank</code>. Highest value in the <code>number</code> block because the surface form <em>is</em> typable (unlike the <code>shape</code> subtypes below).</p>
+<p><strong>✅ LANDED — currency (euro) + coordinates (2026-10-29).</strong> <code>euro</code> (n0011-f01) and the coordinate PAIR leaves <code>lat_lon</code> (n0018-f01 DMS/decimal, n0018-f02 ISO 6709) and <code>lon_lat</code> (n0019-f01 DMS/decimal) now route at <strong>type-accuracy 1.00</strong> on the benchmark, with <strong>no per-variant regression</strong> (headline 0.800 → 0.804 on the full set). <code>euro</code> reuses the symbol-parameterized <code>.fx_currency_amount()</code> (the generic mechanism behind <code>as_usd</code>/<code>as_euro</code>; adding a currency is now a one-liner). The coordinate family is new (<code>R/dt-coordinate.R</code>: <code>is_coord_latlon</code> / <code>is_coord_lonlat</code> / <code>is_iso6709</code> + <code>as_coord_*</code> verbs), canonicalizing DMS / decimal / ISO 6709 pairs to lat-first decimal degrees. All four joined the always-on verifier set (they route without a retrain) and ship banked format slices. One supporting fix: <code>as_range</code> now rejects a <strong>descending</strong> comma/<code>to</code> pair (<code>34.1, -118.1</code>, lat &gt; lon) — a valid range is ascending — so a western/southern-hemisphere decimal coordinate falls through to the coordinate leaf instead of being claimed as a <code>min_max</code> range; ascending ranges (<code>1.2, 3.4</code>) are unchanged.</p>
+<p><em>Deferred (header-gated, Phase C — not value-typable):</em> <code>balance</code> (n0009-f01, a symbol-less bare number) and the bare <code>lat</code> / <code>lon</code> singletons (n0020/n0021, a lone decimal in range). A value-only detector for these would manufacture false leaves; they belong to the name-side/arbiter work (§7.4). <code>min_max</code> to_range / <code>confidence_interval</code> remain for a later pass.</p>
+</div>
+<div class="section level3">
+<h3 id="64-p2--shape-numerics-and-codebook-gated-types-fail-safe-or-need-header">6.4 P2 — shape numerics and codebook-gated types (fail safe or need header)<a class="anchor" aria-label="anchor" href="#64-p2--shape-numerics-and-codebook-gated-types-fail-safe-or-need-header"></a></h3>
+<ul><li>
+<code>number/shape</code>: <code>probability</code>, <code>odds</code>, <code>percentile</code> land <strong>graceful</strong> (correct <code>data_type</code>, no committed subtype) — they fail safely and are low urgency; <code>rate</code> misroutes to <code>measurement</code>. None are subtype-typable from values alone.</li>
+<li>
+<code>categorical/none</code>: <code>likert</code>, <code>missingness_reason</code> and <code>text/text/serialized</code> need a codebook/header; low yield from values.</li>
+<li>
+<code>temporal/phase</code>: <code>hour_of_day</code>, <code>week_of_year</code> are bare small integers, genuinely ambiguous with <code>number</code> without a header.</li>
+<li>
+<code>structured</code> non-geometry: <code>array</code>, <code>object</code>, <code>key_value</code> route to <code>&lt;none&gt;</code> / <code>tags</code>; <code>is_json</code> / <code>is_wkb</code> exist but are not wired for these. (<code>point</code> / <code>polygon</code> already <strong>hit</strong> — now regression-covered.)</li>
+</ul></div>
+<div class="section level3">
+<h3 id="65-already-correct-now-regression-anchored">6.5 Already correct (now regression-anchored)<a class="anchor" aria-label="anchor" href="#65-already-correct-now-regression-anchored"></a></h3>
+<p>Nine previously-untested variants <strong>hit</strong> on the first benchmark and now have a guard: <code>geographic</code> (×3), <code>administrative</code> isbn/doi/orcid (×3), <code>point</code>, <code>polygon</code>, <code>color_name</code>.</p>
+<p><strong>Housekeeping.</strong> ✅ Done — the stale <code>implemented</code> flags for <code>person</code> (<code>n0027-f02/f03</code>) and the <code>boolean</code> binary variants were flipped to <code>yes</code> in the §6.1/§6.2 pass.</p>
+<p><strong>Reproduce:</strong> <code>Rscript data-raw/scaffold_gap_cases.R &amp;&amp; Rscript data-raw/build_benchmark.R</code>, then <code>fx_benchmark(fx_benchmark_data("full"))</code> and <code><a href="reference/fx_coverage_gaps.html">fx_coverage_gaps()</a></code>.</p>
+</div>
+<div class="section level3">
+<h3 id="66-format-sliced-depth-for-the-p0-types-2026-10-29">6.6 Format-sliced depth for the P0 types (2026-10-29)<a class="anchor" aria-label="anchor" href="#66-format-sliced-depth-for-the-p0-types-2026-10-29"></a></h3>
+<p>The gap scaffold gave each P0 variant exactly <strong>one</strong> canonical case (n=1, synthetic, <code>confidence=low</code>) — enough to measure <em>coverage</em> but not <em>format drift</em>, the real failure surface. <code>data-raw/scaffold_format_slices.R</code> now banks <strong>several cases per P0 variant, one per distinct surface shape</strong> (positive, single-shape columns of ~34 rows; values sliced from the <code>data-raw/datatypes/*.R</code> fixtures by regex, or seeded-generated where the fixtures lack a shape). This adds <strong>50 cases</strong> across the 15 P0 variants (full set 867 → <strong>917</strong>; every P0 variant now carries 3–6 cases), labelled <code>method="scaffold_format_slice"</code>, <code>corpus="scaffold_fmt"</code>, <code>confidence="low"</code>, with the exact shape recorded in <code>label.format_label</code> / <code>original_label</code> / <code>notes</code>. Shapes added:</p>
+<ul><li>
+<strong>hex</strong> <code>#RRGGBB</code>, <code>#RGB</code>, bare <code>RRGGBB</code>, <code>0xRRGGBB</code>
+</li>
+<li>
+<strong>rgb</strong> <code>r,g,b</code>, spaced <code>r, g, b</code>, functional <code>rgb(r,g,b)</code>
+</li>
+<li>
+<strong>hsl</strong> <code>h, s%, l%</code>, functional <code>hsl(…)</code>; <strong>cmyk</strong> fractional <code>c,m,y,k</code>, functional <code>cmyk(…)</code>
+</li>
+<li>
+<strong>ip</strong> IPv4 dotted, IPv6 full, IPv6 compressed (<code>::</code>)</li>
+<li>
+<strong>mac</strong> colon, hyphen, Cisco-dotted; <strong>phone</strong> NANP dashed / parens / dotted, E.164 <code>+1-…</code>, international <code>+CC …</code>
+</li>
+<li>
+<strong>po_box</strong> <code>PO BOX n</code> / <code>P.O. Box n</code> / <code>POB n</code> / <code>Box n</code>
+</li>
+<li>
+<strong>month</strong> <code>yyyymm</code> / <code>Mon YYYY</code> / <code>YYYY-MM</code> / full name</li>
+<li>
+<strong>literal</strong> 3 deliberately heterogeneous mixed-content columns</li>
+<li>
+<strong>issn</strong> <code>NNNN-NNNN</code> / check-digit <code>NNNN-NNNX</code> / <code>ISSN</code>-prefixed</li>
+<li>
+<strong>boolean</strong> presence (x·blank / 1·blank / present·absent), status (active·inactive / enabled·disabled / on·off / open·closed), response (yes·no / Y·N / true·false / T·F / 1·0), mixed (2 multi-encoding columns)</li>
+</ul><p><strong>Per-format finding: the P0 failures are systemic, not shape-specific.</strong> The router misroutes on <strong>every</strong> shape of nearly every P0 variant — it never reaches these leaves at all, so format drift is not yet the differentiator (it will become one once §6.1/§6.2 land the routing). Two exceptions are the actionable signal:</p>
+<ul><li>
+<strong>hex</strong> <code>#RRGGBB</code> lands <strong>graceful</strong> (recognized as <code>text</code>, subtype dropped), while its drift variants (<code>#RGB</code>, bare <code>RRGGBB</code>, <code>0xRRGGBB</code>) all <strong>misroute</strong> — the canonical hash-6 form is the only shape the pipeline half-recognizes.</li>
+<li>
+<strong>issn</strong> <strong>hits</strong> only when the literal <code>ISSN</code> prefix is present; bare <code>NNNN-NNNN</code> <strong>misroutes</strong> (the <code>date_range</code> collision from §6.1) and the check-digit <code>NNNN-NNNX</code> form lands <strong>graceful</strong>. The prefix token <em>is</em> the disambiguator — direct evidence for the §6.1 <code>hard_negative</code>/<code>disambiguator</code> action.</li>
+<li>
+<strong>boolean</strong> is <strong>0%</strong> across all 20 cases (every shape, every subtype), re-confirming §6.2.</li>
+</ul><p><strong>✅ Post-fix per-format split (§6.1/§6.2 landed).</strong> The format slices did exactly their job as regression anchors. Hit rate on the <code>scaffold_fmt</code> slices after the fix: <code>rgb</code>/<code>hsl</code>/<code>cmyk</code>/<code>mac</code>/<code>po_box</code> <strong>1.00</strong>, <code>phone</code> 0.80, <code>month</code>/<code>hex</code> 0.75, <code>ip</code> 0.67, <code>issn</code>/<code>literal</code> 0.33. The residual misses are shape-specific and expected, not routing gaps: bare-<code>RRGGBB</code> hex (collides with short hashes, left out on purpose), IPv6 <code>::</code>, the invalid-checksum <code>NNNN-NNNX</code> ISSN slice, and the sparser <code>literal</code> mixes. Boolean is <strong>0%</strong> at the subtype level by design (the subtype is header-dependent) but <strong>~100%</strong> at the <code>data_type</code> level — the must-fix.</p>
+<p>These cases are regression anchors for the P0 work: when a routing fix lands, the per-format <code>hit/graceful/misroute</code> split (group <code><a href="reference/fx_benchmark.html">fx_benchmark()</a></code> output by <code>format_label</code>) shows <em>which</em> shapes it recovered, not just a single number. This is recommendation #1 of the benchmark review (format depth); the hard-negative/confusability bank is a separate follow-up.</p>
+<p><strong>Reproduce:</strong> <code>Rscript data-raw/scaffold_format_slices.R &amp;&amp; Rscript data-raw/build_benchmark.R</code>, then <code>fx_benchmark(fx_benchmark_data("full"))</code> and join <code>format_label</code> back by <code>case_id</code> for the per-shape split.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="7-forward-plan-2026-10-29-addendum">7. Forward plan (2026-10-29 addendum)<a class="anchor" aria-label="anchor" href="#7-forward-plan-2026-10-29-addendum"></a></h2>
+<p>A roadmap for the two open fronts — finishing the detector set and improving the router — plus four design decisions that came out of looking hard at the shipped model (<code>inst/extdata/router_xgb.rds</code>, 3,853 cases × 441 features, 47 classes, OOF top-1 0.771 / top-5 0.946 / top-8 0.965).</p>
+<div class="section level3">
+<h3 id="71-detector-implementation-roadmap">7.1 Detector implementation roadmap<a class="anchor" aria-label="anchor" href="#71-detector-implementation-roadmap"></a></h3>
+<p>The remaining unimplemented variants split by <strong>mechanism</strong>, and the mechanism dictates the work. Sequenced by leverage:</p>
+<p><strong>Phase A — <code>mask</code> detectors (value-detectable, highest routable payoff).</strong> These are real detector+verb work but the values carry the signal, so they both confirm <em>and</em> can be learned-routed once cases exist. - <code>number/currency/{balance,usd,euro}</code> — ✅ <strong>done (usd, euro)</strong>. <code>usd</code> and <code>euro</code> share the symbol-parameterized <code>.fx_currency_amount()</code> mask (unit_type USD/EUR); adding a currency is a one-liner. <code>balance</code> stays deferred — it is symbol-less, so header-gated (Phase C), not a value mask. <code>write_*</code> currency renderer / cross-currency conversion is still open (§7.1 renderers). - <code>number/range/{comma_pair,to_range,confidence_interval}</code> — <code>min_max</code> done; add the CI form and the <code>lo to hi</code> style. (<code>as_range</code> now also rejects a descending comma pair, reserving those for the coordinate leaf — see §6.3.) - <code>number/coordinate/{lat_lon dms/decimal, iso6709, lon_lat dms/decimal}</code> — ✅ <strong>done</strong>. New <code>R/dt-coordinate.R</code> detectors + <code>as_coord_*</code> decimal-degree canonicalizer, all at type-accuracy 1.00 (§6.3). The bare <code>lat</code> / <code>lon</code> singletons stay deferred (header-gated: a lone in-range decimal is not value-typable). - <code>structured/geometry/{point,polygon}</code> and <code>structured/collection|record</code> — the detectors already exist (<code>is_wkt_geometry</code>, <code>is_geojson</code>, <code>is_wkb</code>, <code>is_json</code>); the work is wiring the ontology rows <code>implemented = yes</code> and giving them a pass-through/parse recipe. Geometry is already in the verifier’s <strong>always-on</strong> set, so it routes without the model (see §7.6). - <strong><code>boolean/binary</code> reconciliation (quick win).</strong> <code><a href="reference/is_boolean.html">is_boolean()</a></code> is shipped and works; the rows say unimplemented. Wire + mark; the <em>class</em> (indicator/presence/status/response) is header-gated and belongs in Phase C.</p>
+<blockquote><p><strong>Carry-forward rule from the v7 session:</strong> a selective recipe is <em>necessary but not sufficient</em> to route. A new <code>mask</code> leaf that confirms in isolation (<code>array</code>, <code>version</code>, <code>reporting_period</code>) is still invisible to the learned router until it has training cases or joins the always-on set. <strong>Every Phase-A detector ships with banked cases, or it does not count as routable</strong> (§7.6).</p></blockquote>
+<p><strong>Phase B — <code>lexicon</code> detectors (need a reference list).</strong> <code>text/name/{last_name, full_name, place, handle}</code>. <code>first_name</code> and <code>place</code> landed; <code>last_name</code>/<code>full_name</code> reuse the surname gazetteer, <code>handle</code> needs a small pattern+lexicon. Gated only by shippable, licence-clean lists.</p>
+<p><strong>Phase C — <code>shape</code> / <code>none</code> types are NOT a detector problem.</strong> The whole <code>number/quantity</code> block (<code>measurement</code>, <code>count</code>, <code>rate</code>, <code>ratio</code>, <code>duration</code>, <code>score</code>, <code>index</code>, <code>rank</code>, <code>probability</code>, <code>percent</code>, <code>percentile</code>), the boolean/categorical <em>classes</em>, and <code>text/{label,title,long}</code> are <strong>not value-typable by subtype</strong> — a column of doubles cannot tell you it is a <em>rate</em> rather than a <em>ratio</em>. These need the column <strong>header/codebook</strong>, i.e. the name-side (<code>nm_*</code>) feature path, which is currently dark (§7.4). Phase C is therefore a <em>router/arbiter</em> task (turn the name features on and fuse them), not a detector task. Do not ship value-only detectors for these; they will only manufacture false leaves.</p>
+</div>
+<div class="section level3">
+<h3 id="72-router-improvement-plan">7.2 Router improvement plan<a class="anchor" aria-label="anchor" href="#72-router-improvement-plan"></a></h3>
+<ol style="list-style-type: decimal"><li>
+<strong>Parity guard. ✅ Landed 2026-10-29.</strong> The artifact stamps <code>extractor_version = 2.0</code> but nothing asserted the <em>live</em> <code>fx_extract_features</code> still matched it. <code>.fx_router_artifact()</code> now checks at load time: if <code>FEATURE_EXTRACTOR_VERSION != art$extractor_version</code> (or the artifact is unstamped), it drops the learned router and falls back to signature with a one-time warning. This was the one failure mode that silently returned garbage (the original “scored at chance” bug).</li>
+<li>
+<strong>Un-blind the dropped feature classes (§7.4).</strong> Bank cases — synthetic where the type is rare-but-regular (the <code>bank_temporal</code> recipe) — for the types the corpus currently has <strong>zero</strong> examples of: SSN, EIN, UUID, IPv4, ZIP+4, YYYYMM, hex hashes, JSON, DMS coordinates, international phone, scientific notation. This simultaneously (a) adds the classes the model can predict and<ol start="2" style="list-style-type: lower-alpha"><li>gives the <code>rx_*</code> features variance so they stop being dropped.</li></ol></li>
+<li>
+<strong>Name-side fusion (unlocks Phase C).</strong> Bank columns <em>with headers</em>, feed the name to the extractor so the 17 <code>nm_*</code> features compute, and train either a name-aware model or a late-fusion arbiter (value-router ⊕ name-signal). This is the only route to the header-gated types.</li>
+<li>
+<strong>Rebalance.</strong> The corpus leans text/categorical/number; <code>top-1 by    match_kind</code> already shows <code>mask</code> (0.964) trailing <code>genome</code>/<code>lexicon</code> (~1.0). Stratify or class-weight so thin types are not drowned.</li>
+<li>
+<strong>Calibrate the depth gates.</strong> The learned router’s top-1 probability sets truncation depth directly (<code>≥0.50 → 3</code>, <code>≥0.25 → 1</code>). Plot a reliability curve and set those cut-points from calibration rather than by hand.</li>
+<li>
+<strong>CI + non-regression gate.</strong> Wire <code><a href="reference/fx_benchmark.html">fx_benchmark()</a></code> + <code><a href="reference/fx_benchmark_compare.html">fx_benchmark_compare()</a></code> into the retrain step; a new artifact ships only if it does not regress the shipped one on any level or the per-<code>match_kind</code> top-k recall.</li>
+</ol></div>
+<div class="section level3">
+<h3 id="73-should-we-sunset-the-legacy-flat-detector-path">7.3 Should we sunset the legacy flat detector path?<a class="anchor" aria-label="anchor" href="#73-should-we-sunset-the-legacy-flat-detector-path"></a></h3>
+<p><strong>Verdict: deprecate, don’t delete — and demote it now.</strong> It is not synergistic with the router path; it is a parallel, older contract.</p>
+<p>Reasons it still earns its place <em>today</em>: - <strong>Backward contract.</strong> <code>$guess</code> / <code>$ontology</code> / <code>$candidates</code> and the flat coordinate axes (<code>data_type / data_subtype / data_class / data_format</code>) are consumed by <code><a href="reference/guess_column.html">guess_column()</a></code> and five test suites; the flat <code>data_format</code> axis is not 1:1 with the v6/v7 <code>format_style</code>/<code>unit_type</code> axes. - <strong>Independent fallback.</strong> It needs neither xgboost nor the ontology CSV — pure predicate scoring. When <code>.fx_route_verify()</code> errors (it is wrapped in <code>tryCatch → NULL</code>), the legacy fields still answer. - <strong>The detectors are shared, not duplicated.</strong> The <code>is_*</code> predicates are reused by the verifier (recipe = detector + transform), so keeping the detectors costs nothing; only the <em>flat scoring + flat ontology crosswalk</em> is redundant.</p>
+<p>Reasons to retire it on a schedule: - <strong>Two ontologies to maintain.</strong> <code>R/00-data-type-ontology.R</code> is a hand-kept flat crosswalk that can drift from the v6/v7 ontology — a standing correctness risk. - <strong>Cost.</strong> <code><a href="reference/score_data_type.html">score_data_type()</a></code> runs <strong>all 88 detectors on every call</strong> — exactly the O(all-detectors) scan the router was built to avoid — yet it runs unconditionally because <code>route = TRUE</code> is the default.</p>
+<p><strong>Plan:</strong> (1) <strong>✅ Landed 2026-10-29</strong> — <code>guess_data_type(..., legacy = FALSE)</code> skips the flat scan and returns only the <code>$route</code> record (legacy fields present but empty); measured at ~13% of the full per-call runtime on a typical column, since it no longer scores all 88 detectors. (2) document <code>$guess</code>/<code>$ontology</code> as deprecated-but-supported; (3) remove only after datagoodr and any flat-axis consumers migrate to <code>$route</code>, and after v7’s <code>format_style</code>/<code>unit_type</code> fully subsume the flat <code>data_format</code> axis. Target: drop in the release that removes <code>format_label</code>, alongside the router retrain that release already forces (§7.6).</p>
+</div>
+<div class="section level3">
+<h3 id="74-feature-hygiene-why-36-of-477-features-drop-out">7.4 Feature hygiene: why 36 of 477 features drop out<a class="anchor" aria-label="anchor" href="#74-feature-hygiene-why-36-of-477-features-drop-out"></a></h3>
+<p>Measured by reproducing <code>train_router.R</code>’s variance filter over the 3,859 training columns (<code>data-raw/</code> diagnostic). <strong>The features are not defective — the drop is corpus-driven</strong>, and it splits three ways:</p>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr class="header"><th>bucket</th>
+<th>n</th>
+<th>examples</th>
+<th>reading</th>
+</tr></thead><tbody><tr class="odd"><td><strong>all-NA (never computes)</strong></td>
+<td>17</td>
+<td>
+<code>nm_amt</code>, <code>nm_date</code>, <code>nm_person</code>, <code>nm_id</code>, … (16 <code>nm_*</code>) + <code>chk_ein_prefix_rate</code>
+</td>
+<td>the <strong>name-side block is gated off</strong> — training is value-only, no header is fed, so these are structurally absent, not broken. They light up the moment §7.2(3) feeds headers.</td>
+</tr><tr class="even"><td><strong>constant everywhere (sd 0)</strong></td>
+<td>18</td>
+<td>
+<code>rx_ssn</code>, <code>rx_ein</code>, <code>rx_uuid</code>, <code>rx_ipv4</code>, <code>rx_zip9</code>, <code>rx_yyyymm</code>, <code>rx_hexhash</code>, <code>rx_jsonfrag</code>, <code>rx_latlon_dms</code>, <code>rx_phone_intl</code>, <code>rx_sci_not</code>; <code>in_is_numeric/date/factor/logical</code>, <code>is_constant</code>, <code>pct_missing</code>
+</td>
+<td>split in two (below)</td>
+</tr><tr class="odd"><td><strong>constant where present (gated, sd 0)</strong></td>
+<td>1</td>
+<td>
+<code>range_epoch_ms</code> (computes on 18.8% of cols, all 0)</td>
+<td>near-degenerate on this corpus</td>
+</tr></tbody></table><p>So the answer to “universal or selective?” is <strong>both, and the distinction is the useful part</strong>:</p>
+<ul><li>The <code>in_is_*</code> flags, <code>is_constant</code>, and <code>pct_missing</code> are <strong>structurally constant</strong> in the banked pipeline: <code>recon()</code> always yields a <em>character</em> vector with no NAs and &gt;1 value, so input-class / missingness / degeneracy flags can never vary. These are genuinely uninformative <em>here</em> (they would vary on raw typed input) — harmless to drop.</li>
+<li>The <code>rx_*</code> regex-hit rates are constant <strong>at exactly 0</strong> — confirmed over the full 4,036-column matrix, zero non-zero columns. They are not broken; <strong>the corpus simply contains no SSN / EIN / UUID / IPv4 / ZIP+4 / YYYYMM / hex-hash / JSON / DMS-coordinate / intl-phone / scientific-notation columns</strong>. A rate that is 0 for every training column carries no signal and is dropped.</li>
+</ul><p><strong>The payoff:</strong> the dropped-<code>rx_*</code> set is a <em>free blind-spot diagnostic</em>. It enumerates, independently of the label crosswalk, exactly the types the learned router has no training signal for — and it corroborates §5.3’s “18 implemented variants have zero test cases.” These are the same types §7.2(2) targets, and they map straight onto the <code>number</code> / <code>structured</code> / thin-<code>identifier</code> gaps in §3. Recommendation: add an assertion to the retrain script that any <code>rx_*</code> feature dropped for zero variance <strong>names the type to bank next</strong>, so the gap is surfaced at train time rather than discovered by inspection.</p>
+</div>
+<div class="section level3">
+<h3 id="75-flagging-underperforming-detectors-difficulty-aware">7.5 Flagging underperforming detectors (difficulty-aware)<a class="anchor" aria-label="anchor" href="#75-flagging-underperforming-detectors-difficulty-aware"></a></h3>
+<p><strong>Shipped.</strong> <code><a href="reference/fx_coverage_gaps.html">fx_coverage_gaps()</a></code> formerly used a <strong>flat</strong> gate (<code>max_accuracy = 0.5</code>, <code>min_support = 3</code>). The objection was correct: a universal threshold conflates three different things — intrinsic difficulty, thin/noisy support, and a genuine detector bug. The flat gate is replaced with four signals and <strong>two action buckets</strong>, so each flag points at a fix:</p>
+<ol style="list-style-type: decimal"><li>
+<strong>Per-<code>match_kind</code> target, not a single number.</strong> Achievable precision is a function of mechanism: <code>genome</code>/<code>lexicon</code>/<code>mask+lexicon</code> types can reach ~0.95; <code>shape</code>/<code>none</code> types are header-gated and should be <strong>excluded from value accuracy entirely</strong>, not scored at 0. Set the target by <code>match_kind</code>.</li>
+<li>
+<strong>Baseline-relative, not absolute.</strong> Flag a type where the <strong>learned router underperforms the signature router</strong> (run both via <code>router=</code>). A type hard for <em>everyone</em> is difficulty, not a bug; a type where learned &lt; model-free floor is a real regression. (<code><a href="reference/fx_benchmark_compare.html">fx_benchmark_compare()</a></code> already computes these deltas.)</li>
+<li>
+<strong>Stress-delta (robustness).</strong> Use <code><a href="reference/fx_stress_grid.html">fx_stress_grid()</a></code>: flag types whose accuracy <strong>collapses under mild perturbation</strong> (low whitespace / case / contamination) relative to their own clean-tier score. Brittleness to a space or a stray uppercase is a detector bug regardless of absolute accuracy, and <code><a href="reference/fx_contamination_curve.html">fx_contamination_curve()</a></code> already measures the shape.</li>
+<li>
+<strong>Support-aware confidence.</strong> Put a Wilson interval on the accuracy estimate; only flag “low-accuracy” when the interval’s <strong>upper bound</strong> is below target, so thin-support types are not flagged on noise.</li>
+</ol><p><strong>Two buckets, two fixes:</strong> <code>needs-cases</code> (thin support, <strong>or absent from the corpus</strong> → bank/generate data, §7.2(2)) vs <code>needs-detector-work</code> (adequate support but accuracy upper-bounded below target, losing to the signature baseline, or stress-brittle → fix the predicate/recipe); header-gated <code>shape</code>/<code>none</code> types with adequate support are <code>excluded</code>, the rest <code>ok</code>. <code><a href="reference/fx_coverage_gaps.html">fx_coverage_gaps()</a></code> gained a <code>target</code> argument (default by <code>match_kind</code> via <code>.FX_COVERAGE_TARGETS</code>), optional <code>baseline=</code> and <code>stress=</code> run arguments, <code>wilson_upper</code> / <code>baseline_delta</code> / <code>stress_drop</code> columns, and emits a <code>bucket</code> label in place of the old <code>"ok" / "low-accuracy" / "low-support"</code> flag. With <code>include_absent = TRUE</code> (the default) it also walks the full ontology and emits a <code>support == 0</code> <code>needs-cases</code> row for every <strong>live</strong> variant that never appears in the corpus — the blind spots the per-case signals cannot see.</p>
+<p><em>Not yet wired:</em> tying the dropped-<code>rx_*</code> feature set into <code>needs-cases</code>. That set is enumerated at retrain time (§7.4), not persisted as a loadable object, so there is no programmatic handle for <code><a href="reference/fx_coverage_gaps.html">fx_coverage_gaps()</a></code> to read yet; wiring it in waits on the retrain script banking the dropped-<code>rx_*</code> names as an artifact.</p>
+</div>
+<div class="section level3">
+<h3 id="76-router-refresh-cadence--triggers">7.6 Router refresh: cadence &amp; triggers<a class="anchor" aria-label="anchor" href="#76-router-refresh-cadence--triggers"></a></h3>
+<p>The learned router predicts over a <strong>fixed 47-class set</strong> (<code>art$levels</code>). Inference maps predicted ids to ontology rows by <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code>, so the framework <strong>degrades gracefully, it does not break</strong>: an ontology id not in <code>art$levels</code> is simply never shortlisted; an <code>art$levels</code> id no longer in the ontology is dropped. The question is therefore not “does X break the router” but “does X leave the router blind to something it should route.”</p>
+<p><strong>MUST retrain (correctness):</strong> - <strong>Any <code>fx_extract_features</code> change</strong> — a feature added, removed, reordered, or recomputed. The artifact bakes in feature names, column order, and median imputations; a mismatch is silent train/serve skew. Bump <code>FEATURE_EXTRACTOR_VERSION</code>, retrain, and rely on the §7.2(1) parity guard in the interim. - <strong>Removal of <code>format_label</code></strong> in v7 (the router trains on it; already the deferred retrain in <code>ONTOLOGY-V7-PLAN.md</code> §5).</p>
+<p><strong>SHOULD retrain (coverage):</strong> - A <strong>new routable <code>semantic_type_id</code></strong> added to the ontology — to add it as a predictable class. (Interim: add high-precision types to the verifier’s <strong>always-on</strong> set, as geometry/email/color-name already are — this makes them routable with <em>no</em> retrain.) - <strong>New or expanded training cases</strong> for an under-covered type, especially the §7.4 zero-example types — to lift its top-k recall. - A <strong>benchmark regression</strong> where <code><a href="reference/fx_benchmark_compare.html">fx_benchmark_compare()</a></code> shows learned losing to signature on a level or <code>match_kind</code>.</p>
+<p><strong>NO retrain needed:</strong> - A new detector/recipe for an <strong>existing</strong> class — the verifier picks it up and the router already shortlists the class. - <strong>Deprecating</strong> a row (ids are never renumbered/reused; <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code> handles it). - Pure <code>fx_stabilize</code> verb/transform additions (they are not router inputs).</p>
+<p><strong>Cadence:</strong> there is no fixed schedule, nor should there be — retrain is <strong>event-driven</strong> by the triggers above, gated by the §7.2(6) non-regression check. The one standing recommendation is the parity guard, so that the “correctness” triggers can never fail silently between retrains.</p>
+</div>
 </div>
 </div>
 

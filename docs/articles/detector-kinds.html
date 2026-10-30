@@ -33,13 +33,22 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/formex.html">Get started</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-package-overview" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Package Overview</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-package-overview">
+<li><a class="dropdown-item" href="../articles/overview-guess-data-type.html">Guess Data Type</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-ontology.html">The Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/overview-formatting-syntax.html">Formatting Syntax</a></li>
+  </ul>
+</li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
     <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
@@ -61,6 +70,7 @@
     <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
   </ul>
 </li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/lecy/formex/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -77,141 +87,78 @@
       <h1>How Detectors Recognize a Type</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/lecy/formex/blob/HEAD/vignettes/detector-kinds.Rmd" class="external-link"><code>vignettes/detector-kinds.Rmd</code></a></small>
       <div class="d-none name"><code>detector-kinds.Rmd</code></div>
     </div>
 
     
     
-<p>A <strong>detector</strong> is a small function that looks at a
-column of values and answers one yes/no question: <em>“is each value a
-such-and-such?”</em> It takes a character vector and returns
-<code>TRUE</code> / <code>FALSE</code> for each value (and
-<code>NA</code> where the value was missing). <code>formex</code> ships
-dozens of them — <code><a href="../reference/is_date.html">is_date()</a></code>, <code><a href="../reference/is_ein.html">is_ein()</a></code>,
-<code><a href="../reference/is_us_state.html">is_us_state()</a></code>, and so on (the <em>Data-Type Detector
-Guide</em> is the full catalogue).</p>
-<p>But detectors do not all work the same way. A date can be written a
-hundred ways, so its detector has to <em>parse</em>; a US state is one
-of exactly 51 things, so its detector just <em>looks it up</em>. This
-guide walks through the handful of <strong>detection kinds</strong> —
-the strategies detectors use — and shows, with real examples, what makes
-each one fire or stay silent. Understanding the kinds explains both why
-some columns are easy to recognize and why others are impossible to
-recognize from their values alone.</p>
-<p>Every type in the ontology records its kind in a field called
-<code>match_kind</code>. There are six.</p>
+<p>A <strong>detector</strong> is a small function that looks at a column of values and answers one yes/no question: <em>“is each value a such-and-such?”</em> It takes a character vector and returns <code>TRUE</code> / <code>FALSE</code> for each value (and <code>NA</code> where the value was missing). <code>formex</code> ships dozens of them — <code><a href="../reference/is_date.html">is_date()</a></code>, <code><a href="../reference/is_ein.html">is_ein()</a></code>, <code><a href="../reference/is_us_state.html">is_us_state()</a></code>, and so on (the <em>Data-Type Detector Guide</em> is the full catalogue).</p>
+<p>But detectors do not all work the same way. A date can be written a hundred ways, so its detector has to <em>parse</em>; a US state is one of exactly 51 things, so its detector just <em>looks it up</em>. This guide walks through the handful of <strong>detection kinds</strong> — the strategies detectors use — and shows, with real examples, what makes each one fire or stay silent. Understanding the kinds explains both why some columns are easy to recognize and why others are impossible to recognize from their values alone.</p>
+<p>Every type in the ontology records its kind in a field called <code>match_kind</code>. There are six.</p>
 <div class="section level2">
 <h2 id="genome-parse-it-many-ways">genome — parse it many ways<a class="anchor" aria-label="anchor" href="#genome-parse-it-many-ways"></a>
 </h2>
-<p>Dates and times have no single written form: <code>3/15/2019</code>,
-<code>2019-03-15</code>, and <code>March 15, 2019</code> are the same
-day. A <strong>genome</strong> detector handles this by trying a whole
-library of formats and accepting the value if <em>some</em> format
-parses it into a real, in-range date that reads back consistently.</p>
+<p>Dates and times have no single written form: <code>3/15/2019</code>, <code>2019-03-15</code>, and <code>March 15, 2019</code> are the same day. A <strong>genome</strong> detector handles this by trying a whole library of formats and accepting the value if <em>some</em> format parses it into a real, in-range date that reads back consistently.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/is_date.html">is_date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"2019-03-15"</span>, <span class="st">"2019-13-45"</span>, <span class="st">"banana"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1]  TRUE  TRUE FALSE FALSE</span></span></code></pre></div>
-<p>The first two fire — different writings of a valid date. The third
-does <em>not</em>: there is no 13th month or 45th day, so no format
-produces a real date. The fourth is not a date in any form. The detector
-is tolerant about <em>style</em> but strict about <em>validity</em>.</p>
+<p>The first two fire — different writings of a valid date. The third does <em>not</em>: there is no 13th month or 45th day, so no format produces a real date. The fourth is not a date in any form. The detector is tolerant about <em>style</em> but strict about <em>validity</em>.</p>
 </div>
 <div class="section level2">
 <h2 id="mask-match-a-fixed-shape">mask — match a fixed shape<a class="anchor" aria-label="anchor" href="#mask-match-a-fixed-shape"></a>
 </h2>
-<p>Many identifiers have one rigid shape: an EIN is two digits, a dash,
-then seven digits. A <strong>mask</strong> detector checks that exact
-pattern. Some masks go further and validate a built-in <strong>check
-digit</strong> — an extra digit computed from the others, so a single
-typo is caught arithmetically.</p>
+<p>Many identifiers have one rigid shape: an EIN is two digits, a dash, then seven digits. A <strong>mask</strong> detector checks that exact pattern. Some masks go further and validate a built-in <strong>check digit</strong> — an extra digit computed from the others, so a single typo is caught arithmetically.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/is_ein.html">is_ein</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"01-2345678"</span>, <span class="st">"12-3456789"</span>, <span class="st">"12-345"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1]  TRUE  TRUE FALSE</span></span></code></pre></div>
-<p>The first two match the <code>NN-NNNNNNN</code> shape; the third is
-too short and fails. Now a check digit in action — an ISBN carries one,
-so a value with the wrong final digit is rejected even though its shape
-is perfect:</p>
+<p>The first two match the <code>NN-NNNNNNN</code> shape; the third is too short and fails. Now a check digit in action — an ISBN carries one, so a value with the wrong final digit is rejected even though its shape is perfect:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/is_isbn.html">is_isbn</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0306406152"</span>, <span class="st">"0306406153"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1]  TRUE FALSE</span></span></code></pre></div>
-<p>Same ten-digit shape, but only the first has a valid checksum. This
-is the tightest kind of recognition: the value essentially proves
-itself.</p>
+<p>Same ten-digit shape, but only the first has a valid checksum. This is the tightest kind of recognition: the value essentially proves itself.</p>
 </div>
 <div class="section level2">
 <h2 id="lexicon-look-it-up-in-a-list">lexicon — look it up in a list<a class="anchor" aria-label="anchor" href="#lexicon-look-it-up-in-a-list"></a>
 </h2>
-<p>Some types are a closed set: there are exactly 50 states plus DC. A
-<strong>lexicon</strong> detector simply tests membership in a known
-list (matching case-insensitively).</p>
+<p>Some types are a closed set: there are exactly 50 states plus DC. A <strong>lexicon</strong> detector simply tests membership in a known list (matching case-insensitively).</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/is_us_state.html">is_us_state</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CA"</span>, <span class="st">"tx"</span>, <span class="st">"ZZ"</span>, <span class="st">"California"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1]  TRUE  TRUE FALSE FALSE</span></span></code></pre></div>
-<p><code>CA</code> and <code>tx</code> are on the list; <code>ZZ</code>
-is not. Notice <code>California</code> fails too — this particular
-detector recognizes the two-letter <em>abbreviation</em>, not the full
-name (a different detector handles spelled-out names). A detector only
-knows what is in its list:</p>
+<p><code>CA</code> and <code>tx</code> are on the list; <code>ZZ</code> is not. Notice <code>California</code> fails too — this particular detector recognizes the two-letter <em>abbreviation</em>, not the full name (a different detector handles spelled-out names). A detector only knows what is in its list:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/is_first_name.html">is_first_name</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"James"</span>, <span class="st">"Mary"</span>, <span class="st">"xzqwt"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1]  TRUE  TRUE FALSE</span></span></code></pre></div>
-<p><code>James</code> and <code>Mary</code> are in the reference list of
-common given names; <code>xzqwt</code> is not. Lexicon detectors are
-precise but only as complete as their list — a rare name that is not in
-it will be missed. That is a deliberate trade: better to stay silent
-than to guess.</p>
+<p><code>James</code> and <code>Mary</code> are in the reference list of common given names; <code>xzqwt</code> is not. Lexicon detectors are precise but only as complete as their list — a rare name that is not in it will be missed. That is a deliberate trade: better to stay silent than to guess.</p>
 </div>
 <div class="section level2">
 <h2 id="masklexicon-the-right-shape-and-a-real-value">mask+lexicon — the right shape <em>and</em> a real value<a class="anchor" aria-label="anchor" href="#masklexicon-the-right-shape-and-a-real-value"></a>
 </h2>
-<p>Some types need both: the shape has to be right <em>and</em> part of
-the value has to be in a reference list. A county FIPS code is five
-digits <strong>whose first two are a real state code</strong> — so a
-random five-digit number does not qualify.</p>
+<p>Some types need both: the shape has to be right <em>and</em> part of the value has to be in a reference list. A county FIPS code is five digits <strong>whose first two are a real state code</strong> — so a random five-digit number does not qualify.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/is_county_fips.html">is_county_fips</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"06037"</span>, <span class="st">"36061"</span>, <span class="st">"99999"</span>, <span class="st">"6037"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1]  TRUE  TRUE FALSE FALSE</span></span></code></pre></div>
-<p><code>06037</code> and <code>36061</code> are five digits with valid
-state prefixes (<code>06</code> = CA, <code>36</code> = NY).
-<code>99999</code> has the right shape but <code>99</code> is not a real
-state. <code>6037</code> is only four digits. Both halves must pass.</p>
+<p><code>06037</code> and <code>36061</code> are five digits with valid state prefixes (<code>06</code> = CA, <code>36</code> = NY). <code>99999</code> has the right shape but <code>99</code> is not a real state. <code>6037</code> is only four digits. Both halves must pass.</p>
 </div>
 <div class="section level2">
 <h2 id="shape-the-look-of-the-numbers">shape — the look of the numbers<a class="anchor" aria-label="anchor" href="#shape-the-look-of-the-numbers"></a>
 </h2>
-<p>Some columns cannot be recognized by any single value, only by the
-<em>pattern of the whole column</em>. “Is this a count?” is not
-something you can ask of one number — <code>42</code> could be a count,
-an age, a score. A <strong>shape</strong> kind looks at the column’s
-overall numeric profile (are the values whole? non-negative? bounded
-between 0 and 1?) to make a soft call. There is no single
-<code>is_count()</code> that fires on one value, because the signal
-lives in the distribution, not the digits.</p>
+<p>Some columns cannot be recognized by any single value, only by the <em>pattern of the whole column</em>. “Is this a count?” is not something you can ask of one number — <code>42</code> could be a count, an age, a score. A <strong>shape</strong> kind looks at the column’s overall numeric profile (are the values whole? non-negative? bounded between 0 and 1?) to make a soft call. There is no single <code>is_count()</code> that fires on one value, because the signal lives in the distribution, not the digits.</p>
 </div>
 <div class="section level2">
 <h2 id="none-not-knowable-from-the-values">none — not knowable from the values<a class="anchor" aria-label="anchor" href="#none-not-knowable-from-the-values"></a>
 </h2>
-<p>Finally, some types simply <strong>cannot</strong> be recognized from
-values at all:</p>
+<p>Finally, some types simply <strong>cannot</strong> be recognized from values at all:</p>
 <ul>
-<li>A membership-ID column is just integers — indistinguishable from any
-other integers.</li>
+<li>A membership-ID column is just integers — indistinguishable from any other integers.</li>
 <li>A free-text notes column is just text.</li>
 </ul>
-<p>These are marked <code>none</code>, and no detector claims them. They
-can only be asserted from outside the data — the column’s name, or a
-data dictionary. Being honest about this is a feature: it stops the
-engine from inventing a confident answer where none is possible.</p>
+<p>These are marked <code>none</code>, and no detector claims them. They can only be asserted from outside the data — the column’s name, or a data dictionary. Being honest about this is a feature: it stops the engine from inventing a confident answer where none is possible.</p>
 </div>
 <div class="section level2">
 <h2 id="from-detectors-to-a-guess">From detectors to a guess<a class="anchor" aria-label="anchor" href="#from-detectors-to-a-guess"></a>
 </h2>
-<p>A single detector answers one question. To guess <em>what a column
-is</em>, <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> runs many detectors over a
-sample of the column and looks at the <strong>pass rate</strong> of each
-— the share of values it accepted. <code><a href="../reference/score_data_type.html">score_data_type()</a></code>
-exposes that raw step:</p>
+<p>A single detector answers one question. To guess <em>what a column is</em>, <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> runs many detectors over a sample of the column and looks at the <strong>pass rate</strong> of each — the share of values it accepted. <code><a href="../reference/score_data_type.html">score_data_type()</a></code> exposes that raw step:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_data_type.html">score_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span>, <span class="st">"01/01/2021"</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt;          data_type n pass_rate</span></span>
@@ -219,21 +166,12 @@ exposes that raw step:</p>
 <span><span class="co">#&gt; 49            date 3         1</span></span>
 <span><span class="co">#&gt; 1    currency_code 3         0</span></span>
 <span><span class="co">#&gt; 2  currency_symbol 3         0</span></span></code></pre></div>
-<p>Often more than one detector fires. A clean date column is accepted
-by both the US-date detector and the general date detector — both pass
-at <code>1.0</code>. So a pass rate alone is not enough; the guesser
-needs a way to choose among the winners. It does this in two stages:</p>
+<p>Often more than one detector fires. A clean date column is accepted by both the US-date detector and the general date detector — both pass at <code>1.0</code>. So a pass rate alone is not enough; the guesser needs a way to choose among the winners. It does this in two stages:</p>
 <ol style="list-style-type: decimal">
-<li>A <strong>router</strong> proposes a short list of the most likely
-types for the column (using the detector signals plus a broader profile
-of the column — see the <em>Feature Engineering for Type Guessing</em>
-vignette).</li>
-<li>A <strong>verifier</strong> then re-runs each candidate’s full
-recipe and keeps only the ones that both fit the column <em>and</em>
-reject junk, breaking ties toward the more specific type.</li>
+<li>A <strong>router</strong> proposes a short list of the most likely types for the column (using the detector signals plus a broader profile of the column — see the <em>Feature Engineering for Type Guessing</em> vignette).</li>
+<li>A <strong>verifier</strong> then re-runs each candidate’s full recipe and keeps only the ones that both fit the column <em>and</em> reject junk, breaking ties toward the more specific type.</li>
 </ol>
-<p>The result is the <code>$route</code> — the type it settled on,
-reported only as far down as the evidence supports:</p>
+<p>The result is the <code>$route</code> — the type it settled on, reported only as far down as the evidence supports:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span>, <span class="st">"01/01/2021"</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">route</span><span class="op">[</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"semantic_type"</span>, <span class="st">"format_style"</span>, <span class="st">"match_kind"</span>, <span class="st">"depth"</span>, <span class="st">"confidence"</span><span class="op">)</span><span class="op">]</span></span>
@@ -251,27 +189,17 @@ reported only as far down as the evidence supports:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $confidence</span></span>
 <span><span class="co">#&gt; [1] 1</span></span></code></pre></div>
-<p>The <code>match_kind</code> in that answer tells you <em>how</em> the
-type was recognized — here, <code>genome</code>, because a date was
-parsed. A column recognized by <code>lexicon</code> would say so, and a
-column that only matched a <code>none</code>-kind type would never
-resolve to a leaf at all. In short: the detection kind is not just an
-implementation detail, it tells you how much to trust the guess and
-why.</p>
+<p>The <code>match_kind</code> in that answer tells you <em>how</em> the type was recognized — here, <code>genome</code>, because a date was parsed. A column recognized by <code>lexicon</code> would say so, and a column that only matched a <code>none</code>-kind type would never resolve to a leaf at all. In short: the detection kind is not just an implementation detail, it tells you how much to trust the guess and why.</p>
 </div>
 <div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <ul>
-<li>The <strong>Data-Type Detector Guide</strong> — the full catalogue
-of <code>is_*</code> detectors, with the structure each one leverages
-and its stress-test report.</li>
+<li>The <strong>Data-Type Detector Guide</strong> — the full catalogue of <code>is_*</code> detectors, with the structure each one leverages and its stress-test report.</li>
 <li>
-<strong>Guessing a Column’s Type</strong> — the router → verifier
-flow end to end.</li>
+<strong>Guessing a Column’s Type</strong> — the router → verifier flow end to end.</li>
 <li>
-<strong>Feature Engineering for Type Guessing</strong> — how a
-column is turned into the numeric profile the router reads.</li>
+<strong>Feature Engineering for Type Guessing</strong> — how a column is turned into the numeric profile the router reads.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
