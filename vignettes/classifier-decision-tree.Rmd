@@ -1,0 +1,197 @@
+---
+title: "Classifying Columns with a Decision Tree"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Classifying Columns with a Decision Tree}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+# Chunks are NOT evaluated at build time. The feature matrix lives in data-raw/
+# (built by data-raw/build_feature_dataset.R) and is not shipped with the
+# package, and fitting 40 models is too slow for R CMD check. Every number below
+# is from an actual run and is reproducible with the code as written, via
+# data-raw/tree_demo.R and data-raw/model_feature_demo.R.
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, collapse = TRUE, comment = "#>")
+library(formex)
+```
+
+## From features to a classifier
+
+`fx_extract_features()` turns a column of values into 477 numeric features --- a
+*value profile* describing the column's cardinality, character makeup, numeric
+range, token vocabulary, and lexicon hits (see
+`vignette("feature-engineering")`). Those features are the substrate the
+`guess_data_type()` router is built on. This vignette uses them for a different,
+more pedagogical purpose: training an off-the-shelf classifier to predict a
+column's type, one row per column.
+
+The data frame is built by `data-raw/build_feature_dataset.R`: one row per
+sample column drawn from the Sherlock, GitTables, and formex-native corpora,
+with the 477 features and six ontology label columns
+(`data_type`, `semantic_family`, `semantic_type`, and the format axes). We start
+small, then scale up to show where a single tree breaks down.
+
+Two preliminaries matter for any model fit on these features:
+
+- **`NA` means "not applicable".** A numeric statistic is undefined on a text
+  column; letter frequencies are undefined on an all-digit column. Impute by the
+  reason a value is missing (`data-raw/make_imputation_spec.R` writes a per-feature
+  rule: zero for absence features, median + an "is-numeric" indicator for the
+  numeric block, drop for the header features that are empty here).
+- **No label leakage.** Features are extracted with `col_name = NULL`, so the
+  column header never enters the model. The target comes from a ground-truth
+  crosswalk, not from `guess_data_type()`.
+
+## The simple version: twelve types
+
+Start with a clean, balanced problem: twelve types, 45 columns each. Ten are
+rigid formats (`email`, `ein`, `ipv4`, `iso_date`, `hex_color`, `guid`, `isbn`,
+`zip_code`, `phone`, `currency_code`); the last two, `artist` and `director`,
+are both columns of human names.
+
+```{r simple}
+library(rpart)
+sub  <- readRDS("data-raw/type_features_teaching.rds")   # 540 rows x 12 types
+# apply the per-feature NA rules from type_features_imputation.csv
+# (zero / numeric-median / drop) -- see data-raw/tree_demo.R for the helper
+X    <- impute_by_spec(sub)
+y    <- factor(sub$source_label)
+
+tr   <- sample(nrow(sub), 0.7 * nrow(sub))
+fit  <- rpart(y ~ ., data = cbind(y = y, X)[tr, ], method = "class")
+pred <- predict(fit, X[-tr, ], type = "class")
+mean(pred == y[-tr])        # ~0.96
+table(truth = y[-tr], pred)
+```
+
+The tree reaches **0.96** test accuracy, but the two groups of types behave very
+differently:
+
+| Type | Recall | Why |
+|------|:------:|-----|
+| `email`, `ein`, `guid`, `isbn`, `iso_date`, `phone`, `zip_code`, `currency_code` | 1.00 | A single feature is nearly an indicator: `rx_email`, `rx_ein`, `has_at`, `chk_ein_prefix_rate`. One axis-aligned split isolates the class. |
+| `ipv4`, `hex_color` | 0.92–1.00 | Still format-driven, occasional overlap with other digit/hex codes. |
+| `artist` | 0.86 | Human names. |
+| `director` | **0.67** | Human names --- *conflated with `artist`*. |
+
+Rigid formats are what a decision tree does best: the `regex`, `punct`, and
+`lexicon` blocks give it near-binary features, and a shallow tree carves each
+type out with one or two splits. But `artist` and `director` are both just
+people's names. No feature distinguishes "names that are artists" from "names
+that are directors", so the tree sends director columns into the artist leaf
+two-thirds of the time. That conflation is not a modelling bug --- it is the
+honest statement that the *values* carry "person name" but not the *role*.
+
+## Scaling up: the full semantic ontology
+
+Now use the whole dataset and the full `semantic_type` label set --- 40 classes,
+from `person` and `geographic` down to `min_max` and `classification_code`.
+
+```{r full}
+d <- readRDS("data-raw/type_features_dataset.rds")   # ~6,390 columns
+y <- factor(d$semantic_type)                         # 40 classes
+# same impute -> train/test split -> rpart as above
+```
+
+| Model | Accuracy | Macro-recall | Notes |
+|-------|:--------:|:------------:|-------|
+| Majority-class baseline | 0.247 | — | always predict `unordered` |
+| Single decision tree | **0.630** | **0.346** | 59 leaves, 40 classes |
+
+Overall accuracy (0.63) is 2.5x the baseline and sounds respectable, but
+*macro-recall* --- the unweighted average of per-class recall --- is only 0.35.
+The gap between the two numbers is the whole story. A single tree scales poorly
+to a broad ontology for three linked reasons:
+
+1. **A fixed split budget, shared across all classes.** One greedy tree grew 59
+   leaves for 40 classes. Each split it spends separating `person` from
+   `organization` is a split it cannot spend on `usd` or `min_max`. Common
+   classes win the competition for splits; rare ones are left in mixed leaves.
+2. **Severe class imbalance.** `unordered` (generic categoricals) is a quarter of
+   the rows; the tree maximizes overall impurity reduction, so it is rewarded for
+   serving the majority and ignoring the tail.
+3. **A long tail that cannot be learned at all.** Eight of the 40 semantic types
+   had zero rows in the test split, and several more had one or two. Fine types
+   that appear once in the corpus (`email`, `url`, `hash` at the semantic-type
+   level) give a tree nothing to split on.
+
+The per-class picture: format-bearing types stay strong (`timestamp` 0.88,
+`administrative` 0.82, `year` 0.74, `day_of_week` 0.71), while meaning-bearing
+types collapse (`organization` 0.49, `usd` 0.24, `classification_code` 0.12,
+`min_max` 0.00).
+
+## One tree, or forty models?
+
+Is it better to train 40 binary one-vs-rest models (e.g. logistic regression),
+each asking "is this column type *k* or not?", than one tree predicting all 40
+at once? We fit both on the same split (`data-raw/model_feature_demo.R` has the
+one-vs-rest machinery; each binary model uses its class's top discriminating
+features as light regularization).
+
+| Model | Accuracy | Macro-recall |
+|-------|:--------:|:------------:|
+| Single decision tree | **0.630** | 0.346 |
+| 40 one-vs-rest logistic models | 0.608 | **0.414** |
+
+Macro-recall by how much training data each class has:
+
+| Class support | # classes | Tree recall | One-vs-rest recall |
+|---------------|:---------:|:-----------:|:------------------:|
+| rare (1–9)    | 12 | 0.00 | **0.17** |
+| mid (10–49)   | 11 | 0.48 | **0.59** |
+| common (50+)  | 9  | **0.64** | 0.53 |
+
+**So the honest answer is "it depends on the objective."** For raw accuracy the
+two are about tied, and the single tree is marginally ahead --- because accuracy
+is dominated by the common classes, and the tree carves those with a few sharp
+splits (and can exploit feature *interactions* a linear model misses). For
+*balanced* performance across all 40 types, the one-vs-rest ensemble is clearly
+better: it lifts the rare and mid-frequency classes the single tree abandons.
+
+Why the ensemble helps where it matters:
+
+- **Dedicated capacity.** Each class gets its own model and the *full* 477-feature
+  space to draw one boundary, instead of competing with 39 other classes for a
+  share of one tree's splits. A rare class is no longer starved.
+- **Boundaries that fit the features.** Many types are *linearly* separable in
+  this space because the `regex` and `lexicon` features are near-indicators;
+  a logistic boundary captures that directly, and degrades gracefully where a
+  tree would need a deep, data-hungry subtree.
+- **Per-class thresholds.** A one-vs-rest score can be thresholded per class, so a
+  rare type is not forced to clear the same bar as the majority.
+
+Why the single tree is still competitive (and sometimes preferable):
+
+- It wins on the **common classes** and on **overall accuracy**, exploiting
+  interactions and carving the majority cheaply.
+- It is **one interpretable model**, handles `NA` natively through surrogate
+  splits, and needs no per-model regularization.
+- The ensemble's 40 scores are **not calibrated against each other**; taking an
+  `argmax` across independently-fit models is a heuristic, and overlapping types
+  (the `artist`/`director` problem, now at scale) still collide.
+
+## Practical guidance
+
+- A **single tree is a teaching baseline**, not a production classifier. A random
+  forest or gradient boosting --- many trees, each on a feature/row subsample ---
+  removes most of the single-tree starvation and would raise both numbers
+  substantially.
+- For a broad, imbalanced ontology, prefer **either an ensemble of trees or a
+  bank of one-vs-rest models**, and report **macro-recall**, not just accuracy, so
+  the long tail is visible.
+- A natural design is a **cascade**: a cheap model for the 7-way `data_type`, then
+  a per-family specialist for the fine `semantic_type`. This is, in spirit, what
+  `guess_data_type()` already does --- a router narrows the candidates, then a
+  per-type verifier confirms --- which is why it outperforms any single flat
+  classifier on the long tail.
+
+```{r reproduce}
+# Reproduce everything in this vignette:
+#   source("data-raw/build_feature_dataset.R")   # build the feature matrix
+#   source("data-raw/make_imputation_spec.R")    # the NA-imputation rules
+#   source("data-raw/tree_demo.R")               # the two decision-tree fits
+#   source("data-raw/model_feature_demo.R")      # one-vs-rest feature models
+#   source("data-raw/tree_vs_ovr.R")             # tree vs 40 one-vs-rest models
+```

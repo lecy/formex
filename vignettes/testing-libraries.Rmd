@@ -141,3 +141,5 @@ types it can actually tell apart.
   built from and the model is trained on.
 * `generate_autotype_test_cases()`, `build_autotype_results()` --- the tools for
   building a new detector's fixture.
+* **Building a Feature Dataset for Classification** --- one row per column, labelled for a classifier.
+* **Classifying Columns with a Decision Tree** --- a worked model on those features.

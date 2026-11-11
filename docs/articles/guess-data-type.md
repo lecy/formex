@@ -1,0 +1,208 @@
+# Guessing a Column's Type
+
+When you open a messy data file, two questions come up before you can do
+anything useful with a column:
+
+1.  **What is this?** Are these dates, dollar amounts, county codes,
+    people’s names?
+2.  **How do I store it without breaking it?** If you save `06037` to a
+    CSV and reopen it in Excel, it becomes `6037` — the leading zero is
+    gone and the county code is ruined.
+
+`formex` answers both.
+[`guess_data_type()`](https://lecy.github.io/formex/reference/guess_data_type.md)
+tells you *what a column is*, and
+[`fx_stabilize()`](https://lecy.github.io/formex/reference/fx_stabilize.md)
+puts it in a form that is *safe to store and reopen*. This guide walks
+through both for a first-time user.
+
+## Guessing what a column is
+
+Point
+[`guess_data_type()`](https://lecy.github.io/formex/reference/guess_data_type.md)
+at a column of values and it returns a `$route` — its best read of what
+the column is:
+
+``` r
+
+guess_data_type(c("03/15/2019", "12/31/2020", "01/01/2021"))$route[
+  c("data_type", "semantic_family", "semantic_type", "format_style",
+    "depth", "confidence")]
+#> $data_type
+#> [1] "temporal"
+#> 
+#> $semantic_family
+#> [1] "date"
+#> 
+#> $semantic_type
+#> [1] "calendar"
+#> 
+#> $format_style
+#> [1] "mdy_slash"
+#> 
+#> $depth
+#> [1] 4
+#> 
+#> $confidence
+#> [1] 1
+```
+
+The answer is a **path**, from coarse to fine:
+
+    data_type  ›  semantic_family  ›  semantic_type  ›  format_style
+     temporal        date              calendar          mdy_slash
+
+Read it left to right: these values are *temporal*, specifically a
+*date*, a *calendar* date, written in month/day/year with slashes.
+
+### It only answers as far as it’s sure
+
+The most important thing to understand is that
+[`guess_data_type()`](https://lecy.github.io/formex/reference/guess_data_type.md)
+**stops at the deepest level it can defend** and does not force a guess.
+The `depth` field says how far it got:
+
+    0  I don't know          3  the specific type (e.g. calendar)
+    1  the broad data_type   4  the exact written format (a leaf)
+    2  the family
+
+A column of clean dates resolves all the way to a leaf (`depth` 4). A
+column of bare five-digit numbers might only reach `number` (`depth` 1),
+because `12345` could be a count, a ZIP, or an ID — the values alone
+cannot say. That is the right answer, not a failure: a
+confident-sounding wrong guess is worse than an honest “this far and no
+further.”
+
+``` r
+
+# nothing matches -> depth 0, confidence low
+guess_data_type(c("apple", "banana", "cherry"))$route$depth
+#> [1] 3
+```
+
+### How the guess is made, in two steps
+
+You do not need to operate these, but it helps to know what is
+happening:
+
+1.  **Sample.** On a big column it looks at the distinct non-missing
+    values (up to 100), not every row — so it stays fast.
+2.  **Router → verifier.** A *router* proposes a short list of likely
+    types. A *verifier* then actually tries each candidate’s recipe on
+    your values and keeps only the ones that genuinely fit — and that
+    also *reject* junk. A type that would accept anything (like “is a
+    number”) cannot win a specific leaf; it truncates instead. This is
+    why the answer is trustworthy rather than merely plausible.
+
+### When the values are ambiguous, the column name can help
+
+Some values fit more than one type. If you also pass the column’s name,
+it is used as a tie-breaker:
+
+``` r
+
+vals <- c("06037", "36061", "48201", "17031")
+guess_data_type(vals, name = "county_fips")$guess
+#> [1] "county_fips"
+guess_data_type(vals, name = "zip_code")$guess
+#> [1] "zip_code"
+```
+
+## Stabilizers: making a column safe to store
+
+A **stabilizer** is the second half of formex. It takes the raw values
+and rewrites them into a *stable* form — one that survives being written
+to a CSV and reopened in R, Excel, or anything else **without losing
+information and without being silently re-typed into the wrong thing.**
+Think of it as putting the column into a *protected* state.
+
+Here is the problem a stabilizer solves. Save these raw values and
+reopen them, and three things can go wrong:
+
+| raw value | what a naive reopen does | why it’s wrong |
+|----|----|----|
+| `06037` (county FIPS) | becomes the number `6037` | the leading zero is dropped |
+| `3/15/2019` | may become text, or the wrong date in another locale | ambiguous day/month order |
+| `$2,300.00` | stays as text `"$2,300.00"` | you can’t do math on it |
+
+[`fx_stabilize()`](https://lecy.github.io/formex/reference/fx_stabilize.md)
+fixes each by (1) normalizing the value and (2) attaching an **import
+rule** that tells a reader how to bring it back as the correct type:
+
+``` r
+
+fx_stabilize(c("03/15/2019", "12/31/2020"), "calendar")[c("stable", "import_rule")]
+#> $stable
+#> [1] "2019-03-15" "2020-12-31"
+#> 
+#> $import_rule
+#> [1] "{{ as_yyyymmdd }}"
+fx_stabilize(c("$2,300.00", "17,298$", "$-45"), "usd")[c("stable", "import_rule")]
+#> $stable
+#> [1] "2300"  "17298" "-45"  
+#> 
+#> $import_rule
+#> [1] "{{ default:numeric }}"
+```
+
+- The date is normalized to unambiguous **ISO** `2019-03-15`, which
+  every tool reads the same way.
+- The dollar amounts become plain numbers you can compute on; the fact
+  that they are USD rides along as metadata, not buried in the text.
+
+For an identifier like a county FIPS, the stable value keeps its leading
+zero *and* carries the rule that re-imports it as text, so `06037` stays
+`06037` instead of collapsing to a number:
+
+``` r
+
+fx_stabilize(c("6037", "06037"), "geographic", "county_fips")[c("stable", "import_rule")]
+#> $stable
+#> [1] NA      "06037"
+#> 
+#> $import_rule
+#> [1] "{{ as_factor }}"
+```
+
+That `import_rule` is the key idea: a stabilized file is
+**self-describing**. Written alongside the data, it lets the next reader
+load each column back as the correct type automatically — dates as
+dates, codes as text, amounts as numbers — with no manual fix-ups and no
+silent corruption.
+
+## The whole loop
+
+``` r
+
+x     <- c("03/15/2019", "12/31/2020", "01/01/2021")
+route <- guess_data_type(x)$route          # 1. what is it?
+fx_stabilize(x, route$semantic_type, route$format_label)$stable  # 2. make it safe
+#> [1] "2019-03-15" "2020-12-31" "2021-01-01"
+```
+
+[`guess_data_type()`](https://lecy.github.io/formex/reference/guess_data_type.md)
+says *what a column is*;
+[`fx_stabilize()`](https://lecy.github.io/formex/reference/fx_stabilize.md)
+puts it in a standard, protected form. A workflow package such as
+`datagoodr` builds on these two calls to profile a whole data frame, let
+a human confirm each column, and write out a cleaned, self-describing
+file. The shared vocabulary both calls speak is the subject of the
+*Data-Type Ontology* vignette; the detectors that do the recognizing are
+catalogued in the *Data-Type Detector Guide*.
+
+For backward compatibility
+[`guess_data_type()`](https://lecy.github.io/formex/reference/guess_data_type.md)
+also returns the older flat fields (`$guess`, `$ontology`,
+`$confidence`, `$candidates`) and
+[`score_data_type()`](https://lecy.github.io/formex/reference/score_data_type.md)
+still exposes the raw per-detector pass rates; new code should use
+`$route`.
+
+## See also
+
+- **Feature Engineering for Type Guessing** — the numeric profile the
+  router reads.
+- **How Detectors Recognize a Type** — what the verifier checks.
+- **The Data-Type Ontology** — the map a guess resolves into.
+- **Formex: the format-expression syntax** — how the resolved type is
+  stabilized.

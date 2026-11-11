@@ -44,15 +44,31 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+<li><h6 class="dropdown-header" data-toc-skip>Data Types</h6></li>
     <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
-    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
+    <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Data Type Detection</h6></li>
+    <li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Detector Types</h6></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Testing Libraries</h6></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
-    <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/feature-dataset.html">Building a Feature Dataset for Classification</a></li>
+    <li><a class="dropdown-item" href="../articles/classifier-decision-tree.html">Classifying Columns with a Decision Tree</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Extending the Library</h6></li>
+    <li><a class="dropdown-item" href="../articles/autotype-framework.html">The AutoType Framework</a></li>
+    <li><a class="dropdown-item" href="../articles/synthetic-data-temporal.html">Synthetic Data: the Temporal Case</a></li>
+    <li><a class="dropdown-item" href="../articles/adding-a-detector.html">Adding a Detector</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Formex Syntax</h6></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -93,7 +109,13 @@
 
     
     
-<p>The <strong>ontology</strong> is the shared catalog at the center of <code>formex</code>: a small, labeled map of every kind of column research data contains. Both halves of the package read it — <code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> to decide <em>where a column belongs</em>, and <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> to look up <em>how to clean it</em>. This guide walks the map one <strong>data type</strong> at a time.</p>
+<p>The <strong>ontology</strong> is the shared catalog at the center of
+<code>formex</code>: a small, labeled map of every kind of column
+research data contains. Both halves of the package read it —
+<code><a href="../reference/guess_data_type.html">guess_data_type()</a></code> to decide <em>where a column
+belongs</em>, and <code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> to look up <em>how to
+clean it</em>. This guide walks the map one <strong>data type</strong>
+at a time.</p>
 <div class="section level2">
 <h2 id="how-the-map-is-organized">How the map is organized<a class="anchor" aria-label="anchor" href="#how-the-map-is-organized"></a>
 </h2>
@@ -102,11 +124,19 @@
  └ semantic_family   what broad kind?           date · currency · geographic · ...
     └ semantic_type     what exactly?           calendar · usd · us_state · ...
        └ format_style / unit_type   how written / what unit?</code></pre>
-<p>The top level, <strong><code>data_type</code></strong>, is the load-bearing one: it decides whether a column is a quantity you can do math on, a label you must leave untouched, a point in time, and so on. The sections below are organized by it. Each opens with what the type <em>is</em> and how it differs from the types it is most often confused with, followed by the families and semantic types inside it.</p>
+<p>The top level, <strong><code>data_type</code></strong>, is the
+load-bearing one: it decides whether a column is a quantity you can do
+math on, a label you must leave untouched, a point in time, and so on.
+The sections below are organized by it. Each opens with what the type
+<em>is</em> and how it differs from the types it is most often confused
+with, followed by the families and semantic types inside it.</p>
 <div class="section level3">
 <h3 id="the-detector-column">The detector column<a class="anchor" aria-label="anchor" href="#the-detector-column"></a>
 </h3>
-<p>Not every type can be recognized just by looking at the values, and the ontology is honest about which can. Each type records <em>how</em> it is spotted, in a <code>match_kind</code> — shown as the <strong>detector</strong> column in every table below:</p>
+<p>Not every type can be recognized just by looking at the values, and
+the ontology is honest about which can. Each type records <em>how</em>
+it is spotted, in a <code>match_kind</code> — shown as the
+<strong>detector</strong> column in every table below:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -139,11 +169,15 @@
 </tr>
 <tr class="even">
 <td><strong><code>none</code></strong></td>
-<td>cannot be told from the values alone — only a name or data dictionary can</td>
+<td>cannot be told from the values alone — only a name or data
+dictionary can</td>
 </tr>
 </tbody>
 </table>
-<p>That last row matters for honesty. A membership-number column is just integers; a notes column is just text. No amount of looking at the values reveals what they are, so the ontology marks these <code>none</code> and the engine does not pretend.</p>
+<p>That last row matters for honesty. A membership-number column is just
+integers; a notes column is just text. No amount of looking at the
+values reveals what they are, so the ontology marks these
+<code>none</code> and the engine does not pretend.</p>
 <table class="table">
 <thead><tr class="header">
 <th align="left">data_type</th>
@@ -184,7 +218,11 @@
 </tr>
 </tbody>
 </table>
-<p>Those totals count geographic entries under their home data type (coordinates under <code>number</code>, GEOIDs under <code>identifier</code>, and so on); the final <strong>Geography</strong> section gathers them back together in one place.</p>
+<p>Those totals count geographic entries under their home data type
+(coordinates under <code>number</code>, GEOIDs under
+<code>identifier</code>, and so on); the final
+<strong>Geography</strong> section gathers them back together in one
+place.</p>
 <hr>
 </div>
 </div>
@@ -192,8 +230,19 @@
 <h2 id="number-quantities-you-can-do-math-on">
 <code>number</code> — quantities you can do math on<a class="anchor" aria-label="anchor" href="#number-quantities-you-can-do-math-on"></a>
 </h2>
-<p>A <code>number</code> is a magnitude: something you can meaningfully add, average, or compare. This is the type to get right first, because it licenses arithmetic.</p>
-<p><strong>Not to be confused with <code>identifier</code>.</strong> A ZIP code, a county FIPS, and an account number are all written with digits, but they are <em>labels</em>, not magnitudes — averaging them is nonsense and dropping their leading zeros corrupts them. If digits are a quantity, they are a <code>number</code>; if they are a key, they are an <code>identifier</code>. The <code>currency</code> family carries a <code>unit_type</code>, because the same written number can mean dollars or euros. Geographic <strong>coordinates</strong> are numbers too — a lat/lon pair is a measurement on a datum — but they are gathered with the rest of geography in the Geography section at the end.</p>
+<p>A <code>number</code> is a magnitude: something you can meaningfully
+add, average, or compare. This is the type to get right first, because
+it licenses arithmetic.</p>
+<p><strong>Not to be confused with <code>identifier</code>.</strong> A
+ZIP code, a county FIPS, and an account number are all written with
+digits, but they are <em>labels</em>, not magnitudes — averaging them is
+nonsense and dropping their leading zeros corrupts them. If digits are a
+quantity, they are a <code>number</code>; if they are a key, they are an
+<code>identifier</code>. The <code>currency</code> family carries a
+<code>unit_type</code>, because the same written number can mean dollars
+or euros. Geographic <strong>coordinates</strong> are numbers too — a
+lat/lon pair is a measurement on a datum — but they are gathered with
+the rest of geography in the Geography section at the end.</p>
 <table class="table">
 <colgroup>
 <col width="4%">
@@ -215,7 +264,8 @@
 <td align="left"><strong>balance</strong></td>
 <td align="left">A signed account balance.</td>
 <td align="left">
-<code>balance</code><br><span style="opacity:.7">unit: USD</span>
+<code>balance</code><br><span style="opacity:.7">unit:
+USD</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -224,7 +274,8 @@
 <td align="left"><strong>euro</strong></td>
 <td align="left">A euro amount (European format).</td>
 <td align="left">
-<code>euro</code><br><span style="opacity:.7">unit: EUR</span>
+<code>euro</code><br><span style="opacity:.7">unit:
+EUR</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -233,7 +284,8 @@
 <td align="left"><strong>usd</strong></td>
 <td align="left">A US-dollar amount.</td>
 <td align="left">
-<code>usd</code><br><span style="opacity:.7">unit: USD</span>
+<code>usd</code><br><span style="opacity:.7">unit:
+USD</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -279,7 +331,8 @@
 <td align="left"><strong>duration</strong></td>
 <td align="left">An elapsed amount of time as a number.</td>
 <td align="left">
-<code>duration</code><br><span style="opacity:.7">unit: seconds;;minutes;;hours;;days;;years</span>
+<code>duration</code><br><span style="opacity:.7">unit:
+seconds;;minutes;;hours;;days;;years</span>
 </td>
 <td align="left"><code>shape</code></td>
 </tr>
@@ -288,7 +341,8 @@
 <td align="left"><strong>index</strong></td>
 <td align="left">A constructed index relative to a base.</td>
 <td align="left">
-<code>index</code><br><span style="opacity:.7">unit: index-specific scale</span>
+<code>index</code><br><span style="opacity:.7">unit:
+index-specific scale</span>
 </td>
 <td align="left"><code>shape</code></td>
 </tr>
@@ -306,7 +360,8 @@
 <td align="left"><strong>rank</strong></td>
 <td align="left">An ordinal rank position.</td>
 <td align="left">
-<code>rank</code><br><span style="opacity:.7">unit: rank position</span>
+<code>rank</code><br><span style="opacity:.7">unit:
+rank position</span>
 </td>
 <td align="left"><code>shape</code></td>
 </tr>
@@ -315,7 +370,8 @@
 <td align="left"><strong>rate</strong></td>
 <td align="left">An amount per unit of exposure or time.</td>
 <td align="left">
-<code>rate</code><br><span style="opacity:.7">unit: per capita;;per 1,000;;per year</span>
+<code>rate</code><br><span style="opacity:.7">unit: per
+capita;;per 1,000;;per year</span>
 </td>
 <td align="left"><code>shape</code></td>
 </tr>
@@ -324,7 +380,8 @@
 <td align="left"><strong>ratio</strong></td>
 <td align="left">A ratio of two quantities.</td>
 <td align="left">
-<code>ratio</code><br><span style="opacity:.7">unit: numerator/denominator</span>
+<code>ratio</code><br><span style="opacity:.7">unit:
+numerator/denominator</span>
 </td>
 <td align="left"><code>shape</code></td>
 </tr>
@@ -333,7 +390,8 @@
 <td align="left"><strong>score</strong></td>
 <td align="left">A score on a defined scale.</td>
 <td align="left">
-<code>score</code><br><span style="opacity:.7">unit: scale points</span>
+<code>score</code><br><span style="opacity:.7">unit:
+scale points</span>
 </td>
 <td align="left"><code>shape</code></td>
 </tr>
@@ -358,7 +416,8 @@
 <tr class="even">
 <td align="left"></td>
 <td align="left"><em>* geographic</em></td>
-<td align="left"><em>geographic coordinates (lat / lon) are numbers — see the Geography section below</em></td>
+<td align="left"><em>geographic coordinates (lat / lon) are numbers —
+see the Geography section below</em></td>
 <td align="left"></td>
 <td align="left"></td>
 </tr>
@@ -367,10 +426,21 @@
 </div>
 <div class="section level2">
 <h2 id="text-strings-from-free-prose-to-structured-tokens">
-<code>text</code> — strings, from free prose to structured tokens<a class="anchor" aria-label="anchor" href="#text-strings-from-free-prose-to-structured-tokens"></a>
+<code>text</code> — strings, from free prose to structured
+tokens<a class="anchor" aria-label="anchor" href="#text-strings-from-free-prose-to-structured-tokens"></a>
 </h2>
-<p><code>text</code> covers values whose content is characters: names, email addresses, URLs, colors, and free-form notes. (Place names and postal addresses are geographic text, gathered in the Geography section at the end.) Some text is highly structured (an email, a hex color) and gets a scheme-specific recipe; some is genuinely free (<code>text.long</code>) and is simply preserved.</p>
-<p><strong>Not to be confused with <code>categorical</code>.</strong> A <code>text</code> column’s values are open-ended — a new row can introduce a name or note never seen before. A <code>categorical</code> column draws from a <em>fixed, closed</em> set of levels. “City name typed in freely” is text; “one of five survey response options” is categorical.</p>
+<p><code>text</code> covers values whose content is characters: names,
+email addresses, URLs, colors, and free-form notes. (Place names and
+postal addresses are geographic text, gathered in the Geography section
+at the end.) Some text is highly structured (an email, a hex color) and
+gets a scheme-specific recipe; some is genuinely free
+(<code>text.long</code>) and is simply preserved.</p>
+<p><strong>Not to be confused with <code>categorical</code>.</strong> A
+<code>text</code> column’s values are open-ended — a new row can
+introduce a name or note never seen before. A <code>categorical</code>
+column draws from a <em>fixed, closed</em> set of levels. “City name
+typed in freely” is text; “one of five survey response options” is
+categorical.</p>
 <table style="width:100%;" class="table">
 <colgroup>
 <col width="4%">
@@ -455,7 +525,8 @@
 <td align="left"><strong>person</strong></td>
 <td align="left">A person’s name.</td>
 <td align="left">
-<code>first_name</code>, <code>last_name</code>, <code>full_name</code>
+<code>first_name</code>, <code>last_name</code>,
+<code>full_name</code>
 </td>
 <td align="left"><code>lexicon / mask+lexicon</code></td>
 </tr>
@@ -525,7 +596,8 @@
 <tr class="even">
 <td align="left"></td>
 <td align="left"><em>* geographic</em></td>
-<td align="left"><em>place names and postal addresses are text — see the Geography section below</em></td>
+<td align="left"><em>place names and postal addresses are text — see the
+Geography section below</em></td>
 <td align="left"></td>
 <td align="left"></td>
 </tr>
@@ -536,8 +608,18 @@
 <h2 id="temporal-points-and-spans-in-time">
 <code>temporal</code> — points and spans in time<a class="anchor" aria-label="anchor" href="#temporal-points-and-spans-in-time"></a>
 </h2>
-<p><code>temporal</code> values live on a timeline: a calendar date, a timestamp, a quarter, a day-of-week. They are detected by a flexible reader (<code>genome</code>) that recognizes many written forms and normalizes them to ISO. The <code>period</code> and <code>phase</code> families cover coarser or cyclic time (a fiscal quarter, a month-of-year), where a <code>unit_type</code> such as the fiscal convention can matter.</p>
-<p><strong>Not to be confused with <code>number</code>.</strong> <code>2019</code> could be a count or a year; <code>3.15</code> could be a measurement or a fragment of a date. What makes a column <code>temporal</code> is that its values <em>locate something in time</em>, which the reader confirms by parsing them as such.</p>
+<p><code>temporal</code> values live on a timeline: a calendar date, a
+timestamp, a quarter, a day-of-week. They are detected by a flexible
+reader (<code>genome</code>) that recognizes many written forms and
+normalizes them to ISO. The <code>period</code> and <code>phase</code>
+families cover coarser or cyclic time (a fiscal quarter, a
+month-of-year), where a <code>unit_type</code> such as the fiscal
+convention can matter.</p>
+<p><strong>Not to be confused with <code>number</code>.</strong>
+<code>2019</code> could be a count or a year; <code>3.15</code> could be
+a measurement or a fragment of a date. What makes a column
+<code>temporal</code> is that its values <em>locate something in
+time</em>, which the reader confirms by parsing them as such.</p>
 <table style="width:100%;" class="table">
 <colgroup>
 <col width="5%">
@@ -584,7 +666,8 @@
 <td align="left"><strong>month</strong></td>
 <td align="left">A calendar month.</td>
 <td align="left">
-<code>month</code><br><span style="opacity:.7">unit: calendar month</span>
+<code>month</code><br><span style="opacity:.7">unit:
+calendar month</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -593,7 +676,8 @@
 <td align="left"><strong>quarter</strong></td>
 <td align="left">A quarter.</td>
 <td align="left">
-<code>quarter</code><br><span style="opacity:.7">unit: calendar or fiscal quarter</span>
+<code>quarter</code><br><span style="opacity:.7">unit:
+calendar or fiscal quarter</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -611,7 +695,8 @@
 <td align="left"><strong>year</strong></td>
 <td align="left">A year.</td>
 <td align="left">
-<code>year</code><br><span style="opacity:.7">unit: calendar or fiscal year</span>
+<code>year</code><br><span style="opacity:.7">unit:
+calendar or fiscal year</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -656,7 +741,8 @@
 <td align="left"><strong>clock</strong></td>
 <td align="left">A time of day (no date).</td>
 <td align="left">
-<code>clock</code><br><span style="opacity:.7">unit: hour;;minute</span>
+<code>clock</code><br><span style="opacity:.7">unit:
+hour;;minute</span>
 </td>
 <td align="left"><code>genome</code></td>
 </tr>
@@ -667,8 +753,16 @@
 <h2 id="categorical-a-value-from-a-fixed-set-of-levels">
 <code>categorical</code> — a value from a fixed set of levels<a class="anchor" aria-label="anchor" href="#categorical-a-value-from-a-fixed-set-of-levels"></a>
 </h2>
-<p>A <code>categorical</code> column takes one value from a closed vocabulary: a Likert response, a classification code, a set of tags. The level-to-label mapping lives in a dictionary alongside the data; the ontology records only the <em>shape</em> of the encoding.</p>
-<p><strong>Not to be confused with <code>boolean</code> or <code>text</code>.</strong> A <code>boolean</code> is the special case of exactly two levels that mean true/false. Free strings with no fixed set are <code>text</code>. Many categorical types are <code>none</code>-detected: a column of codes <code>1, 2, 3</code> cannot be told from a count without its labels.</p>
+<p>A <code>categorical</code> column takes one value from a closed
+vocabulary: a Likert response, a classification code, a set of tags. The
+level-to-label mapping lives in a dictionary alongside the data; the
+ontology records only the <em>shape</em> of the encoding.</p>
+<p><strong>Not to be confused with <code>boolean</code> or
+<code>text</code>.</strong> A <code>boolean</code> is the special case
+of exactly two levels that mean true/false. Free strings with no fixed
+set are <code>text</code>. Many categorical types are
+<code>none</code>-detected: a column of codes <code>1, 2, 3</code>
+cannot be told from a count without its labels.</p>
 <table class="table">
 <colgroup>
 <col width="7%">
@@ -738,7 +832,8 @@
 <td align="left"><strong>likert</strong></td>
 <td align="left">A Likert agreement scale.</td>
 <td align="left">
-<code>likert</code><br><span style="opacity:.7">unit: ordered response scale</span>
+<code>likert</code><br><span style="opacity:.7">unit:
+ordered response scale</span>
 </td>
 <td align="left"><code>none</code></td>
 </tr>
@@ -747,7 +842,8 @@
 <td align="left"><strong>ranking</strong></td>
 <td align="left">A ranking of options.</td>
 <td align="left">
-<code>ranking</code><br><span style="opacity:.7">unit: rank position</span>
+<code>ranking</code><br><span style="opacity:.7">unit:
+rank position</span>
 </td>
 <td align="left"><code>none</code></td>
 </tr>
@@ -756,14 +852,16 @@
 <td align="left"><strong>rating</strong></td>
 <td align="left">A rating scale.</td>
 <td align="left">
-<code>rating</code><br><span style="opacity:.7">unit: ordered scale (1-5;;1-10)</span>
+<code>rating</code><br><span style="opacity:.7">unit:
+ordered scale (1-5;;1-10)</span>
 </td>
 <td align="left"><code>none</code></td>
 </tr>
 <tr class="even">
 <td align="left"></td>
 <td align="left"><em>* geographic</em></td>
-<td align="left"><em>geographic groupings (state, country, city) — see the Geography section below</em></td>
+<td align="left"><em>geographic groupings (state, country, city) — see
+the Geography section below</em></td>
 <td align="left"></td>
 <td align="left"></td>
 </tr>
@@ -774,9 +872,25 @@
 <h2 id="boolean-a-two-state-flag">
 <code>boolean</code> — a two-state flag<a class="anchor" aria-label="anchor" href="#boolean-a-two-state-flag"></a>
 </h2>
-<p>A <code>boolean</code> is a yes/no, true/false, present/absent flag. <code>formex</code> recognizes a wide vocabulary of encodings (<code>yes/no</code>, <code>t/f</code>, <code>1/0</code>, <code>active/inactive</code>, a bare <code>x</code> check) and maps them all to <code>TRUE</code>/<code>FALSE</code>.</p>
-<p><strong>Not to be confused with <code>categorical</code>.</strong> A boolean is <em>exactly</em> two states that collapse to logical true/false. Three or more mutually exclusive levels are categorical. The one thing that cannot be defaulted is the blank policy — a blank is <em>missing</em> in a survey but <em>FALSE</em> in a checkbox — so the encoding records it explicitly.</p>
+<p>A <code>boolean</code> is a yes/no, true/false, present/absent flag.
+<code>formex</code> recognizes a wide vocabulary of encodings
+(<code>yes/no</code>, <code>t/f</code>, <code>1/0</code>,
+<code>active/inactive</code>, a bare <code>x</code> check) and maps them
+all to <code>TRUE</code>/<code>FALSE</code>.</p>
+<p><strong>Not to be confused with <code>categorical</code>.</strong> A
+boolean is <em>exactly</em> two states that collapse to logical
+true/false. Three or more mutually exclusive levels are categorical. The
+one thing that cannot be defaulted is the blank policy — a blank is
+<em>missing</em> in a survey but <em>FALSE</em> in a checkbox — so the
+encoding records it explicitly.</p>
 <table class="table">
+<colgroup>
+<col width="8%">
+<col width="16%">
+<col width="47%">
+<col width="18%">
+<col width="10%">
+</colgroup>
 <thead><tr class="header">
 <th align="left">family</th>
 <th align="left">semantic_type</th>
@@ -825,10 +939,22 @@
 </div>
 <div class="section level2">
 <h2 id="identifier-keys-and-codes-that-must-be-preserved-exactly">
-<code>identifier</code> — keys and codes that must be preserved exactly<a class="anchor" aria-label="anchor" href="#identifier-keys-and-codes-that-must-be-preserved-exactly"></a>
+<code>identifier</code> — keys and codes that must be preserved
+exactly<a class="anchor" aria-label="anchor" href="#identifier-keys-and-codes-that-must-be-preserved-exactly"></a>
 </h2>
-<p>An <code>identifier</code> labels something: an EIN, an ISBN, a DOI, a record key, a geographic GEOID (see the Geography section at the end). The defining rule is that its written form <em>is</em> the data — leading zeros, delimiters, and check digits all matter — so it must never be coerced to a number or silently reformatted.</p>
-<p><strong>Not to be confused with <code>number</code>.</strong> This is the most consequential distinction in the whole ontology, because treating an identifier as a number is how real data gets corrupted (<code>06037</code> → <code>6037</code>). Identifiers are detected by <code>mask</code> (a fixed shape, often with a checksum) and sometimes a <code>lexicon</code> of valid codes; <code>record</code> and <code>entity</code> keys are <code>none</code>, knowable only from context.</p>
+<p>An <code>identifier</code> labels something: an EIN, an ISBN, a DOI,
+a record key, a geographic GEOID (see the Geography section at the end).
+The defining rule is that its written form <em>is</em> the data —
+leading zeros, delimiters, and check digits all matter — so it must
+never be coerced to a number or silently reformatted.</p>
+<p><strong>Not to be confused with <code>number</code>.</strong> This is
+the most consequential distinction in the whole ontology, because
+treating an identifier as a number is how real data gets corrupted
+(<code>06037</code> → <code>6037</code>). Identifiers are detected by
+<code>mask</code> (a fixed shape, often with a checksum) and sometimes a
+<code>lexicon</code> of valid codes; <code>record</code> and
+<code>entity</code> keys are <code>none</code>, knowable only from
+context.</p>
 <table class="table">
 <colgroup>
 <col width="4%">
@@ -850,7 +976,8 @@
 <td align="left"><strong>administrative</strong></td>
 <td align="left">An administrative / registry ID.</td>
 <td align="left">
-<code>ein</code>, <code>isbn</code>, <code>doi</code>, <code>orcid</code>, <code>issn</code>
+<code>ein</code>, <code>isbn</code>, <code>doi</code>,
+<code>orcid</code>, <code>issn</code>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -885,7 +1012,8 @@
 <tr class="even">
 <td align="left"></td>
 <td align="left"><em>* geographic</em></td>
-<td align="left"><em>geographic keys (FIPS / GEOID) are identifiers — see the Geography section below</em></td>
+<td align="left"><em>geographic keys (FIPS / GEOID) are identifiers —
+see the Geography section below</em></td>
 <td align="left"></td>
 <td align="left"></td>
 </tr>
@@ -896,8 +1024,15 @@
 <h2 id="structured-composite-values-with-internal-parts">
 <code>structured</code> — composite values with internal parts<a class="anchor" aria-label="anchor" href="#structured-composite-values-with-internal-parts"></a>
 </h2>
-<p>A <code>structured</code> value packs more than one field into a single cell: a JSON object, a WKT geometry (geographic geometries are gathered in the Geography section at the end), an array, a key-value blob. It is detected by the syntax of the container and is typically handled by parsing or splitting into component variables.</p>
-<p><strong>Not to be confused with <code>categorical</code> tags.</strong> A <code>multiselect</code> tag list is a flat set of labels; a <code>structured</code> value has real internal syntax (brackets, braces, coordinates) that a parser must honor.</p>
+<p>A <code>structured</code> value packs more than one field into a
+single cell: a JSON object, a WKT geometry (geographic geometries are
+gathered in the Geography section at the end), an array, a key-value
+blob. It is detected by the syntax of the container and is typically
+handled by parsing or splitting into component variables.</p>
+<p><strong>Not to be confused with <code>categorical</code>
+tags.</strong> A <code>multiselect</code> tag list is a flat set of
+labels; a <code>structured</code> value has real internal syntax
+(brackets, braces, coordinates) that a parser must honor.</p>
 <table class="table">
 <colgroup>
 <col width="5%">
@@ -919,7 +1054,8 @@
 <td align="left"><strong>array</strong></td>
 <td align="left">An array.</td>
 <td align="left">
-<code>array</code><br><span style="opacity:.7">unit: dimensions</span>
+<code>array</code><br><span style="opacity:.7">unit:
+dimensions</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -944,14 +1080,16 @@
 <td align="left"><strong>object</strong></td>
 <td align="left">An object.</td>
 <td align="left">
-<code>object</code><br><span style="opacity:.7">unit: record schema</span>
+<code>object</code><br><span style="opacity:.7">unit:
+record schema</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
 <tr class="odd">
 <td align="left"></td>
 <td align="left"><em>* geographic</em></td>
-<td align="left"><em>geographic geometries (point, polygon) — see the Geography section below</em></td>
+<td align="left"><em>geographic geometries (point, polygon) — see the
+Geography section below</em></td>
 <td align="left"></td>
 <td align="left"></td>
 </tr>
@@ -962,8 +1100,21 @@
 <h2 id="unknown-the-honest-fallback">
 <code>unknown</code> — the honest fallback<a class="anchor" aria-label="anchor" href="#unknown-the-honest-fallback"></a>
 </h2>
-<p><code>unknown</code> is where a column lands when the values cannot support any type: a column mixing dates, numbers, and prose (<code>heterogeneous</code>), a column of corrupt values (<code>malformed</code>), or one that simply did not resolve (<code>unclassified</code>). It is deliberately part of the ontology, so the engine always has a safe, truthful place to stop rather than forcing a wrong guess.</p>
+<p><code>unknown</code> is where a column lands when the values cannot
+support any type: a column mixing dates, numbers, and prose
+(<code>heterogeneous</code>), a column of corrupt values
+(<code>malformed</code>), or one that simply did not resolve
+(<code>unclassified</code>). It is deliberately part of the ontology, so
+the engine always has a safe, truthful place to stop rather than forcing
+a wrong guess.</p>
 <table class="table">
+<colgroup>
+<col width="9%">
+<col width="20%">
+<col width="41%">
+<col width="18%">
+<col width="10%">
+</colgroup>
 <thead><tr class="header">
 <th align="left">family</th>
 <th align="left">semantic_type</th>
@@ -999,10 +1150,21 @@
 </div>
 <div class="section level2">
 <h2 id="geography-a-cross-cutting-domain-not-a-data-type">
-<code>geography</code> — a cross-cutting domain, not a data type<a class="anchor" aria-label="anchor" href="#geography-a-cross-cutting-domain-not-a-data-type"></a>
+<code>geography</code> — a cross-cutting domain, not a data
+type<a class="anchor" aria-label="anchor" href="#geography-a-cross-cutting-domain-not-a-data-type"></a>
 </h2>
-<p>Geography is the one case that deliberately does <strong>not</strong> get its own <code>data_type</code>, and it is worth saying why. The top level of the ontology classifies <em>how a value should be treated, not what domain it is about</em> — and a geographic value can need completely different handling depending on the column it sits in. The <em>same place</em> can be three data types at once: <code>"Los Angeles County"</code> the <strong>label</strong>, <code>06037</code> the <strong>key</strong>, and <code>34.3, -118.2</code> the <strong>coordinate</strong>.</p>
-<p>So geographic entries are distributed across the data types above. Here they are gathered in one place, with a <code>data_type</code> column so the split is explicit:</p>
+<p>Geography is the one case that deliberately does <strong>not</strong>
+get its own <code>data_type</code>, and it is worth saying why. The top
+level of the ontology classifies <em>how a value should be treated, not
+what domain it is about</em> — and a geographic value can need
+completely different handling depending on the column it sits in. The
+<em>same place</em> can be three data types at once:
+<code>"Los Angeles County"</code> the <strong>label</strong>,
+<code>06037</code> the <strong>key</strong>, and
+<code>34.3, -118.2</code> the <strong>coordinate</strong>.</p>
+<p>So geographic entries are distributed across the data types above.
+Here they are gathered in one place, with a <code>data_type</code>
+column so the split is explicit:</p>
 <table class="table">
 <colgroup>
 <col width="7%">
@@ -1027,7 +1189,8 @@
 <td align="left"><strong>lat</strong></td>
 <td align="left">A latitude.</td>
 <td align="left">
-<code>lat</code><br><span style="opacity:.7">unit: EPSG:4326</span>
+<code>lat</code><br><span style="opacity:.7">unit:
+EPSG:4326</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -1047,7 +1210,8 @@
 <td align="left"><strong>lon</strong></td>
 <td align="left">A longitude.</td>
 <td align="left">
-<code>lon</code><br><span style="opacity:.7">unit: EPSG:4326</span>
+<code>lon</code><br><span style="opacity:.7">unit:
+EPSG:4326</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -1057,7 +1221,8 @@
 <td align="left"><strong>lon_lat</strong></td>
 <td align="left">A lon/lat pair in degrees-minutes-seconds.</td>
 <td align="left">
-<code>lon_lat</code><br><span style="opacity:.7">unit: EPSG:4326</span>
+<code>lon_lat</code><br><span style="opacity:.7">unit:
+EPSG:4326</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -1077,7 +1242,8 @@
 <td align="left"><strong>geographic</strong></td>
 <td align="left">A geographic grouping.</td>
 <td align="left">
-<code>iso_country</code>, <code>us_state</code>, <code>us_city</code>, <code>county_fips</code><br><span style="opacity:.7">unit: geographic level</span>
+<code>iso_country</code>, <code>us_state</code>,
+<code>us_city</code>, <code>county_fips</code><br><span style="opacity:.7">unit: geographic level</span>
 </td>
 <td align="left"><code>lexicon / mask+lexicon</code></td>
 </tr>
@@ -1119,7 +1285,8 @@
 <td align="left"><strong>point</strong></td>
 <td align="left">A point geometry.</td>
 <td align="left">
-<code>point</code><br><span style="opacity:.7">unit: EPSG:4326</span>
+<code>point</code><br><span style="opacity:.7">unit:
+EPSG:4326</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -1129,7 +1296,8 @@
 <td align="left"><strong>polygon</strong></td>
 <td align="left">A polygon geometry.</td>
 <td align="left">
-<code>polygon</code><br><span style="opacity:.7">unit: EPSG:4326</span>
+<code>polygon</code><br><span style="opacity:.7">unit:
+EPSG:4326</span>
 </td>
 <td align="left"><code>mask</code></td>
 </tr>
@@ -1138,32 +1306,61 @@
 <p>Why each case lands where it does:</p>
 <ul>
 <li>
-<strong><code>number</code> — coordinates.</strong> A latitude/longitude pair is a <em>measurement</em> on a datum (its <code>unit_type</code> is a coordinate reference system such as EPSG:4326). You interpolate it, compute distances, reproject it — all arithmetic — so it is a number.</li>
+<strong><code>number</code> — coordinates.</strong> A
+latitude/longitude pair is a <em>measurement</em> on a datum (its
+<code>unit_type</code> is a coordinate reference system such as
+EPSG:4326). You interpolate it, compute distances, reproject it — all
+arithmetic — so it is a number.</li>
 <li>
-<strong><code>identifier</code> — geographic keys.</strong> A FIPS or GEOID like <code>06037</code> is a <em>key</em> you join on. Its leading zero and fixed width are load-bearing, so it must stay text and is hardened (<code>FIPS-06037</code>) against a spreadsheet silently turning it into <code>6037</code>. Taking its average is meaningless.</li>
+<strong><code>identifier</code> — geographic keys.</strong> A FIPS
+or GEOID like <code>06037</code> is a <em>key</em> you join on. Its
+leading zero and fixed width are load-bearing, so it must stay text and
+is hardened (<code>FIPS-06037</code>) against a spreadsheet silently
+turning it into <code>6037</code>. Taking its average is
+meaningless.</li>
 <li>
-<strong><code>categorical</code> — groupings.</strong> A state or country used to <em>group</em> rows (<code>us_state</code>, <code>iso_country</code>) is a factor you analyze <em>by</em>: a closed vocabulary, matched against a lexicon.</li>
+<strong><code>categorical</code> — groupings.</strong> A state or
+country used to <em>group</em> rows (<code>us_state</code>,
+<code>iso_country</code>) is a factor you analyze <em>by</em>: a closed
+vocabulary, matched against a lexicon.</li>
 <li>
-<strong><code>text</code> — place names and addresses.</strong> A freely typed city name or a street address is open-ended text — a new row can introduce one never seen before — so it is handled as text, not as a closed category.</li>
+<strong><code>text</code> — place names and addresses.</strong> A
+freely typed city name or a street address is open-ended text — a new
+row can introduce one never seen before — so it is handled as text, not
+as a closed category.</li>
 <li>
-<strong><code>structured</code> — geometries.</strong> A WKT point or polygon packs coordinates into a single cell with real internal syntax that a parser must honor.</li>
+<strong><code>structured</code> — geometries.</strong> A WKT point
+or polygon packs coordinates into a single cell with real internal
+syntax that a parser must honor.</li>
 </ul>
-<p>So when you meet a geographic column, the useful question is not “is this geography?” but “which <strong>treatment</strong> does it need?” — and the answer places it under the matching data type, with that type’s recipe for cleaning and storing it.</p>
+<p>So when you meet a geographic column, the useful question is not “is
+this geography?” but “which <strong>treatment</strong> does it need?” —
+and the answer places it under the matching data type, with that type’s
+recipe for cleaning and storing it.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="stable-identities-so-a-label-means-the-same-thing-next-year">Stable identities, so a label means the same thing next year<a class="anchor" aria-label="anchor" href="#stable-identities-so-a-label-means-the-same-thing-next-year"></a>
 </h2>
-<p>Every entry carries a stable <code>semantic_type_id</code> (like <code>n0059</code>) and <code>variant_id</code> (like <code>n0059-f01</code>) that are assigned once and never reused. Types are <em>retired</em> rather than deleted, so a label you record today still means the same thing years from now. <code><a href="../reference/fx_ontology.html">fx_ontology()</a></code> reads the whole map; <code><a href="../reference/fx_validate_ontology.html">fx_validate_ontology()</a></code> checks it is internally consistent.</p>
+<p>Every entry carries a stable <code>semantic_type_id</code> (like
+<code>n0059</code>) and <code>variant_id</code> (like
+<code>n0059-f01</code>) that are assigned once and never reused. Types
+are <em>retired</em> rather than deleted, so a label you record today
+still means the same thing years from now. <code><a href="../reference/fx_ontology.html">fx_ontology()</a></code>
+reads the whole map; <code><a href="../reference/fx_validate_ontology.html">fx_validate_ontology()</a></code> checks it is
+internally consistent.</p>
 </div>
 <div class="section level2">
 <h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
 </h2>
 <ul>
 <li>
-<strong>Guess Data Type</strong> — how a column is walked down this tree, and why the walk is allowed to stop early.</li>
+<strong>Guess Data Type</strong> — how a column is walked down this
+tree, and why the walk is allowed to stop early.</li>
 <li>
-<strong>Formatting Syntax</strong> — the recipe each leaf stores for cleaning and safely storing its column, and how to add your own. ```</li>
+<strong>Formatting Syntax</strong> — the recipe each leaf stores for
+cleaning and safely storing its column, and how to add your own.
+```</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -1177,7 +1374,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

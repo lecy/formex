@@ -24,15 +24,31 @@
   </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><h6 class="dropdown-header" data-toc-skip>Data Types</h6></li>
     <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
-    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
+    <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Data Type Detection</h6></li>
+    <li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Detector Types</h6></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Testing Libraries</h6></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
-    <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/feature-dataset.html">Building a Feature Dataset for Classification</a></li>
+    <li><a class="dropdown-item" href="../articles/classifier-decision-tree.html">Classifying Columns with a Decision Tree</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Extending the Library</h6></li>
+    <li><a class="dropdown-item" href="../articles/autotype-framework.html">The AutoType Framework</a></li>
+    <li><a class="dropdown-item" href="../articles/synthetic-data-temporal.html">Synthetic Data: the Temporal Case</a></li>
+    <li><a class="dropdown-item" href="../articles/adding-a-detector.html">Adding a Detector</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Formex Syntax</h6></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -83,11 +99,11 @@ code list at any level (<code>.naics</code>, rolled up from the 2022 NAICS index
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other gov detectors:
-<code><a href="is_chinese_resident_id.html">is_chinese_resident_id</a>()</code>,
-<code><a href="is_dea.html">is_dea</a>()</code>,
-<code><a href="is_ein.html">is_ein</a>()</code>,
-<code><a href="is_ssn.html">is_ssn</a>()</code>,
-<code><a href="is_uei.html">is_uei</a>()</code></p></div>
+<code><a href="is_chinese_resident_id.html">is_chinese_resident_id()</a></code>,
+<code><a href="is_dea.html">is_dea()</a></code>,
+<code><a href="is_ein.html">is_ein()</a></code>,
+<code><a href="is_ssn.html">is_ssn()</a></code>,
+<code><a href="is_uei.html">is_uei()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -105,7 +121,7 @@ code list at any level (<code>.naics</code>, rolled up from the 2022 NAICS index
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

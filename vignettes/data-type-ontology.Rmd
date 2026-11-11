@@ -282,3 +282,4 @@ same thing years from now.
   `mask`, `lexicon`, and `genome` detection kinds.
 * `fx_ontology()` reads the whole map; `fx_validate_ontology()` checks it is
   internally consistent.
+* **Formex: the format-expression syntax** --- how each type's stabilization recipe is written.

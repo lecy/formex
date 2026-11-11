@@ -260,3 +260,9 @@ recall/precision table shown here before you adopt it. Once you are happy:
 
 See `?generate_autotype_test_cases`, `?build_autotype_results`, and
 `?generate_autotype_report` for details.
+
+## See also
+
+* **How Detectors Recognize a Type** --- the structures a detector keys on.
+* **The AutoType Framework** --- generating hard negatives and refining a mask.
+* **Adding a Detector** --- the end-to-end steps to add one.
