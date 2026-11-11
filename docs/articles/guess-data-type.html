@@ -212,6 +212,75 @@ name, it is used as a tie-breaker:</p>
 </div>
 </div>
 <div class="section level2">
+<h2 id="inside-the-guess-the-router-and-the-verifier">Inside the guess: the router and the verifier<a class="anchor" aria-label="anchor" href="#inside-the-guess-the-router-and-the-verifier"></a>
+</h2>
+<p>The two-step summary above is the whole architecture, but it is worth
+seeing why it is built that way — it is what separates a
+<em>trustworthy</em> answer from a merely plausible one.</p>
+<p><strong>The router (propose).</strong> Scoring every detector against
+every column is expensive, so a column is first turned into a fixed
+<strong>feature profile</strong>: 477 numbers summarizing its shape and
+content (see <code><a href="../articles/feature-engineering.html">vignette("feature-engineering")</a></code>). A learned
+model — an xgboost classifier shipped in
+<code>inst/extdata/router_xgb.rds</code> — reads that profile and
+proposes a short list of the most likely ontology types. When the model
+or the xgboost package is unavailable, a model-free <strong>signature
+router</strong> falls back to comparing the column’s profile against
+each type’s example signatures. <code>$route$router_method</code>
+reports which one ran.</p>
+<p><strong>The verifier (confirm).</strong> A shortlist is a guess about
+what the column <em>looks like</em>; the verifier checks what it
+<em>is</em>. For each candidate it runs that type’s ontology recipe on
+the values and measures two rates:</p>
+<ul>
+<li>
+<strong>confirm</strong> — the share of the column’s values the
+recipe accepts (does it fit?);</li>
+<li>
+<strong>leak</strong> — the share of a contrasting <em>foil</em> set
+the recipe wrongly accepts (does it also accept junk?).</li>
+</ul>
+<p>A variant wins a specific leaf only if it is
+<strong>selective</strong>: <code>confirm</code> high <em>and</em>
+<code>leak</code> low. This is the mechanism behind “it only answers as
+far as it’s sure”: a loose rule like “is a number” confirms almost
+everything but leaks almost everything too, so it can never win a leaf —
+the guess truncates to the depth the evidence supports
+(<code>data_type → semantic_family → semantic_type → format</code>),
+which <code>$route$depth</code> records (0 = unknown … 4 = a full format
+leaf).</p>
+<p><strong>The always-on set.</strong> A few selective types are
+high-precision but so rare the router never shortlists them: dates and
+person names (which the profile confuses with identifiers and hashes),
+geometry, colors, phone, and the boolean family. Their recipes are
+<em>always</em> verified regardless of the shortlist, and the foil gate
+still blocks a false leaf — closing the “dark detector” gap where a
+correct but rare type would otherwise score zero.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"06037"</span>, <span class="st">"36061"</span>, <span class="st">"48201"</span><span class="op">)</span>, name <span class="op">=</span> <span class="st">"county_fips"</span><span class="op">)</span><span class="op">$</span><span class="va">route</span></span>
+<span><span class="va">r</span><span class="op">$</span><span class="va">router_method</span>   <span class="co"># "learned" or "signature"</span></span>
+<span><span class="co">#&gt; [1] "learned"</span></span>
+<span><span class="va">r</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"data_type"</span>, <span class="st">"semantic_family"</span>, <span class="st">"semantic_type"</span>, <span class="st">"depth"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; $data_type</span></span>
+<span><span class="co">#&gt; [1] "identifier"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $semantic_family</span></span>
+<span><span class="co">#&gt; [1] "id"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $semantic_type</span></span>
+<span><span class="co">#&gt; [1] "geographic"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $depth</span></span>
+<span><span class="co">#&gt; [1] 4</span></span></code></pre></div>
+<p>So the pipeline is <strong>profile → router (propose) → verifier
+(confirm, selectively) → an ontology path as deep as the evidence
+allows</strong>. The detectors the verifier runs are catalogued in
+<code><a href="../articles/data-type-detectors.html">vignette("data-type-detectors")</a></code>, the structures they key on
+in <code><a href="../articles/detector-kinds.html">vignette("detector-kinds")</a></code>, and the way they are
+stress-tested for exactly this foil-selectivity in
+<code><a href="../articles/autotype-framework.html">vignette("autotype-framework")</a></code>.</p>
+</div>
+<div class="section level2">
 <h2 id="stabilizers-making-a-column-safe-to-store">Stabilizers: making a column safe to store<a class="anchor" aria-label="anchor" href="#stabilizers-making-a-column-safe-to-store"></a>
 </h2>
 <p>A <strong>stabilizer</strong> is the second half of formex. It takes
@@ -257,7 +326,7 @@ reopen them, and three things can go wrong:</p>
 <p><code><a href="../reference/fx_stabilize.html">fx_stabilize()</a></code> fixes each by (1) normalizing the value
 and (2) attaching an <strong>import rule</strong> that tells a reader
 how to bring it back as the correct type:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span><span class="op">)</span>, <span class="st">"calendar"</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stable"</span>, <span class="st">"import_rule"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $stable</span></span>
 <span><span class="co">#&gt; [1] "2019-03-15" "2020-12-31"</span></span>
@@ -280,7 +349,7 @@ that they are USD rides along as metadata, not buried in the text.</li>
 leading zero <em>and</em> carries the rule that re-imports it as text,
 so <code>06037</code> stays <code>06037</code> instead of collapsing to
 a number:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"6037"</span>, <span class="st">"06037"</span><span class="op">)</span>, <span class="st">"geographic"</span>, <span class="st">"county_fips"</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stable"</span>, <span class="st">"import_rule"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $stable</span></span>
 <span><span class="co">#&gt; [1] NA      "06037"</span></span>
@@ -296,7 +365,7 @@ fix-ups and no silent corruption.</p>
 <div class="section level2">
 <h2 id="the-whole-loop">The whole loop<a class="anchor" aria-label="anchor" href="#the-whole-loop"></a>
 </h2>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">x</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03/15/2019"</span>, <span class="st">"12/31/2020"</span>, <span class="st">"01/01/2021"</span><span class="op">)</span></span>
 <span><span class="va">route</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/guess_data_type.html">guess_data_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">$</span><span class="va">route</span>          <span class="co"># 1. what is it?</span></span>
 <span><span class="fu"><a href="../reference/fx_stabilize.html">fx_stabilize</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">route</span><span class="op">$</span><span class="va">semantic_type</span>, <span class="va">route</span><span class="op">$</span><span class="va">format_label</span><span class="op">)</span><span class="op">$</span><span class="va">stable</span>  <span class="co"># 2. make it safe</span></span>

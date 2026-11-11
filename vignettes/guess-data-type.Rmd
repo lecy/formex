@@ -94,6 +94,56 @@ guess_data_type(vals, name = "county_fips")$guess
 guess_data_type(vals, name = "zip_code")$guess
 ```
 
+## Inside the guess: the router and the verifier
+
+The two-step summary above is the whole architecture, but it is worth seeing why
+it is built that way --- it is what separates a *trustworthy* answer from a merely
+plausible one.
+
+**The router (propose).** Scoring every detector against every column is
+expensive, so a column is first turned into a fixed **feature profile**: 477
+numbers summarizing its shape and content (see
+`vignette("feature-engineering")`). A learned model --- an xgboost classifier
+shipped in `inst/extdata/router_xgb.rds` --- reads that profile and proposes a
+short list of the most likely ontology types. When the model or the xgboost
+package is unavailable, a model-free **signature router** falls back to comparing
+the column's profile against each type's example signatures.
+`$route$router_method` reports which one ran.
+
+**The verifier (confirm).** A shortlist is a guess about what the column *looks
+like*; the verifier checks what it *is*. For each candidate it runs that type's
+ontology recipe on the values and measures two rates:
+
+* **confirm** --- the share of the column's values the recipe accepts (does it fit?);
+* **leak** --- the share of a contrasting *foil* set the recipe wrongly accepts
+  (does it also accept junk?).
+
+A variant wins a specific leaf only if it is **selective**: `confirm` high *and*
+`leak` low. This is the mechanism behind "it only answers as far as it's sure": a
+loose rule like "is a number" confirms almost everything but leaks almost
+everything too, so it can never win a leaf --- the guess truncates to the depth
+the evidence supports (`data_type → semantic_family → semantic_type → format`),
+which `$route$depth` records (0 = unknown ... 4 = a full format leaf).
+
+**The always-on set.** A few selective types are high-precision but so rare the
+router never shortlists them: dates and person names (which the profile confuses
+with identifiers and hashes), geometry, colors, phone, and the boolean family.
+Their recipes are *always* verified regardless of the shortlist, and the foil gate
+still blocks a false leaf --- closing the "dark detector" gap where a correct but
+rare type would otherwise score zero.
+
+```{r route-record}
+r <- guess_data_type(c("06037", "36061", "48201"), name = "county_fips")$route
+r$router_method   # "learned" or "signature"
+r[c("data_type", "semantic_family", "semantic_type", "depth")]
+```
+
+So the pipeline is **profile → router (propose) → verifier (confirm, selectively)
+→ an ontology path as deep as the evidence allows**. The detectors the verifier
+runs are catalogued in `vignette("data-type-detectors")`, the structures they key
+on in `vignette("detector-kinds")`, and the way they are stress-tested for exactly
+this foil-selectivity in `vignette("autotype-framework")`.
+
 ## Stabilizers: making a column safe to store
 
 A **stabilizer** is the second half of formex. It takes the raw values and
