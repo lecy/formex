@@ -32,6 +32,7 @@ data-raw/eval/sherlock/
 # Generated type-classification feature dataset (data-raw/build_feature_dataset.R).
 # The .rds is committed; the large CSV export and build log are regenerable.
 data-raw/type_features_dataset.csv
+data-raw/type_features_teaching.csv
 data-raw/build_feature_dataset.log
 
 # The pkgdown site is committed and served by GitHub Pages from /docs on main.

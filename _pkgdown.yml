@@ -35,6 +35,8 @@ navbar:
         href: articles/data-type-detectors.html
       - text: Feature Engineering for Type Guessing
         href: articles/feature-engineering.html
+      - text: Classifying Columns with a Decision Tree
+        href: articles/classifier-decision-tree.html
       - text: The Testing Libraries
         href: articles/testing-libraries.html
       - text: Benchmarking and the Stress-Test Design Grid
@@ -154,6 +156,7 @@ articles:
   - data-type-detectors
   - data-type-ontology
   - feature-engineering
+  - classifier-decision-tree
   - testing-libraries
   - benchmarking
   - formex-type-atlas
