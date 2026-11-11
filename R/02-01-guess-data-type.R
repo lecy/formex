@@ -250,6 +250,8 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
 .fx_route_verify <- function(u, ont = fx_ontology(), router_k = 8,
                              confirm_thr = 0.80, leak_max = 0.25,
                              margin = 0.50, sig_floor = 0.55,
+                             tie_confirm_thr = 0.25, tie_leak_max = 0.0,
+                             tie_router_max = 0.95, tie_min_n = 30L,
                              prefer_router = "auto", uniq = NA_real_) {
   blank <- function(depth = 0L, conf = NA_real_, router = NULL, verified = NULL)
     list(data_type = NA_character_, semantic_family = NA_character_,
@@ -379,6 +381,67 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
     return(out)
   }
 
+  ## 1a) nothing cleared the SELECTIVE gate, but a ZERO-LEAK lexicon variant
+  ## still confirmed a substantial share of the column while the router's top-1
+  ## is only weakly confident. Prefer the lexicon.
+  ##
+  ## Rationale: `confirm` is direct evidence about THESE values -- a lexicon hit
+  ## on 44% of them, with the foil rejected outright (leak 0). The router's
+  ## `router_sim` is a class probability: a prior over columns that LOOK like
+  ## this one in feature space. Where the two disagree and the router is barely
+  ## past its own floor, the evidence should win. MEASURED: dg_baseball$nameLast
+  ## (607 MLB surnames) verifies person/last_name at confirm 0.437 / leak 0 and
+  ## geographic/us_city at 0.037, yet routed to categorical/geographic on a
+  ## 0.568 class probability -- surnames and US city names are indistinguishable
+  ## to the feature extractor (both: capitalized single alpha tokens, no digits,
+  ## high cardinality), and the surname lexicon covers only 42.7% of a roster
+  ## this heavily Latin American and Japanese.
+  ##
+  ## Gated hard, so this can only ever rescue a case stage 1 abstained on:
+  ##  - runs AFTER stage 1, so a selective leaf always outranks it;
+  ##  - `leak <= tie_leak_max` (default 0): the foil must be rejected outright,
+  ##    which is what separates last_name (leak 0) from handle (leak 0.609);
+  ##  - `confirm >= tie_confirm_thr` (default 0.25): a real share, not a trickle;
+  ##  - `router_sim < tie_router_max` (default 0.95): a confident router still
+  ##    wins, so this cannot overturn a strong model call;
+  ##  - the pick must beat the router's top-1 `semantic_type`, else there is no
+  ##    disagreement to resolve and stage 2 would reach the same place anyway.
+  ## Honest about its own strength: depth 4 (the variant IS identified) with
+  ## confidence = confirm, so a downstream consumer gating at 0.8 still ignores
+  ## it -- it sharpens the recorded guess without promoting a weak one.
+  ## `match_kind == "lexicon"` EXACTLY, never "mask+lexicon". The distinction is
+  ## the whole point: for a name lexicon, partial coverage means the LEXICON is
+  ## incomplete (42.7% here) and the misses are still surnames. For a code
+  ## lexicon reached through a shape mask, the mask already carried the signal
+  ## and the lexicon is a membership table -- partial coverage there means the
+  ## values are NOT that code. MEASURED: c("12309","88421","55012","73418",
+  ## "29100","61234") puts 3 of 6 random 5-digit numbers inside the county-FIPS
+  ## table (confirm 0.50, leak 0), which must not become a geographic leaf
+  ## (test-disambiguator.R).
+  ## `tie_min_n` guards the other end: on a handful of values `confirm` is a
+  ## coin flip, so the tie-break stays out of short columns entirely.
+  tie <- !is.na(vr$confirm) & vr$confirm >= tie_confirm_thr &
+         !is.na(vr$leak) & vr$leak <= tie_leak_max &
+         !is.na(vr$match_kind) & vr$match_kind == "lexicon"
+  if (any(tie) && length(u) >= tie_min_n && !is.na(router$router_sim[1]) &&
+      router$router_sim[1] < tie_router_max) {
+    ord <- which(tie)[order(-vr$confirm[tie])]
+    w   <- ord[1]
+    if (!identical(vr$semantic_type[w], router$semantic_type[1])) {
+      r  <- vr[w, ]
+      dd <- r$unit_type
+      return(list(
+        data_type = r$data_type, semantic_family = r$semantic_family,
+        semantic_type = r$semantic_type, semantic_type_id = r$semantic_type_id,
+        variant_id = r$variant_id, format_label = r$format_label,
+        format_style = r$format_style,
+        match_kind = r$match_kind, depth = 4L, confidence = r$confirm,
+        dd_unit = if (!is.na(dd) && nzchar(trimws(dd))) dd else NA_character_,
+        router_method = "lexicon-tiebreak",
+        candidates = list(router = router, verified = verified)))
+    }
+  }
+
   ## 1b) nothing selective, but the column is a recognizable typed MIXTURE ->
   ## the text/literal passthrough leaf (sec 6.1). Gated after every selective leaf
   ## (so a mono-typed column already won above) and narrow (see .fx_literal_mix),
@@ -495,6 +558,16 @@ score_data_type <- function(values, detectors = data_type_detectors()) {
 #' guess_data_type(c("06037", "36061"), name = "county_fips")$guess
 #' guess_data_type(c("03/15/2019", "12/31/2020"))$route$format_label  # calendar
 #'
+#' @param tie_confirm_thr Minimum verifier confirm rate for the zero-leak
+#'   lexicon tie-break (stage 1a) to fire when no variant cleared the selective
+#'   gate. Set to `1` to disable the tie-break entirely.
+#' @param tie_leak_max Maximum foil leak tolerated by the tie-break. The default
+#'   `0` demands the foil be rejected outright, which is what separates a clean
+#'   partial-coverage lexicon from a near-unselective one.
+#' @param tie_router_max Router top-1 class probability at or above which the
+#'   router keeps the call and the tie-break stands down.
+#' @param tie_min_n Minimum number of distinct values before the tie-break may
+#'   fire. Below it `confirm` is too noisy to outrank the router.
 #' @seealso [score_data_type()], [fx_stabilize()], [fx_ontology()]
 #' @export
 guess_data_type <- function(x, name = NULL, n_sample = 100, threshold = 0.8,
@@ -502,6 +575,8 @@ guess_data_type <- function(x, name = NULL, n_sample = 100, threshold = 0.8,
                             seed = NULL, route = TRUE, legacy = TRUE,
                             ontology = NULL,
                             router_k = 8, confirm_thr = 0.80, sig_floor = 0.55,
+                            tie_confirm_thr = 0.25, tie_leak_max = 0.0,
+                            tie_router_max = 0.95, tie_min_n = 30L,
                             router = c("auto", "learned", "signature")) {
   router <- match.arg(router)
   x <- as.character(x)
@@ -569,6 +644,10 @@ guess_data_type <- function(x, name = NULL, n_sample = 100, threshold = 0.8,
                  else tryCatch(.fx_route_verify(u, ont, router_k = router_k,
                                                 confirm_thr = confirm_thr,
                                                 sig_floor = sig_floor,
+                                                tie_confirm_thr = tie_confirm_thr,
+                                                tie_leak_max = tie_leak_max,
+                                                tie_router_max = tie_router_max,
+                                                tie_min_n = tie_min_n,
                                                 prefer_router = router,
                                                 uniq = uniq),
                                error = function(e) NULL)

@@ -18,6 +18,10 @@ guess_data_type(
   router_k = 8,
   confirm_thr = 0.8,
   sig_floor = 0.55,
+  tie_confirm_thr = 0.25,
+  tie_leak_max = 0,
+  tie_router_max = 0.95,
+  tie_min_n = 30L,
   router = c("auto", "learned", "signature")
 )
 }
@@ -59,6 +63,20 @@ to resolve a full leaf (depth 4).}
 
 \item{sig_floor}{Minimum router similarity for any non-\code{NA} route guess
 (signature router only).}
+
+\item{tie_confirm_thr}{Minimum verifier confirm rate for the zero-leak
+lexicon tie-break (stage 1a) to fire when no variant cleared the selective
+gate. Set to \code{1} to disable the tie-break entirely.}
+
+\item{tie_leak_max}{Maximum foil leak tolerated by the tie-break. The default
+\code{0} demands the foil be rejected outright, which is what separates a clean
+partial-coverage lexicon from a near-unselective one.}
+
+\item{tie_router_max}{Router top-1 class probability at or above which the
+router keeps the call and the tie-break stands down.}
+
+\item{tie_min_n}{Minimum number of distinct values before the tie-break may
+fire. Below it \code{confirm} is too noisy to outrank the router.}
 
 \item{router}{Which Stage-1 router to use: \code{"auto"} (default) prefers the
 learned xgboost model in \code{inst/extdata/router_xgb.rds} and falls back to
