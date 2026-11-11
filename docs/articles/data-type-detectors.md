@@ -1154,3 +1154,11 @@ See
 and
 [`?generate_autotype_report`](https://lecy.github.io/formex/reference/generate_autotype_report.md)
 for details.
+
+## See also
+
+- **How Detectors Recognize a Type** — the structures a detector keys
+  on.
+- **The AutoType Framework** — generating hard negatives and refining a
+  mask.
+- **Adding a Detector** — the end-to-end steps to add one.

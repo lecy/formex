@@ -151,3 +151,7 @@ honest about which types it can actually tell apart.
 - [`generate_autotype_test_cases()`](https://lecy.github.io/formex/reference/generate_autotype_test_cases.md),
   [`build_autotype_results()`](https://lecy.github.io/formex/reference/build_autotype_results.md)
   — the tools for building a new detector’s fixture.
+- **Building a Feature Dataset for Classification** — one row per
+  column, labelled for a classifier.
+- **Classifying Columns with a Decision Tree** — a worked model on those
+  features.

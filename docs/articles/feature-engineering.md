@@ -178,6 +178,8 @@ a reminder that a good reference list often beats a clever statistic.
   profile works alongside.
 - **Guessing a Column’s Type** — the router → verifier flow the profile
   feeds.
+- **Building a Feature Dataset for Classification** — the profile turned
+  into a model-ready matrix.
 - [`fx_extract_features()`](https://lecy.github.io/formex/reference/fx_extract_features.md),
   [`fx_feature_manifest()`](https://lecy.github.io/formex/reference/fx_feature_manifest.md),
   and

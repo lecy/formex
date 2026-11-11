@@ -165,5 +165,6 @@ clever statistic.
 * **How Detectors Recognize a Type** --- the per-value recognizers the profile
   works alongside.
 * **Guessing a Column's Type** --- the router → verifier flow the profile feeds.
+* **Building a Feature Dataset for Classification** --- the profile turned into a model-ready matrix.
 * `fx_extract_features()`, `fx_feature_manifest()`, and `fx_type_signature()`
   --- the profile, its catalogue, and the model-free fingerprint.

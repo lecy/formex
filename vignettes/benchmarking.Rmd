@@ -273,3 +273,9 @@ The frozen sets are produced by `data-raw/build_benchmark.R` from the local
 banked test library (`dev/bank*`, not shipped). Re-run it when the library or the
 ontology changes; it re-stamps `benchmark_version` and rewrites both the packaged
 sets and the remote artifact.
+
+## See also
+
+* **The Testing Libraries** --- the corpora the benchmark scores against.
+* **The AutoType Framework** --- the mutation module behind the stress grid.
+* **Guessing a Column's Type** --- the function being benchmarked.

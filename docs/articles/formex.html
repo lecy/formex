@@ -118,6 +118,18 @@ executed by <a href="../reference/fx_transform.html"><code>fx_transform()</code>
 (run one expression) and <a href="../reference/fx_stabilize.html"><code>fx_stabilize()</code></a>
 (run a whole row’s recipe). Every example below is a real row from
 <code><a href="../reference/fx_ontology.html">fx_ontology()</a></code>.</p>
+<p>Read structurally, Formex is the <strong>contract language for
+governed data workflows</strong>. Each ontology row names three things:
+the <strong>current</strong> format a raw value arrives in
+(<code>data_format</code>), the <strong>desired</strong> stable format
+it should be rewritten to (<code>stable_format</code>), and the
+<strong>bridge</strong> between them — the recipe that maps one to the
+other (<code>raw_to_stable_transform</code>, with
+<code>stable_import_rule</code> for how the clean value is re-read).
+Because that bridge is <em>declared</em>, not hand-coded per file,
+cleaning a column becomes a rule the ontology owns: the same value is
+normalized the same way everywhere, and a workflow can be audited by
+reading its recipes rather than its code.</p>
 <div class="section level2">
 <h2 id="the-one-rule-is-the-parsed-part">The one rule: <code>{{ … }}</code> is the parsed part<a class="anchor" aria-label="anchor" href="#the-one-rule-is-the-parsed-part"></a>
 </h2>
@@ -528,6 +540,21 @@ carry what a mask can’t reach — a valid-prefix <strong>list</strong>, a
 checksum, a reference-table lookup. The nchar-range case
 (<code>X(8,10)</code>) is the interesting middle: both a parse fact and
 a constraint, served by one notation.</p>
+</div>
+<div class="section level2">
+<h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
+</h2>
+<ul>
+<li>
+<strong>The Data-Type Ontology</strong> — where these recipes live,
+one per semantic type.</li>
+<li>
+<strong>Formatting Syntax</strong> — the raw → stable workflow these
+recipes drive.</li>
+<li>
+<strong>Synthetic Data: the Temporal Case</strong> — rendering the
+same values the recipes read back in.</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

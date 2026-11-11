@@ -362,3 +362,5 @@ today still means the same thing years from now.
   reads the whole map;
   [`fx_validate_ontology()`](https://lecy.github.io/formex/reference/fx_validate_ontology.md)
   checks it is internally consistent.
+- **Formex: the format-expression syntax** — how each type’s
+  stabilization recipe is written.

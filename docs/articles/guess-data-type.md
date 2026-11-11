@@ -197,3 +197,12 @@ also returns the older flat fields (`$guess`, `$ontology`,
 [`score_data_type()`](https://lecy.github.io/formex/reference/score_data_type.md)
 still exposes the raw per-detector pass rates; new code should use
 `$route`.
+
+## See also
+
+- **Feature Engineering for Type Guessing** — the numeric profile the
+  router reads.
+- **How Detectors Recognize a Type** — what the verifier checks.
+- **The Data-Type Ontology** — the map a guess resolves into.
+- **Formex: the format-expression syntax** — how the resolved type is
+  stabilized.

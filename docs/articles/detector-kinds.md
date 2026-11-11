@@ -202,5 +202,8 @@ guess and why.
   detectors, with the structure each one leverages and its stress-test
   report.
 - **Guessing a Column’s Type** — the router → verifier flow end to end.
+- **The AutoType Framework** — stress-testing a detector against hard
+  negatives.
+- **Adding a Detector** — the steps to build and wire a new one.
 - **Feature Engineering for Type Guessing** — how a column is turned
   into the numeric profile the router reads.

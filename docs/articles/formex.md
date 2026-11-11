@@ -11,6 +11,17 @@ is executed by
 (run a whole row’s recipe). Every example below is a real row from
 [`fx_ontology()`](https://lecy.github.io/formex/reference/fx_ontology.md).
 
+Read structurally, Formex is the **contract language for governed data
+workflows**. Each ontology row names three things: the **current**
+format a raw value arrives in (`data_format`), the **desired** stable
+format it should be rewritten to (`stable_format`), and the **bridge**
+between them — the recipe that maps one to the other
+(`raw_to_stable_transform`, with `stable_import_rule` for how the clean
+value is re-read). Because that bridge is *declared*, not hand-coded per
+file, cleaning a column becomes a rule the ontology owns: the same value
+is normalized the same way everywhere, and a workflow can be audited by
+reading its recipes rather than its code.
+
 ## The one rule: `{{ … }}` is the parsed part
 
 A cell is **prose with `{{ }}` interpolations** — the Mustache/Jinja
@@ -222,3 +233,11 @@ mask can’t reach — a valid-prefix **list**, a checksum, a
 reference-table lookup. The nchar-range case (`X(8,10)`) is the
 interesting middle: both a parse fact and a constraint, served by one
 notation.
+
+## See also
+
+- **The Data-Type Ontology** — where these recipes live, one per
+  semantic type.
+- **Formatting Syntax** — the raw → stable workflow these recipes drive.
+- **Synthetic Data: the Temporal Case** — rendering the same values the
+  recipes read back in.
