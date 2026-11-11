@@ -818,6 +818,19 @@ dataset to train and evaluate column-type classifiers.
 - [Classifying Columns with a Decision
   Tree](https://lecy.github.io/formex/articles/classifier-decision-tree.md):
 
+### Extending the Library
+
+Growing the package: the AutoType negative-generation framework for
+refining masks, a synthetic-data strategy via the temporal case, and the
+end-to-end steps to add a detector.
+
+- [The AutoType
+  Framework](https://lecy.github.io/formex/articles/autotype-framework.md):
+- [Synthetic Data: the Temporal
+  Case](https://lecy.github.io/formex/articles/synthetic-data-temporal.md):
+- [Adding a
+  Detector](https://lecy.github.io/formex/articles/adding-a-detector.md):
+
 ### Formex Syntax
 
 The recipe language that governs how a raw value is read, cleaned, and

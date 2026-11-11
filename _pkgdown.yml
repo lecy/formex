@@ -51,6 +51,14 @@ navbar:
       - text: Classifying Columns with a Decision Tree
         href: articles/classifier-decision-tree.html
       - text: ---
+      - text: Extending the Library
+      - text: The AutoType Framework
+        href: articles/autotype-framework.html
+      - text: "Synthetic Data: the Temporal Case"
+        href: articles/synthetic-data-temporal.html
+      - text: Adding a Detector
+        href: articles/adding-a-detector.html
+      - text: ---
       - text: Formex Syntax
       - text: "Formex: the format-expression syntax"
         href: articles/formex.html
@@ -157,9 +165,7 @@ articles:
   - overview-guess-data-type
   - overview-ontology
   - overview-formatting-syntax
-# Grouped to match the Articles navbar menu. "Extending the Library" (the
-# AutoType framework, synthetic-data strategy, and adding a detector) is added
-# once its first vignette is drafted.
+# Grouped to match the Articles navbar menu.
 - title: Data Types
   desc: What kinds of column research data contains, and the ontology that maps them.
   contents:
@@ -188,6 +194,15 @@ articles:
   - benchmarking
   - feature-dataset
   - classifier-decision-tree
+- title: Extending the Library
+  desc: >
+    Growing the package: the AutoType negative-generation framework for refining
+    masks, a synthetic-data strategy via the temporal case, and the end-to-end
+    steps to add a detector.
+  contents:
+  - autotype-framework
+  - synthetic-data-temporal
+  - adding-a-detector
 - title: Formex Syntax
   desc: >
     The recipe language that governs how a raw value is read, cleaned, and

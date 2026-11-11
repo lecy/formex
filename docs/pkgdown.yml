@@ -2,6 +2,8 @@ pandoc: '3.10'
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
+  adding-a-detector: adding-a-detector.html
+  autotype-framework: autotype-framework.html
   benchmarking: benchmarking.html
   classifier-decision-tree: classifier-decision-tree.html
   data-type-detectors: data-type-detectors.html
@@ -15,8 +17,9 @@ articles:
   overview-formatting-syntax: overview-formatting-syntax.html
   overview-guess-data-type: overview-guess-data-type.html
   overview-ontology: overview-ontology.html
+  synthetic-data-temporal: synthetic-data-temporal.html
   testing-libraries: testing-libraries.html
-last_built: 2026-11-11T20:34Z
+last_built: 2026-11-11T20:45Z
 urls:
   reference: https://lecy.github.io/formex/reference
   article: https://lecy.github.io/formex/articles
