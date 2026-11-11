@@ -1,9 +1,11 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://lecy.github.io/formex/404.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/benchmarking.html</loc></url>
+<url><loc>https://lecy.github.io/formex/articles/classifier-decision-tree.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/data-type-detectors.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/data-type-ontology.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/detector-kinds.html</loc></url>
+<url><loc>https://lecy.github.io/formex/articles/feature-dataset.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/feature-engineering.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/formex-type-atlas.html</loc></url>
 <url><loc>https://lecy.github.io/formex/articles/formex.html</loc></url>

@@ -24,16 +24,26 @@
   </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><h6 class="dropdown-header" data-toc-skip>Data Types</h6></li>
     <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
-    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
+    <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Data Type Detection</h6></li>
+    <li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Detector Types</h6></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
-    <li><a class="dropdown-item" href="../articles/classifier-decision-tree.html">Classifying Columns with a Decision Tree</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Testing Libraries</h6></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
-    <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/feature-dataset.html">Building a Feature Dataset for Classification</a></li>
+    <li><a class="dropdown-item" href="../articles/classifier-decision-tree.html">Classifying Columns with a Decision Tree</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Formex Syntax</h6></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -69,28 +79,50 @@
         <dd>
       </dd></dl></div>
     <div class="section ">
-      <h3>Guides &amp; reference</h3>
-      <div class="section-desc"><p>Deeper tutorials and the detection/benchmarking internals.</p></div>
+      <h3>Data Types</h3>
+      <div class="section-desc"><p>What kinds of column research data contains, and the ontology that maps them.</p></div>
 
-      <dl><dt><a href="formex.html">Formex: the format-expression syntax</a></dt>
+      <dl><dt><a href="data-type-ontology.html">The Data-Type Ontology</a></dt>
         <dd>
-        </dd><dt><a href="guess-data-type.html">Guessing a Column's Type</a></dt>
+        </dd><dt><a href="formex-type-atlas.html">The Type Atlas</a></dt>
         <dd>
-        </dd><dt><a href="detector-kinds.html">How Detectors Recognize a Type</a></dt>
-        <dd>
-        </dd><dt><a href="data-type-detectors.html">Data-Type Detector Guide</a></dt>
-        <dd>
-        </dd><dt><a href="data-type-ontology.html">The Data-Type Ontology</a></dt>
+      </dd></dl></div>
+    <div class="section ">
+      <h3>Data Type Detection</h3>
+      <div class="section-desc"><p>The architecture that routes a column to its type: detectors, the learned router, and the feature profile it reads.</p></div>
+
+      <dl><dt><a href="guess-data-type.html">Guessing a Column's Type</a></dt>
         <dd>
         </dd><dt><a href="feature-engineering.html">Feature Engineering for Type Guessing</a></dt>
         <dd>
-        </dd><dt><a href="classifier-decision-tree.html">Classifying Columns with a Decision Tree</a></dt>
+      </dd></dl></div>
+    <div class="section ">
+      <h3>Detector Types</h3>
+      <div class="section-desc"><p>How each kind of detector recognizes a format — masks, lexicons, shapes — and how building each one differs.</p></div>
+
+      <dl><dt><a href="detector-kinds.html">How Detectors Recognize a Type</a></dt>
         <dd>
-        </dd><dt><a href="testing-libraries.html">The Testing Libraries</a></dt>
+        </dd><dt><a href="data-type-detectors.html">Data-Type Detector Guide</a></dt>
+        <dd>
+      </dd></dl></div>
+    <div class="section ">
+      <h3>Testing Libraries</h3>
+      <div class="section-desc"><p>The example corpora, the stress-test grid, and building a feature dataset to train and evaluate column-type classifiers.</p></div>
+
+      <dl><dt><a href="testing-libraries.html">The Testing Libraries</a></dt>
         <dd>
         </dd><dt><a href="benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></dt>
         <dd>
-        </dd><dt><a href="formex-type-atlas.html">The Type Atlas</a></dt>
+        </dd><dt><a href="feature-dataset.html">Building a Feature Dataset for Classification</a></dt>
+        <dd>
+        </dd><dt><a href="classifier-decision-tree.html">Classifying Columns with a Decision Tree</a></dt>
+        <dd>
+      </dd></dl></div>
+    <div class="section ">
+      <h3>Formex Syntax</h3>
+      <div class="section-desc"><p>The recipe language that governs how a raw value is read, cleaned, and rewritten to a stable, analysis-ready form.</p></div>
+
+      <dl><dt><a href="formex.html">Formex: the format-expression syntax</a></dt>
         <dd>
       </dd></dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

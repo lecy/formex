@@ -23,26 +23,37 @@ navbar:
     articles:
       text: Articles
       menu:
-      - text: Guessing a Column's Type
-        href: articles/guess-data-type.html
+      - text: Data Types
       - text: The Data-Type Ontology
         href: articles/data-type-ontology.html
-      - text: "Formex: the format-expression syntax"
-        href: articles/formex.html
+      - text: The Type Atlas
+        href: articles/formex-type-atlas.html
+      - text: ---
+      - text: Data Type Detection
+      - text: Guessing a Column's Type
+        href: articles/guess-data-type.html
+      - text: Feature Engineering for Type Guessing
+        href: articles/feature-engineering.html
+      - text: ---
+      - text: Detector Types
       - text: How Detectors Recognize a Type
         href: articles/detector-kinds.html
       - text: Data-Type Detector Guide
         href: articles/data-type-detectors.html
-      - text: Feature Engineering for Type Guessing
-        href: articles/feature-engineering.html
-      - text: Classifying Columns with a Decision Tree
-        href: articles/classifier-decision-tree.html
+      - text: ---
+      - text: Testing Libraries
       - text: The Testing Libraries
         href: articles/testing-libraries.html
       - text: Benchmarking and the Stress-Test Design Grid
         href: articles/benchmarking.html
-      - text: The Type Atlas
-        href: articles/formex-type-atlas.html
+      - text: Building a Feature Dataset for Classification
+        href: articles/feature-dataset.html
+      - text: Classifying Columns with a Decision Tree
+        href: articles/classifier-decision-tree.html
+      - text: ---
+      - text: Formex Syntax
+      - text: "Formex: the format-expression syntax"
+        href: articles/formex.html
 
 reference:
 - title: Detect & classify a column
@@ -146,17 +157,40 @@ articles:
   - overview-guess-data-type
   - overview-ontology
   - overview-formatting-syntax
-- title: Guides & reference
-  desc: Deeper tutorials and the detection/benchmarking internals.
-  navbar: Articles
+# Grouped to match the Articles navbar menu. "Extending the Library" (the
+# AutoType framework, synthetic-data strategy, and adding a detector) is added
+# once its first vignette is drafted.
+- title: Data Types
+  desc: What kinds of column research data contains, and the ontology that maps them.
   contents:
-  - formex
+  - data-type-ontology
+  - formex-type-atlas
+- title: Data Type Detection
+  desc: >
+    The architecture that routes a column to its type: detectors, the learned
+    router, and the feature profile it reads.
+  contents:
   - guess-data-type
+  - feature-engineering
+- title: Detector Types
+  desc: >
+    How each kind of detector recognizes a format --- masks, lexicons, shapes ---
+    and how building each one differs.
+  contents:
   - detector-kinds
   - data-type-detectors
-  - data-type-ontology
-  - feature-engineering
-  - classifier-decision-tree
+- title: Testing Libraries
+  desc: >
+    The example corpora, the stress-test grid, and building a feature dataset to
+    train and evaluate column-type classifiers.
+  contents:
   - testing-libraries
   - benchmarking
-  - formex-type-atlas
+  - feature-dataset
+  - classifier-decision-tree
+- title: Formex Syntax
+  desc: >
+    The recipe language that governs how a raw value is read, cleaned, and
+    rewritten to a stable, analysis-ready form.
+  contents:
+  - formex

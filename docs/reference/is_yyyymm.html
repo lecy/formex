@@ -30,15 +30,26 @@ counts."></head><body>
   </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><h6 class="dropdown-header" data-toc-skip>Data Types</h6></li>
     <li><a class="dropdown-item" href="../articles/data-type-ontology.html">The Data-Type Ontology</a></li>
-    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
+    <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Data Type Detection</h6></li>
+    <li><a class="dropdown-item" href="../articles/guess-data-type.html">Guessing a Column's Type</a></li>
+    <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Detector Types</h6></li>
     <li><a class="dropdown-item" href="../articles/detector-kinds.html">How Detectors Recognize a Type</a></li>
     <li><a class="dropdown-item" href="../articles/data-type-detectors.html">Data-Type Detector Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/feature-engineering.html">Feature Engineering for Type Guessing</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Testing Libraries</h6></li>
     <li><a class="dropdown-item" href="../articles/testing-libraries.html">The Testing Libraries</a></li>
     <li><a class="dropdown-item" href="../articles/benchmarking.html">Benchmarking and the Stress-Test Design Grid</a></li>
-    <li><a class="dropdown-item" href="../articles/formex-type-atlas.html">The Type Atlas</a></li>
+    <li><a class="dropdown-item" href="../articles/feature-dataset.html">Building a Feature Dataset for Classification</a></li>
+    <li><a class="dropdown-item" href="../articles/classifier-decision-tree.html">Classifying Columns with a Decision Tree</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Formex Syntax</h6></li>
+    <li><a class="dropdown-item" href="../articles/formex.html">Formex: the format-expression syntax</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -91,23 +102,23 @@ counts.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other datetime detectors:
-<code><a href="is_abbr_month_date.html">is_abbr_month_date</a>()</code>,
-<code><a href="is_clock_time.html">is_clock_time</a>()</code>,
-<code><a href="is_date.html">is_date</a>()</code>,
-<code><a href="is_date_range.html">is_date_range</a>()</code>,
-<code><a href="is_day_of_week.html">is_day_of_week</a>()</code>,
-<code><a href="is_fiscal_year.html">is_fiscal_year</a>()</code>,
-<code><a href="is_hijri_date.html">is_hijri_date</a>()</code>,
-<code><a href="is_iso_date.html">is_iso_date</a>()</code>,
-<code><a href="is_iso_datetime.html">is_iso_datetime</a>()</code>,
-<code><a href="is_long_date.html">is_long_date</a>()</code>,
-<code><a href="is_month_day.html">is_month_day</a>()</code>,
-<code><a href="is_month_of_year.html">is_month_of_year</a>()</code>,
-<code><a href="is_month_year.html">is_month_year</a>()</code>,
-<code><a href="is_quarter.html">is_quarter</a>()</code>,
-<code><a href="is_rfc2822_datetime.html">is_rfc2822_datetime</a>()</code>,
-<code><a href="is_us_date.html">is_us_date</a>()</code>,
-<code><a href="is_us_datetime.html">is_us_datetime</a>()</code></p></div>
+<code><a href="is_abbr_month_date.html">is_abbr_month_date()</a></code>,
+<code><a href="is_clock_time.html">is_clock_time()</a></code>,
+<code><a href="is_date.html">is_date()</a></code>,
+<code><a href="is_date_range.html">is_date_range()</a></code>,
+<code><a href="is_day_of_week.html">is_day_of_week()</a></code>,
+<code><a href="is_fiscal_year.html">is_fiscal_year()</a></code>,
+<code><a href="is_hijri_date.html">is_hijri_date()</a></code>,
+<code><a href="is_iso_date.html">is_iso_date()</a></code>,
+<code><a href="is_iso_datetime.html">is_iso_datetime()</a></code>,
+<code><a href="is_long_date.html">is_long_date()</a></code>,
+<code><a href="is_month_day.html">is_month_day()</a></code>,
+<code><a href="is_month_of_year.html">is_month_of_year()</a></code>,
+<code><a href="is_month_year.html">is_month_year()</a></code>,
+<code><a href="is_quarter.html">is_quarter()</a></code>,
+<code><a href="is_rfc2822_datetime.html">is_rfc2822_datetime()</a></code>,
+<code><a href="is_us_date.html">is_us_date()</a></code>,
+<code><a href="is_us_datetime.html">is_us_datetime()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -125,7 +136,7 @@ counts.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

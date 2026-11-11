@@ -1,0 +1,827 @@
+# formex
+
+**formex** (*format expressions*) is a vocabulary + detection +
+transformation engine for the column types found in research data. Point
+it at a column and it tells you *what the values are* — a calendar date,
+an ISBN, a US state, a person name, a currency amount — and then
+*standardizes them* to a stable, analysis-ready form.
+
+It is built around a versioned **ontology** of semantic types, a library
+of deterministic **detectors**, and a two-stage **router → verifier**
+classifier that returns a graceful, confidence-aware answer rather than
+a forced guess.
+
+## Installation
+
+``` r
+
+# install.packages("remotes")
+remotes::install_github("lecy/formex")
+```
+
+The learned router additionally uses **xgboost** (a soft dependency);
+without it, `formex` falls back to a model-free signature router.
+
+## Two entry points
+
+### 1. `guess_data_type()` — what is this column?
+
+``` r
+
+library(formex)
+
+guess_data_type(c("03/15/2019", "12/31/2020", "01/01/2021"))$route
+#> data_type      "temporal"
+#> semantic_family "date"
+#> semantic_type   "calendar"
+#> format_label    "calendar"
+#> depth           4        # resolved all the way to a leaf
+#> confidence      1.00
+```
+
+The `$route` record anchors the column to the ontology
+(`data_type → semantic_family → semantic_type → format_label`) and
+**truncates gracefully**: when the values cannot pin a leaf, it stops at
+the deepest level it can actually defend (`depth` 0–4). The legacy
+detector-based fields (`$guess`, `$ontology`) are returned alongside,
+unchanged.
+
+### 2. `fx_stabilize()` — put it in a standard form
+
+``` r
+
+fx_stabilize(c("isbn 0395629764", "ISBN 957-33-0471-6"),
+             "administrative", "isbn")$stable
+#> "0395629764" "9573304716"
+
+fx_stabilize(c("California", "TX", "Ohio"), "geographic", "us_state")$stable
+#> "CA" "TX" "OH"
+```
+
+Each ontology row carries a recipe (a small transform DSL) that
+normalizes the raw values and reports the stable format + import rule.
+
+## How it works
+
+- **Router** (Stage 1) shortlists candidate semantic types. Two ship: a
+  learned xgboost model over the full value profile
+  ([`fx_extract_features()`](https://lecy.github.io/formex/reference/fx_extract_features.md)),
+  and a model-free signature router. `guess_data_type(router=)` picks
+  the strategy.
+- **Verifier** (Stage 2) confirms a leaf deterministically with *confirm
+  = detect ∘ transform*, gated by a foil-selectivity test so permissive
+  types truncate instead of claiming a false leaf.
+- **Ontology**
+  ([`fx_ontology()`](https://lecy.github.io/formex/reference/fx_ontology.md))
+  is the shared vocabulary — stable `semantic_type_id`s and per-type
+  recipes — that
+  [`guess_data_type()`](https://lecy.github.io/formex/reference/guess_data_type.md)
+  and
+  [`fx_stabilize()`](https://lecy.github.io/formex/reference/fx_stabilize.md)
+  both speak.
+
+## Gazetteers & licensing
+
+The shipped person/place gazetteers are public-domain: the top 1000 SSA
+given names (CC0, via `babynames`) and the top 2000 US Census 2010
+surnames. See `data-raw/gazetteers.R` to regenerate them.
+
+# Package index
+
+## Detect & classify a column
+
+The primary entry point. Route a column to its ontology type and
+reconcile value- and name-based evidence.
+
+- [`guess_data_type()`](https://lecy.github.io/formex/reference/guess_data_type.md)
+  : Guess the ontology-anchored data type of a column
+- [`guess_column()`](https://lecy.github.io/formex/reference/guess_column.md)
+  : Guess a column's type from its values and its name
+- [`score_data_type()`](https://lecy.github.io/formex/reference/score_data_type.md)
+  : Score a column against every registered detector
+- [`classify_by_name()`](https://lecy.github.io/formex/reference/classify_by_name.md)
+  : Classify a column by its variable name
+- [`fx_classify_column()`](https://lecy.github.io/formex/reference/fx_classify_column.md)
+  : Classify a single column under deployment rules (sample + gate +
+  score)
+- [`fx_classify_df()`](https://lecy.github.io/formex/reference/fx_classify_df.md)
+  : Classify every column of a data frame under deployment rules
+
+## Stabilize
+
+Execute an ontology recipe to normalize a column to its stable form.
+
+- [`fx_stabilize()`](https://lecy.github.io/formex/reference/fx_stabilize.md)
+  : Stabilize a column via its ontology recipe
+- [`fx_transform()`](https://lecy.github.io/formex/reference/fx_transform.md)
+  : Run an ontology transform-DSL expression on a vector
+
+## The ontology
+
+The shared vocabulary of semantic types, plus tooling to audit and
+evolve it.
+
+- [`fx_ontology()`](https://lecy.github.io/formex/reference/fx_ontology.md)
+  : The research data-type ontology (v7)
+- [`fx_validate_ontology()`](https://lecy.github.io/formex/reference/fx_validate_ontology.md)
+  : Integrity-check an ontology table
+- [`fx_ontology_diff()`](https://lecy.github.io/formex/reference/fx_ontology_diff.md)
+  : Classify the differences between two ontology versions
+- [`fx_ontology_impact_table()`](https://lecy.github.io/formex/reference/fx_ontology_impact_table.md)
+  : Ontology change impact table
+- [`fx_impacted_cases()`](https://lecy.github.io/formex/reference/fx_impacted_cases.md)
+  : Map an ontology diff onto banked cases
+- [`fx_migrate_bank()`](https://lecy.github.io/formex/reference/fx_migrate_bank.md)
+  : Apply the mechanical half of a bank migration
+- [`fx_relabel_queue()`](https://lecy.github.io/formex/reference/fx_relabel_queue.md)
+  : The relabel work list, highest-value first
+- [`fx_dgf_fields()`](https://lecy.github.io/formex/reference/fx_dgf_fields.md)
+  : Format a type prediction as governance-file (DGF) fields
+- [`fx_triage_field()`](https://lecy.github.io/formex/reference/fx_triage_field.md)
+  : Triage a column for banking as a test case
+
+## Column detectors
+
+Deterministic value predicates, one per format. A column is typed by the
+share of its values a detector accepts.
+
+- [`is_abbr_month_date()`](https://lecy.github.io/formex/reference/is_abbr_month_date.md)
+  : Is it a day-month-year date with an abbreviated month?
+- [`is_address()`](https://lecy.github.io/formex/reference/is_address.md)
+  : Is it a full postal address?
+- [`is_asin()`](https://lecy.github.io/formex/reference/is_asin.md) : Is
+  it an Amazon ASIN?
+- [`is_bibcode()`](https://lecy.github.io/formex/reference/is_bibcode.md)
+  : Is it an ADS bibcode?
+- [`is_block_fips()`](https://lecy.github.io/formex/reference/is_block_fips.md)
+  : Is it a census block FIPS code?
+- [`is_block_group_fips()`](https://lecy.github.io/formex/reference/is_block_group_fips.md)
+  : Is it a census block-group FIPS code?
+- [`is_boolean()`](https://lecy.github.io/formex/reference/is_boolean.md)
+  : Is it a boolean / indicator value?
+- [`is_ca_postal_code()`](https://lecy.github.io/formex/reference/is_ca_postal_code.md)
+  : Is it a Canadian postal code (or FSA)?
+- [`is_cbsa()`](https://lecy.github.io/formex/reference/is_cbsa.md) : Is
+  it a CBSA code?
+- [`is_census_region()`](https://lecy.github.io/formex/reference/is_census_region.md)
+  : Is it a US census region or division?
+- [`is_chinese_resident_id()`](https://lecy.github.io/formex/reference/is_chinese_resident_id.md)
+  : Is it a Chinese resident identity card number?
+- [`is_city_name()`](https://lecy.github.io/formex/reference/is_city_name.md)
+  : Is it a US city / place name?
+- [`is_city_state()`](https://lecy.github.io/formex/reference/is_city_state.md)
+  : Is it a "City, State" value?
+- [`is_clock_time()`](https://lecy.github.io/formex/reference/is_clock_time.md)
+  : Is it a clock time?
+- [`is_cmyk_color()`](https://lecy.github.io/formex/reference/is_cmyk_color.md)
+  : Is it a CMYK quadruple?
+- [`is_color_name()`](https://lecy.github.io/formex/reference/is_color_name.md)
+  : Is it a named color?
+- [`is_coord_latlon()`](https://lecy.github.io/formex/reference/is_coord_latlon.md)
+  : Is it a latitude/longitude pair (latitude first)?
+- [`is_coord_lonlat()`](https://lecy.github.io/formex/reference/is_coord_lonlat.md)
+  : Is it a longitude/latitude pair (longitude first)?
+- [`is_country_code()`](https://lecy.github.io/formex/reference/is_country_code.md)
+  : Is it an ISO 3166-1 country code?
+- [`is_county_fips()`](https://lecy.github.io/formex/reference/is_county_fips.md)
+  : Is it a county FIPS code?
+- [`is_csa()`](https://lecy.github.io/formex/reference/is_csa.md) : Is
+  it a CSA code?
+- [`is_currency_amount()`](https://lecy.github.io/formex/reference/is_currency_amount.md)
+  : Is it a monetary amount?
+- [`is_currency_code()`](https://lecy.github.io/formex/reference/is_currency_code.md)
+  : Is it an ISO 4217 currency code?
+- [`is_currency_code_symbol()`](https://lecy.github.io/formex/reference/is_currency_code_symbol.md)
+  : Is it a currency code + symbol + amount?
+- [`is_currency_symbol()`](https://lecy.github.io/formex/reference/is_currency_symbol.md)
+  : Is it a currency symbol + amount?
+- [`is_date()`](https://lecy.github.io/formex/reference/is_date.md) : Is
+  it a date or timestamp?
+- [`is_date_range()`](https://lecy.github.io/formex/reference/is_date_range.md)
+  : Is it a date range?
+- [`is_day_of_week()`](https://lecy.github.io/formex/reference/is_day_of_week.md)
+  : Is it a day-of-week name?
+- [`is_dea()`](https://lecy.github.io/formex/reference/is_dea.md) : Is
+  it a DEA registration number?
+- [`is_doi()`](https://lecy.github.io/formex/reference/is_doi.md) : Is
+  it a DOI?
+- [`is_ein()`](https://lecy.github.io/formex/reference/is_ein.md) : Is
+  it a US Employer Identification Number (EIN)?
+- [`is_email()`](https://lecy.github.io/formex/reference/is_email.md) :
+  Is it an email address?
+- [`is_ensembl_id()`](https://lecy.github.io/formex/reference/is_ensembl_id.md)
+  : Is it an Ensembl gene/transcript/protein ID?
+- [`is_first_name()`](https://lecy.github.io/formex/reference/is_first_name.md)
+  : Is it a common US given (first) name?
+- [`is_fiscal_year()`](https://lecy.github.io/formex/reference/is_fiscal_year.md)
+  : Is it a fiscal (or explicitly labelled) year?
+- [`is_full_name()`](https://lecy.github.io/formex/reference/is_full_name.md)
+  : Is it a person's full name?
+- [`is_geojson()`](https://lecy.github.io/formex/reference/is_geojson.md)
+  : Is it a GeoJSON geometry?
+- [`is_guid()`](https://lecy.github.io/formex/reference/is_guid.md) : Is
+  it a GUID / UUID?
+- [`is_hex_color()`](https://lecy.github.io/formex/reference/is_hex_color.md)
+  : Is it a hex color?
+- [`is_hijri_date()`](https://lecy.github.io/formex/reference/is_hijri_date.md)
+  : Is it a Hijri (Islamic-calendar) date?
+- [`is_hsl_color()`](https://lecy.github.io/formex/reference/is_hsl_color.md)
+  : Is it an HSL triple?
+- [`is_http_status()`](https://lecy.github.io/formex/reference/is_http_status.md)
+  : Is it an HTTP status code?
+- [`is_icd10_code()`](https://lecy.github.io/formex/reference/is_icd10_code.md)
+  : Is it an ICD-10 code?
+- [`is_icd9_code()`](https://lecy.github.io/formex/reference/is_icd9_code.md)
+  : Is it an ICD-9 code?
+- [`is_intl_phone()`](https://lecy.github.io/formex/reference/is_intl_phone.md)
+  : Is it an international (+ prefixed) phone number?
+- [`is_ipv4()`](https://lecy.github.io/formex/reference/is_ipv4.md) : Is
+  it an IPv4 address?
+- [`is_ipv6()`](https://lecy.github.io/formex/reference/is_ipv6.md) : Is
+  it an IPv6 address?
+- [`is_isbn()`](https://lecy.github.io/formex/reference/is_isbn.md) : Is
+  it an ISBN (10 or 13)?
+- [`is_iso6709()`](https://lecy.github.io/formex/reference/is_iso6709.md)
+  : Is it an ISO 6709 lat/lon pair?
+- [`is_iso_date()`](https://lecy.github.io/formex/reference/is_iso_date.md)
+  : Is it an ISO 8601 date?
+- [`is_iso_datetime()`](https://lecy.github.io/formex/reference/is_iso_datetime.md)
+  : Is it an ISO 8601 datetime?
+- [`is_issn()`](https://lecy.github.io/formex/reference/is_issn.md) : Is
+  it an ISSN?
+- [`is_json()`](https://lecy.github.io/formex/reference/is_json.md) : Is
+  it a JSON object or array?
+- [`is_last_name()`](https://lecy.github.io/formex/reference/is_last_name.md)
+  : Is it a common US surname (last name)?
+- [`is_long_date()`](https://lecy.github.io/formex/reference/is_long_date.md)
+  : Is it a verbose English date?
+- [`is_mac()`](https://lecy.github.io/formex/reference/is_mac.md) : Is
+  it a MAC address?
+- [`is_md5()`](https://lecy.github.io/formex/reference/is_md5.md) : Is
+  it an MD5 digest?
+- [`is_metro_area_name()`](https://lecy.github.io/formex/reference/is_metro_area_name.md)
+  : Is it a metropolitan-area name?
+- [`is_month_day()`](https://lecy.github.io/formex/reference/is_month_day.md)
+  : Is it a Month-Day value (no year)?
+- [`is_month_of_year()`](https://lecy.github.io/formex/reference/is_month_of_year.md)
+  : Is it a month-of-year name?
+- [`is_month_year()`](https://lecy.github.io/formex/reference/is_month_year.md)
+  : Is it a Month-Year value?
+- [`is_msisdn()`](https://lecy.github.io/formex/reference/is_msisdn.md)
+  : Is it an MSISDN (mobile subscriber number)?
+- [`is_naics()`](https://lecy.github.io/formex/reference/is_naics.md) :
+  Is it a NAICS industry code?
+- [`is_nces_locale()`](https://lecy.github.io/formex/reference/is_nces_locale.md)
+  : Is it an NCES locale code?
+- [`is_npi()`](https://lecy.github.io/formex/reference/is_npi.md) : Is
+  it an NPI (US health provider)?
+- [`is_orcid()`](https://lecy.github.io/formex/reference/is_orcid.md) :
+  Is it an ORCID iD?
+- [`is_phone()`](https://lecy.github.io/formex/reference/is_phone.md) :
+  Is it a US / NANP phone number?
+- [`is_po_box()`](https://lecy.github.io/formex/reference/is_po_box.md)
+  : Is it a PO box?
+- [`is_quarter()`](https://lecy.github.io/formex/reference/is_quarter.md)
+  : Is it a year-quarter?
+- [`is_rfc2822_datetime()`](https://lecy.github.io/formex/reference/is_rfc2822_datetime.md)
+  : Is it an RFC 2822 / HTTP datetime?
+- [`is_rgb_color()`](https://lecy.github.io/formex/reference/is_rgb_color.md)
+  : Is it an RGB triple?
+- [`is_roman()`](https://lecy.github.io/formex/reference/is_roman.md) :
+  Is it a Roman numeral?
+- [`is_sha1()`](https://lecy.github.io/formex/reference/is_sha1.md) : Is
+  it a SHA-1 digest?
+- [`is_sha256()`](https://lecy.github.io/formex/reference/is_sha256.md)
+  : Is it a SHA-256 digest?
+- [`is_snp_id()`](https://lecy.github.io/formex/reference/is_snp_id.md)
+  : Is it a dbSNP reference SNP ID?
+- [`is_ssn()`](https://lecy.github.io/formex/reference/is_ssn.md) : Is
+  it a US Social Security Number?
+- [`is_state_fips()`](https://lecy.github.io/formex/reference/is_state_fips.md)
+  : Is it a state FIPS code?
+- [`is_state_zip()`](https://lecy.github.io/formex/reference/is_state_zip.md)
+  : Is it a "State ZIP" value?
+- [`is_street_address()`](https://lecy.github.io/formex/reference/is_street_address.md)
+  : Is it a street address?
+- [`is_tags()`](https://lecy.github.io/formex/reference/is_tags.md) : Is
+  it a tag set (a delimited multi-value field)?
+- [`is_tract_fips()`](https://lecy.github.io/formex/reference/is_tract_fips.md)
+  : Is it a census tract FIPS code?
+- [`is_uei()`](https://lecy.github.io/formex/reference/is_uei.md) : Is
+  it a SAM.gov Unique Entity Identifier (UEI)?
+- [`is_uk_postcode()`](https://lecy.github.io/formex/reference/is_uk_postcode.md)
+  : Is it a UK postcode?
+- [`is_uniprot_id()`](https://lecy.github.io/formex/reference/is_uniprot_id.md)
+  : Is it a UniProt accession?
+- [`is_unix_time()`](https://lecy.github.io/formex/reference/is_unix_time.md)
+  : Is it a Unix timestamp (seconds)?
+- [`is_urban_rural()`](https://lecy.github.io/formex/reference/is_urban_rural.md)
+  : Is it an urban/rural designation?
+- [`is_url()`](https://lecy.github.io/formex/reference/is_url.md) : Is
+  it a URL?
+- [`is_us_date()`](https://lecy.github.io/formex/reference/is_us_date.md)
+  : Is it a US numeric date (M/D/YY)?
+- [`is_us_datetime()`](https://lecy.github.io/formex/reference/is_us_datetime.md)
+  : Is it a US numeric datetime with AM/PM?
+- [`is_us_state()`](https://lecy.github.io/formex/reference/is_us_state.md)
+  : Is it a US state abbreviation?
+- [`is_version()`](https://lecy.github.io/formex/reference/is_version.md)
+  : Is it a version identifier?
+- [`is_wkb()`](https://lecy.github.io/formex/reference/is_wkb.md) : Is
+  it Well-Known Binary (WKB / EWKB) geometry?
+- [`is_wkt_geometry()`](https://lecy.github.io/formex/reference/is_wkt_geometry.md)
+  : Is it a WKT (Well-Known Text) geometry?
+- [`is_yyyymm()`](https://lecy.github.io/formex/reference/is_yyyymm.md)
+  : Is it a compact YYYYMM year-month?
+- [`is_zip_code()`](https://lecy.github.io/formex/reference/is_zip_code.md)
+  : Is it a US ZIP code?
+- [`as_EIN()`](https://lecy.github.io/formex/reference/as_EIN.md) :
+  Format a value as a canonical hyphenated EIN
+- [`as_mm()`](https://lecy.github.io/formex/reference/as_mm.md) : Format
+  a value as a zero-padded two-digit month
+- [`as_yyyy()`](https://lecy.github.io/formex/reference/as_yyyy.md) :
+  Format a value as a four-digit year
+- [`as_yyyymm()`](https://lecy.github.io/formex/reference/as_yyyymm.md)
+  : Format a YYYYMM value as "YYYY-MM"
+
+## Feature extraction & signatures
+
+The value-profile the routers are built on, and the lightweight
+signature primitives derived from it.
+
+- [`fx_extract_features()`](https://lecy.github.io/formex/reference/fx_extract_features.md)
+  : Extract the value-profile feature vector for a column
+- [`fx_extract_features_df()`](https://lecy.github.io/formex/reference/fx_extract_features_df.md)
+  : Extract features for every column of a data frame
+- [`fx_feature_manifest()`](https://lecy.github.io/formex/reference/fx_feature_manifest.md)
+  : Map each feature to its block and cascade tier
+- [`fx_blocks_for_features()`](https://lecy.github.io/formex/reference/fx_blocks_for_features.md)
+  : Minimal set of feature blocks needed for a set of features
+- [`default_lexicons()`](https://lecy.github.io/formex/reference/default_lexicons.md)
+  : Default controlled-vocabulary lexicons for the lexicon feature block
+- [`fx_type_signature()`](https://lecy.github.io/formex/reference/fx_type_signature.md)
+  : Reduce a column to its 7-number type signature
+- [`fx_signature_distance()`](https://lecy.github.io/formex/reference/fx_signature_distance.md)
+  : Weighted distance between two type signatures
+- [`fx_path_distance()`](https://lecy.github.io/formex/reference/fx_path_distance.md)
+  : Taxonomic distance between two ontology paths
+- [`fx_sibling_report()`](https://lecy.github.io/formex/reference/fx_sibling_report.md)
+  : Surface confusable type pairs through the taxonomy and the data
+- [`SIGNATURE_WEIGHTS`](https://lecy.github.io/formex/reference/SIGNATURE_WEIGHTS.md)
+  : Signature axis weights (balanced default)
+- [`WEIGHTS_FORMAT`](https://lecy.github.io/formex/reference/WEIGHTS_FORMAT.md)
+  : Signature axis weights tuned for format comparisons
+
+## Test-case bank & auditing
+
+- [`fx_make_test_case()`](https://lecy.github.io/formex/reference/fx_make_test_case.md)
+  : Build a banked test case from a column
+- [`fx_index_bank()`](https://lecy.github.io/formex/reference/fx_index_bank.md)
+  : Index a directory of banked test cases
+- [`fx_bank_coverage()`](https://lecy.github.io/formex/reference/fx_bank_coverage.md)
+  : Coverage of a test-case bank by type and difficulty
+- [`fx_roundtrip_check()`](https://lecy.github.io/formex/reference/fx_roundtrip_check.md)
+  : Check whether stabilized values survive a read/write round trip
+- [`fx_audit_ontology()`](https://lecy.github.io/formex/reference/fx_audit_ontology.md)
+  : Round-trip audit an ontology file
+
+## Benchmark & stress-test harness
+
+Score guess_data_type() over the frozen test library at every ontology
+level, track accuracy and runtime over time, and stress-test robustness
+with a controlled grid of perturbations.
+
+- [`fx_benchmark_data()`](https://lecy.github.io/formex/reference/fx_benchmark_data.md)
+  : Locate and load the frozen benchmark dataset
+- [`fx_benchmark()`](https://lecy.github.io/formex/reference/fx_benchmark.md)
+  : Benchmark guess_data_type() over the frozen test library
+- [`fx_benchmark_compare()`](https://lecy.github.io/formex/reference/fx_benchmark_compare.md)
+  : Compare two benchmark runs (track progress over time)
+- [`fx_benchmark_confusion()`](https://lecy.github.io/formex/reference/fx_benchmark_confusion.md)
+  : Confusion structure: what shape does "wrong" take?
+- [`fx_benchmark_summary()`](https://lecy.github.io/formex/reference/fx_benchmark_summary.md)
+  : Summarize a benchmark run
+- [`fx_coverage_gaps()`](https://lecy.github.io/formex/reference/fx_coverage_gaps.md)
+  : Coverage gaps: difficulty-aware flagging of underperforming
+  detectors
+- [`fx_perturb()`](https://lecy.github.io/formex/reference/fx_perturb.md)
+  : Perturb a column along one stress dimension
+- [`fx_stress_grid()`](https://lecy.github.io/formex/reference/fx_stress_grid.md)
+  : Run the stress-test grid over the benchmark
+- [`fx_stress_summary()`](https://lecy.github.io/formex/reference/fx_stress_summary.md)
+  : Summarize the stress grid: accuracy decay per dimension and level
+- [`fx_contamination_curve()`](https://lecy.github.io/formex/reference/fx_contamination_curve.md)
+  : Contamination breaking-point curve
+
+## Evaluation & AutoType reporting
+
+- [`evaluate_columns()`](https://lecy.github.io/formex/reference/evaluate_columns.md)
+  : Evaluate formex predictions against a labeled column corpus
+- [`eval_summary()`](https://lecy.github.io/formex/reference/eval_summary.md)
+  : Summarize an evaluation into overall and per-class metrics
+- [`feasibility_score()`](https://lecy.github.io/formex/reference/feasibility_score.md)
+  : Score one ontology assignment by feasibility
+- [`score_feasibility_table()`](https://lecy.github.io/formex/reference/score_feasibility_table.md)
+  : Score a table of predictions against a feasibility crosswalk
+- [`generate_autotype_negatives()`](https://lecy.github.io/formex/reference/generate_autotype_negatives.md)
+  : Generate negative examples for a mutation tier
+- [`generate_autotype_report()`](https://lecy.github.io/formex/reference/generate_autotype_report.md)
+  : Print an autotype error report for a results table
+- [`generate_autotype_test_cases()`](https://lecy.github.io/formex/reference/generate_autotype_test_cases.md)
+  : Build a labelled test-case table for one data type
+- [`autotype_summary()`](https://lecy.github.io/formex/reference/autotype_summary.md)
+  : Summarize an autotype results table by mutation tier
+- [`autotype_summary_row()`](https://lecy.github.io/formex/reference/autotype_summary_row.md)
+  : One master-table row for a data type
+- [`build_autotype_results()`](https://lecy.github.io/formex/reference/build_autotype_results.md)
+  : Run a detector against positives and generated negatives
+
+## Other
+
+- [`as_EIN()`](https://lecy.github.io/formex/reference/as_EIN.md) :
+  Format a value as a canonical hyphenated EIN
+- [`as_mm()`](https://lecy.github.io/formex/reference/as_mm.md) : Format
+  a value as a zero-padded two-digit month
+- [`as_yyyy()`](https://lecy.github.io/formex/reference/as_yyyy.md) :
+  Format a value as a four-digit year
+- [`as_yyyymm()`](https://lecy.github.io/formex/reference/as_yyyymm.md)
+  : Format a YYYYMM value as "YYYY-MM"
+- [`autotype_summary()`](https://lecy.github.io/formex/reference/autotype_summary.md)
+  : Summarize an autotype results table by mutation tier
+- [`autotype_summary_row()`](https://lecy.github.io/formex/reference/autotype_summary_row.md)
+  : One master-table row for a data type
+- [`build_autotype_results()`](https://lecy.github.io/formex/reference/build_autotype_results.md)
+  : Run a detector against positives and generated negatives
+- [`classify_by_name()`](https://lecy.github.io/formex/reference/classify_by_name.md)
+  : Classify a column by its variable name
+- [`data_type_tests`](https://lecy.github.io/formex/reference/data_type_tests.md)
+  : Labelled test cases for data-type detectors
+- [`default_lexicons()`](https://lecy.github.io/formex/reference/default_lexicons.md)
+  : Default controlled-vocabulary lexicons for the lexicon feature block
+- [`evaluate_columns()`](https://lecy.github.io/formex/reference/evaluate_columns.md)
+  : Evaluate formex predictions against a labeled column corpus
+- [`eval_summary()`](https://lecy.github.io/formex/reference/eval_summary.md)
+  : Summarize an evaluation into overall and per-class metrics
+- [`feasibility_score()`](https://lecy.github.io/formex/reference/feasibility_score.md)
+  : Score one ontology assignment by feasibility
+- [`fx_apply_plan()`](https://lecy.github.io/formex/reference/fx_apply_plan.md)
+  : Apply a transform plan to values (v7, experimental)
+- [`fx_audit_ontology()`](https://lecy.github.io/formex/reference/fx_audit_ontology.md)
+  : Round-trip audit an ontology file
+- [`fx_bank_coverage()`](https://lecy.github.io/formex/reference/fx_bank_coverage.md)
+  : Coverage of a test-case bank by type and difficulty
+- [`fx_benchmark()`](https://lecy.github.io/formex/reference/fx_benchmark.md)
+  : Benchmark guess_data_type() over the frozen test library
+- [`fx_benchmark_compare()`](https://lecy.github.io/formex/reference/fx_benchmark_compare.md)
+  : Compare two benchmark runs (track progress over time)
+- [`fx_benchmark_confusion()`](https://lecy.github.io/formex/reference/fx_benchmark_confusion.md)
+  : Confusion structure: what shape does "wrong" take?
+- [`fx_benchmark_data()`](https://lecy.github.io/formex/reference/fx_benchmark_data.md)
+  : Locate and load the frozen benchmark dataset
+- [`fx_benchmark_summary()`](https://lecy.github.io/formex/reference/fx_benchmark_summary.md)
+  : Summarize a benchmark run
+- [`fx_blocks_for_features()`](https://lecy.github.io/formex/reference/fx_blocks_for_features.md)
+  : Minimal set of feature blocks needed for a set of features
+- [`fx_classify_column()`](https://lecy.github.io/formex/reference/fx_classify_column.md)
+  : Classify a single column under deployment rules (sample + gate +
+  score)
+- [`fx_classify_df()`](https://lecy.github.io/formex/reference/fx_classify_df.md)
+  : Classify every column of a data frame under deployment rules
+- [`fx_contamination_curve()`](https://lecy.github.io/formex/reference/fx_contamination_curve.md)
+  : Contamination breaking-point curve
+- [`fx_coverage_gaps()`](https://lecy.github.io/formex/reference/fx_coverage_gaps.md)
+  : Coverage gaps: difficulty-aware flagging of underperforming
+  detectors
+- [`fx_dgf_fields()`](https://lecy.github.io/formex/reference/fx_dgf_fields.md)
+  : Format a type prediction as governance-file (DGF) fields
+- [`fx_extract_features()`](https://lecy.github.io/formex/reference/fx_extract_features.md)
+  : Extract the value-profile feature vector for a column
+- [`fx_extract_features_df()`](https://lecy.github.io/formex/reference/fx_extract_features_df.md)
+  : Extract features for every column of a data frame
+- [`fx_feature_manifest()`](https://lecy.github.io/formex/reference/fx_feature_manifest.md)
+  : Map each feature to its block and cascade tier
+- [`fx_format()`](https://lecy.github.io/formex/reference/fx_format.md)
+  : A value's format descriptor (v7, experimental)
+- [`fx_impacted_cases()`](https://lecy.github.io/formex/reference/fx_impacted_cases.md)
+  : Map an ontology diff onto banked cases
+- [`fx_index_bank()`](https://lecy.github.io/formex/reference/fx_index_bank.md)
+  : Index a directory of banked test cases
+- [`fx_make_test_case()`](https://lecy.github.io/formex/reference/fx_make_test_case.md)
+  : Build a banked test case from a column
+- [`fx_migrate_bank()`](https://lecy.github.io/formex/reference/fx_migrate_bank.md)
+  : Apply the mechanical half of a bank migration
+- [`fx_ontology()`](https://lecy.github.io/formex/reference/fx_ontology.md)
+  : The research data-type ontology (v7)
+- [`fx_ontology_diff()`](https://lecy.github.io/formex/reference/fx_ontology_diff.md)
+  : Classify the differences between two ontology versions
+- [`fx_ontology_impact_table()`](https://lecy.github.io/formex/reference/fx_ontology_impact_table.md)
+  : Ontology change impact table
+- [`fx_path_distance()`](https://lecy.github.io/formex/reference/fx_path_distance.md)
+  : Taxonomic distance between two ontology paths
+- [`fx_perturb()`](https://lecy.github.io/formex/reference/fx_perturb.md)
+  : Perturb a column along one stress dimension
+- [`fx_plan_transform()`](https://lecy.github.io/formex/reference/fx_plan_transform.md)
+  : Plan a transform from one format to another (v7, experimental)
+- [`fx_relabel_queue()`](https://lecy.github.io/formex/reference/fx_relabel_queue.md)
+  : The relabel work list, highest-value first
+- [`fx_roundtrip_check()`](https://lecy.github.io/formex/reference/fx_roundtrip_check.md)
+  : Check whether stabilized values survive a read/write round trip
+- [`fx_sibling_report()`](https://lecy.github.io/formex/reference/fx_sibling_report.md)
+  : Surface confusable type pairs through the taxonomy and the data
+- [`fx_signature_distance()`](https://lecy.github.io/formex/reference/fx_signature_distance.md)
+  : Weighted distance between two type signatures
+- [`fx_stabilize()`](https://lecy.github.io/formex/reference/fx_stabilize.md)
+  : Stabilize a column via its ontology recipe
+- [`fx_stress_grid()`](https://lecy.github.io/formex/reference/fx_stress_grid.md)
+  : Run the stress-test grid over the benchmark
+- [`fx_stress_summary()`](https://lecy.github.io/formex/reference/fx_stress_summary.md)
+  : Summarize the stress grid: accuracy decay per dimension and level
+- [`fx_transform()`](https://lecy.github.io/formex/reference/fx_transform.md)
+  : Run an ontology transform-DSL expression on a vector
+- [`fx_transformable()`](https://lecy.github.io/formex/reference/fx_transformable.md)
+  : Is one format reachable from another? (v7, experimental)
+- [`fx_transforms()`](https://lecy.github.io/formex/reference/fx_transforms.md)
+  : The transform registry (v7, experimental)
+- [`fx_triage_field()`](https://lecy.github.io/formex/reference/fx_triage_field.md)
+  : Triage a column for banking as a test case
+- [`fx_type_signature()`](https://lecy.github.io/formex/reference/fx_type_signature.md)
+  : Reduce a column to its 7-number type signature
+- [`fx_validate_ontology()`](https://lecy.github.io/formex/reference/fx_validate_ontology.md)
+  : Integrity-check an ontology table
+- [`generate_autotype_negatives()`](https://lecy.github.io/formex/reference/generate_autotype_negatives.md)
+  : Generate negative examples for a mutation tier
+- [`generate_autotype_report()`](https://lecy.github.io/formex/reference/generate_autotype_report.md)
+  : Print an autotype error report for a results table
+- [`generate_autotype_test_cases()`](https://lecy.github.io/formex/reference/generate_autotype_test_cases.md)
+  : Build a labelled test-case table for one data type
+- [`guess_column()`](https://lecy.github.io/formex/reference/guess_column.md)
+  : Guess a column's type from its values and its name
+- [`guess_data_type()`](https://lecy.github.io/formex/reference/guess_data_type.md)
+  : Guess the ontology-anchored data type of a column
+- [`is_abbr_month_date()`](https://lecy.github.io/formex/reference/is_abbr_month_date.md)
+  : Is it a day-month-year date with an abbreviated month?
+- [`is_address()`](https://lecy.github.io/formex/reference/is_address.md)
+  : Is it a full postal address?
+- [`is_asin()`](https://lecy.github.io/formex/reference/is_asin.md) : Is
+  it an Amazon ASIN?
+- [`is_bibcode()`](https://lecy.github.io/formex/reference/is_bibcode.md)
+  : Is it an ADS bibcode?
+- [`is_block_fips()`](https://lecy.github.io/formex/reference/is_block_fips.md)
+  : Is it a census block FIPS code?
+- [`is_block_group_fips()`](https://lecy.github.io/formex/reference/is_block_group_fips.md)
+  : Is it a census block-group FIPS code?
+- [`is_boolean()`](https://lecy.github.io/formex/reference/is_boolean.md)
+  : Is it a boolean / indicator value?
+- [`is_ca_postal_code()`](https://lecy.github.io/formex/reference/is_ca_postal_code.md)
+  : Is it a Canadian postal code (or FSA)?
+- [`is_cbsa()`](https://lecy.github.io/formex/reference/is_cbsa.md) : Is
+  it a CBSA code?
+- [`is_census_region()`](https://lecy.github.io/formex/reference/is_census_region.md)
+  : Is it a US census region or division?
+- [`is_chinese_resident_id()`](https://lecy.github.io/formex/reference/is_chinese_resident_id.md)
+  : Is it a Chinese resident identity card number?
+- [`is_city_name()`](https://lecy.github.io/formex/reference/is_city_name.md)
+  : Is it a US city / place name?
+- [`is_city_state()`](https://lecy.github.io/formex/reference/is_city_state.md)
+  : Is it a "City, State" value?
+- [`is_clock_time()`](https://lecy.github.io/formex/reference/is_clock_time.md)
+  : Is it a clock time?
+- [`is_cmyk_color()`](https://lecy.github.io/formex/reference/is_cmyk_color.md)
+  : Is it a CMYK quadruple?
+- [`is_color_name()`](https://lecy.github.io/formex/reference/is_color_name.md)
+  : Is it a named color?
+- [`is_coord_latlon()`](https://lecy.github.io/formex/reference/is_coord_latlon.md)
+  : Is it a latitude/longitude pair (latitude first)?
+- [`is_coord_lonlat()`](https://lecy.github.io/formex/reference/is_coord_lonlat.md)
+  : Is it a longitude/latitude pair (longitude first)?
+- [`is_country_code()`](https://lecy.github.io/formex/reference/is_country_code.md)
+  : Is it an ISO 3166-1 country code?
+- [`is_county_fips()`](https://lecy.github.io/formex/reference/is_county_fips.md)
+  : Is it a county FIPS code?
+- [`is_csa()`](https://lecy.github.io/formex/reference/is_csa.md) : Is
+  it a CSA code?
+- [`is_currency_amount()`](https://lecy.github.io/formex/reference/is_currency_amount.md)
+  : Is it a monetary amount?
+- [`is_currency_code()`](https://lecy.github.io/formex/reference/is_currency_code.md)
+  : Is it an ISO 4217 currency code?
+- [`is_currency_code_symbol()`](https://lecy.github.io/formex/reference/is_currency_code_symbol.md)
+  : Is it a currency code + symbol + amount?
+- [`is_currency_symbol()`](https://lecy.github.io/formex/reference/is_currency_symbol.md)
+  : Is it a currency symbol + amount?
+- [`is_date()`](https://lecy.github.io/formex/reference/is_date.md) : Is
+  it a date or timestamp?
+- [`is_date_range()`](https://lecy.github.io/formex/reference/is_date_range.md)
+  : Is it a date range?
+- [`is_day_of_week()`](https://lecy.github.io/formex/reference/is_day_of_week.md)
+  : Is it a day-of-week name?
+- [`is_dea()`](https://lecy.github.io/formex/reference/is_dea.md) : Is
+  it a DEA registration number?
+- [`is_doi()`](https://lecy.github.io/formex/reference/is_doi.md) : Is
+  it a DOI?
+- [`is_ein()`](https://lecy.github.io/formex/reference/is_ein.md) : Is
+  it a US Employer Identification Number (EIN)?
+- [`is_email()`](https://lecy.github.io/formex/reference/is_email.md) :
+  Is it an email address?
+- [`is_ensembl_id()`](https://lecy.github.io/formex/reference/is_ensembl_id.md)
+  : Is it an Ensembl gene/transcript/protein ID?
+- [`is_first_name()`](https://lecy.github.io/formex/reference/is_first_name.md)
+  : Is it a common US given (first) name?
+- [`is_fiscal_year()`](https://lecy.github.io/formex/reference/is_fiscal_year.md)
+  : Is it a fiscal (or explicitly labelled) year?
+- [`is_full_name()`](https://lecy.github.io/formex/reference/is_full_name.md)
+  : Is it a person's full name?
+- [`is_geojson()`](https://lecy.github.io/formex/reference/is_geojson.md)
+  : Is it a GeoJSON geometry?
+- [`is_guid()`](https://lecy.github.io/formex/reference/is_guid.md) : Is
+  it a GUID / UUID?
+- [`is_hex_color()`](https://lecy.github.io/formex/reference/is_hex_color.md)
+  : Is it a hex color?
+- [`is_hijri_date()`](https://lecy.github.io/formex/reference/is_hijri_date.md)
+  : Is it a Hijri (Islamic-calendar) date?
+- [`is_hsl_color()`](https://lecy.github.io/formex/reference/is_hsl_color.md)
+  : Is it an HSL triple?
+- [`is_http_status()`](https://lecy.github.io/formex/reference/is_http_status.md)
+  : Is it an HTTP status code?
+- [`is_icd10_code()`](https://lecy.github.io/formex/reference/is_icd10_code.md)
+  : Is it an ICD-10 code?
+- [`is_icd9_code()`](https://lecy.github.io/formex/reference/is_icd9_code.md)
+  : Is it an ICD-9 code?
+- [`is_intl_phone()`](https://lecy.github.io/formex/reference/is_intl_phone.md)
+  : Is it an international (+ prefixed) phone number?
+- [`is_ipv4()`](https://lecy.github.io/formex/reference/is_ipv4.md) : Is
+  it an IPv4 address?
+- [`is_ipv6()`](https://lecy.github.io/formex/reference/is_ipv6.md) : Is
+  it an IPv6 address?
+- [`is_isbn()`](https://lecy.github.io/formex/reference/is_isbn.md) : Is
+  it an ISBN (10 or 13)?
+- [`is_iso6709()`](https://lecy.github.io/formex/reference/is_iso6709.md)
+  : Is it an ISO 6709 lat/lon pair?
+- [`is_iso_date()`](https://lecy.github.io/formex/reference/is_iso_date.md)
+  : Is it an ISO 8601 date?
+- [`is_iso_datetime()`](https://lecy.github.io/formex/reference/is_iso_datetime.md)
+  : Is it an ISO 8601 datetime?
+- [`is_issn()`](https://lecy.github.io/formex/reference/is_issn.md) : Is
+  it an ISSN?
+- [`is_json()`](https://lecy.github.io/formex/reference/is_json.md) : Is
+  it a JSON object or array?
+- [`is_last_name()`](https://lecy.github.io/formex/reference/is_last_name.md)
+  : Is it a common US surname (last name)?
+- [`is_long_date()`](https://lecy.github.io/formex/reference/is_long_date.md)
+  : Is it a verbose English date?
+- [`is_mac()`](https://lecy.github.io/formex/reference/is_mac.md) : Is
+  it a MAC address?
+- [`is_md5()`](https://lecy.github.io/formex/reference/is_md5.md) : Is
+  it an MD5 digest?
+- [`is_metro_area_name()`](https://lecy.github.io/formex/reference/is_metro_area_name.md)
+  : Is it a metropolitan-area name?
+- [`is_month_day()`](https://lecy.github.io/formex/reference/is_month_day.md)
+  : Is it a Month-Day value (no year)?
+- [`is_month_of_year()`](https://lecy.github.io/formex/reference/is_month_of_year.md)
+  : Is it a month-of-year name?
+- [`is_month_year()`](https://lecy.github.io/formex/reference/is_month_year.md)
+  : Is it a Month-Year value?
+- [`is_msisdn()`](https://lecy.github.io/formex/reference/is_msisdn.md)
+  : Is it an MSISDN (mobile subscriber number)?
+- [`is_naics()`](https://lecy.github.io/formex/reference/is_naics.md) :
+  Is it a NAICS industry code?
+- [`is_nces_locale()`](https://lecy.github.io/formex/reference/is_nces_locale.md)
+  : Is it an NCES locale code?
+- [`is_npi()`](https://lecy.github.io/formex/reference/is_npi.md) : Is
+  it an NPI (US health provider)?
+- [`is_orcid()`](https://lecy.github.io/formex/reference/is_orcid.md) :
+  Is it an ORCID iD?
+- [`is_phone()`](https://lecy.github.io/formex/reference/is_phone.md) :
+  Is it a US / NANP phone number?
+- [`is_po_box()`](https://lecy.github.io/formex/reference/is_po_box.md)
+  : Is it a PO box?
+- [`is_quarter()`](https://lecy.github.io/formex/reference/is_quarter.md)
+  : Is it a year-quarter?
+- [`is_rfc2822_datetime()`](https://lecy.github.io/formex/reference/is_rfc2822_datetime.md)
+  : Is it an RFC 2822 / HTTP datetime?
+- [`is_rgb_color()`](https://lecy.github.io/formex/reference/is_rgb_color.md)
+  : Is it an RGB triple?
+- [`is_roman()`](https://lecy.github.io/formex/reference/is_roman.md) :
+  Is it a Roman numeral?
+- [`is_sha1()`](https://lecy.github.io/formex/reference/is_sha1.md) : Is
+  it a SHA-1 digest?
+- [`is_sha256()`](https://lecy.github.io/formex/reference/is_sha256.md)
+  : Is it a SHA-256 digest?
+- [`is_snp_id()`](https://lecy.github.io/formex/reference/is_snp_id.md)
+  : Is it a dbSNP reference SNP ID?
+- [`is_ssn()`](https://lecy.github.io/formex/reference/is_ssn.md) : Is
+  it a US Social Security Number?
+- [`is_state_fips()`](https://lecy.github.io/formex/reference/is_state_fips.md)
+  : Is it a state FIPS code?
+- [`is_state_zip()`](https://lecy.github.io/formex/reference/is_state_zip.md)
+  : Is it a "State ZIP" value?
+- [`is_street_address()`](https://lecy.github.io/formex/reference/is_street_address.md)
+  : Is it a street address?
+- [`is_tags()`](https://lecy.github.io/formex/reference/is_tags.md) : Is
+  it a tag set (a delimited multi-value field)?
+- [`is_tract_fips()`](https://lecy.github.io/formex/reference/is_tract_fips.md)
+  : Is it a census tract FIPS code?
+- [`is_uei()`](https://lecy.github.io/formex/reference/is_uei.md) : Is
+  it a SAM.gov Unique Entity Identifier (UEI)?
+- [`is_uk_postcode()`](https://lecy.github.io/formex/reference/is_uk_postcode.md)
+  : Is it a UK postcode?
+- [`is_uniprot_id()`](https://lecy.github.io/formex/reference/is_uniprot_id.md)
+  : Is it a UniProt accession?
+- [`is_unix_time()`](https://lecy.github.io/formex/reference/is_unix_time.md)
+  : Is it a Unix timestamp (seconds)?
+- [`is_urban_rural()`](https://lecy.github.io/formex/reference/is_urban_rural.md)
+  : Is it an urban/rural designation?
+- [`is_url()`](https://lecy.github.io/formex/reference/is_url.md) : Is
+  it a URL?
+- [`is_us_date()`](https://lecy.github.io/formex/reference/is_us_date.md)
+  : Is it a US numeric date (M/D/YY)?
+- [`is_us_datetime()`](https://lecy.github.io/formex/reference/is_us_datetime.md)
+  : Is it a US numeric datetime with AM/PM?
+- [`is_us_state()`](https://lecy.github.io/formex/reference/is_us_state.md)
+  : Is it a US state abbreviation?
+- [`is_version()`](https://lecy.github.io/formex/reference/is_version.md)
+  : Is it a version identifier?
+- [`is_wkb()`](https://lecy.github.io/formex/reference/is_wkb.md) : Is
+  it Well-Known Binary (WKB / EWKB) geometry?
+- [`is_wkt_geometry()`](https://lecy.github.io/formex/reference/is_wkt_geometry.md)
+  : Is it a WKT (Well-Known Text) geometry?
+- [`is_yyyymm()`](https://lecy.github.io/formex/reference/is_yyyymm.md)
+  : Is it a compact YYYYMM year-month?
+- [`is_zip_code()`](https://lecy.github.io/formex/reference/is_zip_code.md)
+  : Is it a US ZIP code?
+- [`ontology`](https://lecy.github.io/formex/reference/ontology.md) :
+  Research data-type ontology (v7), parsed
+- [`score_data_type()`](https://lecy.github.io/formex/reference/score_data_type.md)
+  : Score a column against every registered detector
+- [`score_feasibility_table()`](https://lecy.github.io/formex/reference/score_feasibility_table.md)
+  : Score a table of predictions against a feasibility crosswalk
+- [`SIGNATURE_WEIGHTS`](https://lecy.github.io/formex/reference/SIGNATURE_WEIGHTS.md)
+  : Signature axis weights (balanced default)
+- [`WEIGHTS_FORMAT`](https://lecy.github.io/formex/reference/WEIGHTS_FORMAT.md)
+  : Signature axis weights tuned for format comparisons
+
+# Articles
+
+### Package overview
+
+Start here. Three short tours of what the package does: how it guesses a
+column’s type, the shared ontology those types live in, and how it
+cleans and standardizes values.
+
+- [Guess Data
+  Type](https://lecy.github.io/formex/articles/overview-guess-data-type.md):
+- [The
+  Ontology](https://lecy.github.io/formex/articles/overview-ontology.md):
+- [Formatting
+  Syntax](https://lecy.github.io/formex/articles/overview-formatting-syntax.md):
+
+### Data Types
+
+What kinds of column research data contains, and the ontology that maps
+them.
+
+- [The Data-Type
+  Ontology](https://lecy.github.io/formex/articles/data-type-ontology.md):
+- [The Type
+  Atlas](https://lecy.github.io/formex/articles/formex-type-atlas.md):
+
+### Data Type Detection
+
+The architecture that routes a column to its type: detectors, the
+learned router, and the feature profile it reads.
+
+- [Guessing a Column's
+  Type](https://lecy.github.io/formex/articles/guess-data-type.md):
+- [Feature Engineering for Type
+  Guessing](https://lecy.github.io/formex/articles/feature-engineering.md):
+
+### Detector Types
+
+How each kind of detector recognizes a format — masks, lexicons, shapes
+— and how building each one differs.
+
+- [How Detectors Recognize a
+  Type](https://lecy.github.io/formex/articles/detector-kinds.md):
+- [Data-Type Detector
+  Guide](https://lecy.github.io/formex/articles/data-type-detectors.md):
+
+### Testing Libraries
+
+The example corpora, the stress-test grid, and building a feature
+dataset to train and evaluate column-type classifiers.
+
+- [The Testing
+  Libraries](https://lecy.github.io/formex/articles/testing-libraries.md):
+- [Benchmarking and the Stress-Test Design
+  Grid](https://lecy.github.io/formex/articles/benchmarking.md):
+- [Building a Feature Dataset for
+  Classification](https://lecy.github.io/formex/articles/feature-dataset.md):
+- [Classifying Columns with a Decision
+  Tree](https://lecy.github.io/formex/articles/classifier-decision-tree.md):
+
+### Formex Syntax
+
+The recipe language that governs how a raw value is read, cleaned, and
+rewritten to a stable, analysis-ready form.
+
+- [Formex: the format-expression
+  syntax](https://lecy.github.io/formex/articles/formex.md):
